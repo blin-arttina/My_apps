@@ -1,0 +1,2 @@
+export GH_USERNAME="your-github-username"
+export GH_TOKEN="ghp_xxx_your_token_here"

@@ -1,0 +1,255 @@
+bash -lc '
+set -e
+
+# ---- settings ----
+APP_NAME="book-animator"
+APP_ID="com.${GH_USERNAME:-user}.bookanimator"
+REPO_NAME="book-animator"
+PORT=5173
+
+if [ -z "$GH_USERNAME" ] || [ -z "$GH_TOKEN" ]; then
+  echo "❌ Please set GH_USERNAME and GH_TOKEN env vars first."
+  echo "   export GH_USERNAME=\"yourname\""
+  echo "   export GH_TOKEN=\"<token with repo scope>\""
+  exit 1
+fi
+
+echo "▶ Installing prerequisites..."
+pkg update -y >/dev/null 2>&1 || true
+pkg install -y nodejs git imagemagick wget >/dev/null 2>&1
+
+echo "▶ Create app (Vite + React + TS)"
+rm -rf "$APP_NAME"
+npm create vite@latest "$APP_NAME" -- --template react-ts >/dev/null 2>&1
+cd "$APP_NAME"
+
+echo "▶ Install deps"
+npm i lucide-react >/dev/null 2>&1
+npm i -D tailwindcss postcss autoprefixer >/dev/null 2>&1
+npx tailwindcss init -p >/dev/null 2>&1
+
+# Tailwind config & styles
+sed -i "s/content: \\[\\]/content: [\\\".\\/index.html\\\", \\\".\\/src\\/**\\/*.{ts,tsx}\\\"]/" tailwind.config.js
+cat > src/index.css << \"EOF\"
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+html,body,#root{height:100%;}
+*{outline:none}
+EOF
+
+# Minimal UI + tabs + engines (same UI you approved)
+mkdir -p src/components/ui src/lib src/engines src/types src/pages
+cat > src/lib/cn.ts << \"EOF\"
+export function cn(...cls: Array<string | false | null | undefined>) { return cls.filter(Boolean).join(" "); }
+EOF
+cat > src/components/ui/button.tsx << \"EOF\"
+import React from "react";
+import { cn } from "../../lib/cn";
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "solid"|"ghost" };
+export const Button: React.FC<Props> = ({ className, variant="solid", ...props }) => (
+  <button {...props} className={cn("rounded-2xl px-4 py-2 transition shadow-lg focus:ring-2 ring-red-600/40",
+    variant==="solid"?"bg-red-600 hover:bg-red-700 text-white":"bg-transparent text-gray-300 hover:text-white", className)} />
+);
+export default Button;
+EOF
+cat > src/components/ui/card.tsx << \"EOF\"
+import React from "react"; import { cn } from "../../lib/cn";
+export const Card: React.FC<React.HTMLAttributes<HTMLDivElement>>=({className,...p})=>(<div className={cn("rounded-2xl border border-gray-700 bg-gray-900",className)} {...p}/>);
+export const CardContent: React.FC<React.HTMLAttributes<HTMLDivElement>>=({className,...p})=>(<div className={cn("p-4",className)} {...p}/>);
+export default Card;
+EOF
+cat > src/components/ui/tabs.tsx << \"EOF\"
+import React,{createContext,useContext,useState}from\"react\";type C={value:string;setValue:(v:string)=>void};const X=createContext<C|null>(null);
+export const Tabs:React.FC<{defaultValue:string;className?:string}>=({defaultValue,className,children})=>{const[v,s]=useState(defaultValue);return <div className={className} data-tabs-value={v}><X.Provider value={{value:v,setValue:s}}>{children}</X.Provider></div>;}
+export const TabsList:React.FC<React.HTMLAttributes<HTMLDivElement>>=({className,...p})=><div className={[\"flex flex-wrap gap-2 bg-gray-800 rounded-xl p-2\",className].filter(Boolean).join(\" \")} {...p}/>;
+export const TabsTrigger:React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>&{value:string}>=({value,className,...p})=>{const c=useContext(X)!;const a=c.value===value;return <button onClick={()=>c.setValue(value)} className={[\"px-4 py-2 rounded-lg text-sm\",a?\"bg-red-600 text-white\":\"bg-gray-900 text-gray-300 hover:text-white\",className||\"\"].join(\" \")} {...p}/>;}
+export const TabsContent:React.FC<React.HTMLAttributes<HTMLDivElement>&{value:string}>=({value,className,...p})=>{const c=useContext(X)!;if(c.value!==value)return null;return <div className={[\"mt-6\",className].filter(Boolean).join(\" \")} {...p}/>;}
+EOF
+cat > src/types/engine.ts << \"EOF\"
+export type AnimationEngineId='pika'|'runway'|'stability-svd'|'animate-diff'|'deforum';
+export interface RenderJob{prompt:string;negativePrompt?:string;durationSec:number;fps:number;width:number;height:number;style?:string;characterIds?:string[];}
+export interface RenderHandle{id:string;engine:AnimationEngineId;}
+export interface Progress{percent:number;etaSec?:number;status:'queued'|'running'|'done'|'error';url?:string;error?:string;}
+export interface EngineAdapter{id:AnimationEngineId;name:string;canLocal:boolean;render(job:RenderJob):Promise<RenderHandle>;progress(h:RenderHandle):Promise<Progress>;cancel?(h:RenderHandle):Promise<void>;}
+EOF
+cat > src/engines/index.ts << \"EOF\"
+import type {EngineAdapter,RenderJob,RenderHandle,Progress} from\"../types/engine\";const delay=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+export const PikaAdapter:EngineAdapter={id:'pika',name:'Pika',canLocal:false,async render(job:RenderJob){return{id:'pika_'+Date.now(),engine:'pika'}},async progress(h:RenderHandle){await delay(300);return{percent:Math.min(95,Math.floor(Math.random()*70)+25),status:'running'}}};
+export const adapters:Record<string,EngineAdapter>={pika:PikaAdapter};
+EOF
+cat > src/App.tsx << \"EOF\"
+import React from "react"; import CharacterLibrary from "./pages/CharacterLibrary"; export default function App(){return <CharacterLibrary/>;}
+EOF
+cat > src/main.tsx << \"EOF\"
+import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; import "./index.css";
+ReactDOM.createRoot(document.getElementById("root")!).render(<React.StrictMode><App/></React.StrictMode>);
+EOF
+
+# Full page (UI with Engine & SFX tabs, settings, autosave, progress)
+cat > src/pages/CharacterLibrary.tsx << \"EOF\"
+import React,{useEffect,useRef,useState}from\"react\";import{Card,CardContent}from\"../components/ui/card\";import{Tabs,TabsList,TabsTrigger,TabsContent}from\"../components/ui/tabs\";
+import{Plus,Search as SearchIcon,User,Image as ImageIcon,Key,Edit,Download,Upload,Settings,Pause,Play,Lock,Unlock,Shield,RefreshCcw,History,Cloud,FolderPlus,BookOpen,Volume2,Wand2,Accessibility,Bell,AlertTriangle,CheckCircle2}from\"lucide-react\";
+import{adapters}from\"../engines\";import type{AnimationEngineId}from\"../types/engine\";
+export default function CharacterLibrary(){const[search,setSearch]=useState(\"\");const[isSaving,setIsSaving]=useState(false);const[lastSavedAt,setLastSavedAt]=useState<Date|null>(null);const[autosaveEnabled,setAutosaveEnabled]=useState(true);const[autosaveMinutes,setAutosaveMinutes]=useState(10);
+const[showSettings,setShowSettings]=useState(false);const[isProjectRunning,setIsProjectRunning]=useState(false);const[elapsedMinutes,setElapsedMinutes]=useState(0);const[totalMinutes,setTotalMinutes]=useState(30);
+const[secretLocked,setSecretLocked]=useState(true);const[passphrase,setPassphrase]=useState(\"\");const[autoLockMinutes,setAutoLockMinutes]=useState(10);const autoLockTimer=useRef<number|null>(null);
+const[snapshots,setSnapshots]=useState<string[]>([]);const[cloudEnabled,setCloudEnabled]=useState(false);const[cloudProvider,setCloudProvider]=useState(\"Dropbox\");const[fontScale,setFontScale]=useState(1.0);const[voiceControl,setVoiceControl]=useState(false);const[notifyOnComplete,setNotifyOnComplete]=useState(true);
+const[queue,setQueue]=useState<Array<{id:string;title:string;status:\"queued\"|\"rendering\"|\"done\"}>>([{id:\"1\",title:\"Chapter 1\",status:\"done\"},{id:\"2\",title:\"Chapter 2\",status:\"queued\"}]);const[errors,setErrors]=useState<Array<{time:string;message:string}>>([]);
+const[showWizard,setShowWizard]=useState(false);const[showTemplates,setShowTemplates]=useState(true);const templates=[{key:\"blank\",label:\"Blank Project\"},{key:\"book-chapter\",label:\"Book Chapter\"},{key:\"short-story\",label:\"Short Story\"},{key:\"visual-novel\",label:\"Visual Novel\"}];
+const[engine,setEngine]=useState<AnimationEngineId>(\"pika\");const[stylePreset,setStylePreset]=useState(\"cinematic\");const[resolution,setResolution]=useState(\"1080x1080\");const[fps,setFps]=useState(24);const[duration,setDuration]=useState(10);
+const saveAll=async()=>{setIsSaving(true);await new Promise(r=>setTimeout(r,800));setIsSaving(false);setLastSavedAt(new Date());setSnapshots(p=>[new Date().toISOString(),...p].slice(0,3));};
+useEffect(()=>{if(!autosaveEnabled)return;saveAll();const id=setInterval(saveAll,autosaveMinutes*60*1000);return()=>clearInterval(id);},[autosaveEnabled,autosaveMinutes]);
+useEffect(()=>{if(!isProjectRunning)return;const id=setInterval(()=>{setElapsedMinutes(m=>{const n=m+1;if(n>=totalMinutes){if(notifyOnComplete)console.log(\"Render complete\");return totalMinutes;}return n;});},60*1000);return()=>clearInterval(id);},[isProjectRunning,totalMinutes,notifyOnComplete]);
+const toggleRun=()=>{if(elapsedMinutes>=totalMinutes)setElapsedMinutes(0);setIsProjectRunning(v=>!v);};const segmentSize=5;const segments=Math.max(1,Math.ceil(totalMinutes/segmentSize));const filledSegments=Math.min(segments,Math.floor(elapsedMinutes/segmentSize));const percent=Math.min(100,Math.round(elapsedMinutes/totalMinutes*100));
+const kickAutoLock=()=>{if(!secretLocked){if(autoLockTimer.current)clearTimeout(autoLockTimer.current);autoLockTimer.current=window.setTimeout(()=>setSecretLocked(true),autoLockMinutes*60*1000);}};useEffect(()=>{const onAny=()=>kickAutoLock();window.addEventListener(\"click\",onAny);window.addEventListener(\"keydown\",onAny);return()=>{window.removeEventListener(\"click\",onAny);window.removeEventListener(\"keydown\",onAny);};},[secretLocked,autoLockMinutes]);
+const previewVoice=()=>alert(\"Playing sample voice… (mock)\");const suggestImage=()=>alert(\"Generating AI placeholder from outline… (mock)\");const dropRef=useRef<HTMLDivElement|null>(null);
+const openSfx=(name:string,url:string,note:string)=>{const ok=window.confirm(\`\${name}\\n\\n\${note}\\n\\nOpen in a new tab?\`);if(ok)window.open(url,\"_blank\",\"noopener,noreferrer\");};
+const startRender=async()=>{alert(\`Render started with \${engine} (mock)\`);setElapsedMinutes(0);setIsProjectRunning(true);try{await adapters[engine]?.render({prompt:\"Scene from chapter\",durationSec:duration,fps,width:parseInt(resolution.split(\"x\")[0]),height:parseInt(resolution.split(\"x\")[1])}as any);}catch(e:any){setErrors(x=>[...x,{time:new Date().toLocaleString(),message:e?.message||\"Render error\"}]);}};
+return(<div className=\"min-h-screen bg-black text-white p-12 space-y-24 leading-loose pb-40\" style={{fontSize:`\${fontScale}rem`}}>
+<div className=\"sticky top-0 z-50 mb-12\"><div className=\"bg-gray-950/90 backdrop-blur rounded-2xl border border-gray-800 px-6 py-4 flex items-center justify-between\">
+<div className=\"flex items-center gap-6\"><h1 className=\"text-4xl font-bold\">Character Library</h1><button onClick={()=>setShowSettings(true)} className=\"bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl flex items-center gap-2\"><Settings className=\"h-5 w-5\"/> Settings</button><button onClick={()=>setShowWizard(true)} className=\"bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl flex items-center gap-2\"><BookOpen className=\"h-5 w-5\"/> Tutorial</button></div>
+<div className=\"flex items-center gap-6 text-sm\">{isSaving?<span className=\"animate-pulse\">Saving…</span>:<span>{lastSavedAt?`Auto-saved at ${lastSavedAt.toLocaleTimeString()}`:\"\"}</span>}<button onClick={saveAll} className=\"bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl\">Save Now</button></div></div></div>
+{true&&(<div className=\"rounded-2xl border border-gray-700 bg-gray-900\"><div className=\"p-8 space-y-8\"><div className=\"flex items-center justify-between\"><h2 className=\"text-2xl font-semibold flex items-center gap-3\"><FolderPlus className=\"h-6 w-6 text-red-500\"/> Start from a Template</h2><button onClick={()=>setShowTemplates(false)} className=\"bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl\">Hide</button></div><div className=\"flex flex-wrap gap-4\">{[{key:\"blank\",label:\"Blank Project\"},{key:\"book-chapter\",label:\"Book Chapter\"},{key:\"short-story\",label:\"Short Story\"},{key:\"visual-novel\",label:\"Visual Novel\"}].map(t=>(<button key={t.key} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-6 py-4 flex items-center gap-2\"><BookOpen className=\"h-5 w-5\"/> {t.label}</button>))}</div></div></div>)}
+<div className=\"flex items-center gap-12 mb-24\"><div className=\"relative w-full max-w-md\"><SearchIcon className=\"absolute left-3 top-4 h-6 w-6 text-gray-400\"/><input placeholder=\"Search characters...\" value={search} onChange={e=>setSearch(e.target.value)} className=\"w-full pl-12 bg-gray-900 border border-gray-700 rounded-xl text-white py-6 text-lg\"/></div><div className=\"flex items-center gap-6\"><button className=\"bg-red-600 hover:bg-red-700 text-xl px-8 py-6 rounded-2xl shadow-lg flex items-center gap-4\"><Plus className=\"h-6 w-6\"/> Add Character</button><div className=\"hidden md:flex items-center gap-3 bg-gray-900 border border-gray-700 rounded-2xl px-4 py-3\"><button onClick={saveAll} className=\"bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl flex items-center gap-2\"><RefreshCcw className=\"h-4 w-4\"/> Snapshot</button><button onClick={()=>alert(\"Voice preview (mock)\")} className=\"bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl flex items-center gap-2\"><Volume2 className=\"h-4 w-4\"/> Preview Voice</button><button onClick={()=>alert(\"Generate preview (mock)\")} className=\"bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl flex items-center gap-2\"><Wand2 className=\"h-4 w-4\"/> Generate Preview</button></div></div></div>
+<div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-24 mb-32\"><div className=\"rounded-2xl border border-gray-700 bg-gray-900\"><div className=\"p-12 space-y-12\"><h2 className=\"text-3xl font-semibold flex items-center gap-4\"><User className=\"h-7 w-7 text-red-500\"/> Arkan the Shadow Knight</h2><p className=\"text-gray-400 text-xl leading-loose\">Dark Fantasy | Brooding, stoic warrior</p><div className=\"flex flex-wrap gap-3\">{[\"Hero\",\"Villain\",\"Mentor\",\"Comic Relief\"].map(p=>(<button key={p} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-4 py-2\">{p}</button>))}</div>
+<div className=\"w-full\"><div className=\"p-4 rounded-lg mb-12 bg-gray-800\"><div className=\"flex flex-wrap gap-2\"><button className=\"px-4 py-2 rounded-lg text-sm bg-red-600 text-white\">Outline</button><button className=\"px-4 py-2 rounded-lg text-sm bg-gray-900 text-gray-300 hover:text-white\" onClick={()=>document.getElementById(\"tab-images\")?.scrollIntoView({behavior:\"smooth\"})}>Images</button><button className=\"px-4 py-2 rounded-lg text-sm bg-gray-900 text-gray-300 hover:text-white\" onClick={()=>document.getElementById(\"tab-voice\")?.scrollIntoView({behavior:\"smooth\"})}>Voice</button><button className=\"px-4 py-2 rounded-lg text-sm bg-gray-900 text-gray-300 hover:text-white\" onClick={()=>document.getElementById(\"tab-style\")?.scrollIntoView({behavior:\"smooth\"})}>Style</button><button className=\"px-4 py-2 rounded-lg text-sm bg-gray-900 text-gray-300 hover:text-white\" onClick={()=>document.getElementById(\"tab-sfx\")?.scrollIntoView({behavior:\"smooth\"})}>Sound FX</button><button className=\"px-4 py-2 rounded-lg text-sm bg-gray-900 text-gray-300 hover:text-white\" onClick={()=>document.getElementById(\"tab-engine\")?.scrollIntoView({behavior:\"smooth\"})}>Engine</button></div></div>
+<div><p className=\"text-xl text-gray-300 leading-loose\">A cursed knight bound in dark armor. Fights with honor but haunted by his past.</p></div>
+<div id=\"tab-images\" className=\"space-y-6\"><div ref={dropRef} className=\"w-full h-40 bg-gray-800/60 border border-dashed border-gray-600 rounded-xl flex items-center justify-center\">Drag & Drop images here (batch supported)</div><div className=\"flex gap-12 items-center\"><div className=\"w-32 h-32 bg-gray-700 flex items-center justify-center rounded-lg\"><ImageIcon className=\"h-12 w-12 text-gray-400\"/></div><div className=\"w-32 h-32 bg-gray-700 flex items-center justify-center rounded-lg\"><ImageIcon className=\"h-12 w-12 text-gray-400\"/></div><button onClick={suggestImage} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-4 py-2 flex items-center gap-2\"><Wand2 className=\"h-4 w-4\"/> AI Suggest</button></div></div>
+<div id=\"tab-voice\" className=\"flex items-center gap-4\"><p className=\"text-xl text-gray-300 leading-loose\">Voice: Deep, gravelly (linked to ElevenLabs)</p><button onClick={previewVoice} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-3 py-2 flex items-center gap-2\"><Volume2 className=\"h-4 w-4\"/> Preview</button></div>
+<div id=\"tab-style\" className=\"flex flex-wrap gap-3\">{[\"Dark Fantasy Anime\",\"Cartoon Comedy\",\"Realistic Drama\"].map(s=>(<button key={s} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-4 py-2\">{s}</button>))}</div>
+<div id=\"tab-sfx\" className=\"space-y-6\"><div className=\"text-lg font-medium\">Suggested free SFX sources</div><div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">
+<button onClick={()=>openSfx(\"Pixabay SFX\",\"https://pixabay.com/sound-effects/\",\"Royalty-free. No attribution required under Pixabay License. Review each item.\")} className=\"bg-gray-8
+00 hover:bg-gray-700 rounded-xl px-4 py-4 text-left\" title=\"Royalty-free; verify each item.\"><div className=\"font-semibold\">Pixabay SFX</div><div className=\"text-sm text-gray-400\">Royalty-free; no attribution (verify)</div></button>
+<button onClick={()=>openSfx(\"Mixkit\",\"https://mixkit.co/free-sound-effects/\",\"Free for commercial use under Mixkit Free License.\")} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-4 py-4 text-left\" title=\"Free for commercial use.\"><div className=\"font-semibold\">Mixkit</div><div className=\"text-sm text-gray-400\">Commercial use allowed (license)</div></button>
+<button onClick={()=>openSfx(\"Freesound\",\"https://freesound.org/\",\"Community SFX under CC0 or CC-BY. Attribution may be required—check each file.\")} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-4 py-4 text-left\" title=\"CC0 or CC-BY (varies per file).\"><div className=\"font-semibold\">Freesound</div><div className=\"text-sm text-gray-400\">CC0 / CC-BY (check each)</div></button>
+<button onClick={()=>openSfx(\"ZapSplat\",\"https://www.zapsplat.com/\",\"Free tier requires attribution; Pro removes credit requirement.\")} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-4 py-4 text-left\" title=\"Free (credit) / Pro (no credit).\"><div className=\"font-semibold\">ZapSplat</div><div className=\"text-sm text-gray-400\">Free (credit) / Pro (no credit)</div></button>
+<button onClick={()=>openSfx(\"YouTube Audio Library\",\"https://studio.youtube.com/channel/UC/music\",\"Free SFX; check each item\\'s License Type.\")} className=\"bg-gray-800 hover:bg-gray-700 rounded-xl px-4 py-4 text-left md:col-span-2\" title=\"License Type varies.\"><div className=\"font-semibold\">YouTube Audio Library (SFX)</div><div className=\"text-sm text-gray-400\">Free SFX; license varies</div></button></div></div>
+<div id=\"tab-engine\" className=\"space-y-6\"><div className=\"grid md:grid-cols-2 gap-6\"><div><div className=\"text-sm text-gray-400 mb-2\">Animation Engine</div><select className=\"w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3\" value={engine} onChange={e=>setEngine(e.target.value as any)}><option value=\"pika\">Pika (cloud)</option><option value=\"runway\" disabled>Runway Gen (add adapter)</option><option value=\"stability-svd\" disabled>Stability SVD (add adapter)</option><option value=\"animate-diff\" disabled>AnimateDiff (local)</option><option value=\"deforum\" disabled>Deforum (Auto1111)</option></select></div>
+<div><div className=\"text-sm text-gray-400 mb-2\">Style Preset</div><select className=\"w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3\" value={stylePreset} onChange={e=>setStylePreset(e.target.value)}><option value=\"cinematic\">Cinematic</option><option value=\"anime\">Anime</option><option value=\"cartoon\">Cartoon</option><option value=\"realistic\">Realistic</option></select></div>
+<div><div className=\"text-sm text-gray-400 mb-2\">Resolution</div><select className=\"w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3\" value={resolution} onChange={e=>setResolution(e.target.value)}><option value=\"768x768\">768×768</option><option value=\"1080x1080\">1080×1080</option><option value=\"1920x1080\">1920×1080</option></select></div>
+<div><div className=\"text-sm text-gray-400 mb-2\">FPS</div><select className=\"w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3\" value={fps} onChange={e=>setFps(parseInt(e.target.value))}>{[12,24,30].map(f=><option key={f} value={f}>{f}</option>)}</select></div>
+<div><div className=\"text-sm text-gray-400 mb-2\">Duration (sec)</div><input type=\"number\" min={1} max={60} value={duration} onChange={e=>setDuration(parseInt(e.target.value||\"1\"))} className=\"w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3\"/></div></div>
+<div className=\"flex flex-wrap gap-4\"><button onClick={startRender} className=\"bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-2xl shadow-lg\">Generate Preview</button><button onClick={()=>alert(\"Queued to render (mock).\")} className=\"bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-2xl shadow-lg\">Add to Render Queue</button></div>
+<div className=\"text-xs text-gray-500\">Tip: cloud engines require API keys in Secret Folder. Local engines need a local runner.</div></div></div>
+<div className=\"space-y-4\"><div className=\"flex items-center justify-between\"><div className=\"flex items-center gap-2 text-lg font-medium\"><History className=\"h-5 w-5\"/> Snapshots</div><button onClick={saveAll} className=\"bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-xl flex items-center gap-2\"><RefreshCcw className=\"h-4 w-4\"/> Save Snapshot</button></div><div className=\"flex flex-wrap gap-3 text-sm text-gray-400\">{snapshots.length===0&&<span>No snapshots yet</span>}{snapshots.map((s,i)=>(<span key={s} className=\"px-3 py-1 rounded-full border border-gray-700\">#{i+1} {new Date(s).toLocaleString()}</span>))}</div></div>
+<button onClick={saveAll} className=\"bg-red-600 hover:bg-red-700 text-lg px-6 py-3 rounded-lg shadow-lg w-full\">Update Character</button>
+</div></div></div>
+<h2 className=\"text-3xl font-bold mb-12\">Secret Folder (API Keys)</h2><div className=\"max-w-3xl rounded-2xl border border-gray-700 bg-gray-900\"><div className=\"p-12 space-y-12\">
+<div className=\"flex items-center justify-between mb-12\"><h3 className=\"text-2xl font-semibold flex items-center gap-4\"><Key className=\"h-7 w-7 text-red-500\"/> API Key Storage</h3><div className=\"flex items-center gap-4\"><button onClick={()=>setSecretLocked(v=>!v)} className={`text-lg px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 ${secretLocked?\"bg-gray-700 hover:bg-gray-600\":\"bg-red-600 hover:bg-red-700\"}`}>{secretLocked?<Lock className=\"h-5 w-5\"/>:<Unlock className=\"h-5 w-5\"/>} {secretLocked?\"Locked\":\"Unlock\"}</button><button className=\"bg-gray-800 hover:bg-gray-700 text-lg px-6 py-3 rounded-lg shadow-lg flex items-center gap-2\"><Shield className=\"h-5 w-5\"/> Encrypt (AES)</button></div></div>
+{!secretLocked?(<><div className=\"flex items-center gap-4\"><input value={passphrase} onChange={e=>setPassphrase(e.target.value)} placeholder=\"Passphrase\" className=\"bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 w-full\"/><button onClick={saveAll} className=\"bg-gray-800 hover:bg-gray-700 px-4 py-3 rounded-xl\">Set/Update</button></div>
+<div className=\"flex items-center gap-6\"><div className=\"text-sm text-gray-400\">Auto-lock after</div><div className=\"flex gap-3\">{[5,10,15,30].map(m=>(<button key={m} onClick={()=>setAutoLockMinutes(m)} className={`px-3 py-2 rounded-lg ${autoLockMinutes===m?\"bg-red-600\":\"bg-gray-800 hover:bg-gray-700\"}`}>{m} min</button>))}</div></div>
+<div className=\"flex gap-8 flex-wrap\"><button onClick={saveAll} className=\"bg-red-600 hover:bg-red-700 text-lg px-6 py-3 rounded-lg shadow-lg\">+ Add Key</button><button onClick={saveAll} className=\"bg-gray-700 hover:bg-gray-600 text-lg px-6 py-3 rounded-lg shadow-lg flex items-center gap-4\"><Download className=\"h-5 w-5\"/> Export</button><button onClick={saveAll} className=\"bg-gray-700 hover:bg-gray-600 text-lg px-6 py-3 rounded-lg shadow-lg flex items-center gap-4\"><Upload className=\"h-5 w-5\"/> Import</button></div>
+<div className=\"space-y-12\"><div className=\"bg-gray-800 p-6 rounded-lg flex justify-between items-center\"><span className=\"text-xl text-gray-300\">ElevenLabs_API</span><div className=\"flex gap-8 items-center\"><span className=\"text-lg text-gray-500\">••••••••</span><button className=\"text-gray-400 hover:text-white\"><Edit className=\"h-5 w-5\"/></button></div></div>
+<div className=\"bg-gray-800 p-6 rounded-lg flex justify-between items-center\"><span className=\"text-xl text-gray-300\">StabilityAI_Key</span><div className=\"flex gap-8 items-center\"><span className=\"text-lg text-gray-500\">••••••••</span><button className=\"text-gray-400 hover:text-white\"><Edit className=\"h-5 w-5\"/></button></div></div></div>
+<button onClick={saveAll} className=\"bg-red-600 hover:bg-red-700 text-lg px-6 py-3 rounded-lg shadow-lg w-full\">Update Keys</button></>):(<div className=\"text-gray-500 flex items-center gap-2\"><Lock className=\"h-4 w-4\"/> Secret folder is locked.</div>)}
+</div></div>
+<div className=\"grid grid-cols-1 lg:grid-cols-2 gap-12\"><div className=\"rounded-2xl border border-gray-700 bg-gray-900\"><div className=\"p-8 space-y-6\"><h3 className=\"text-2xl font-semibold flex items-center gap-3\"><Cloud className=\"h-6 w-6 text-red-500\"/> Render Queue</h3><div className=\"space-y-3 text-sm\">{queue.map(q=>(<div key={q.id} className=\"flex items-center justify-between bg-gray-800 rounded-xl px-4 py-3\"><div className=\"flex items-center gap-3\">{q.status===\"done\"?<CheckCircle2 className=\"h-4 w-4 text-green-400\"/>:q.status===\"rendering\"?<RefreshCcw className=\"h-4 w-4 animate-spin\"/>:<Pause className=\"h-4 w-4\"/>}<span>{q.title}</span></div><span className=\"text-gray-400\">{q.status}</span></div>))}</div></div></div>
+<div className=\"rounded-2xl border border-gray-700 bg-gray-900\"><div className=\"p-8 space-y-6\"><h3 className=\"text-2xl font-semibold flex items-center gap-3\"><AlertTriangle className=\"h-6 w-6 text-red-500\"/> Error Log</h3><div className=\"space-y-3 text-sm\">{errors.length===0&&<div className=\"text-gray-500\">No errors yet.</div>}{errors.map((e,i)=>(<div key={i} className=\"bg-gray-800 rounded-xl px-4 py-3 flex items-center justify-between\"><span className=\"text-gray-300\">{e.message}</span><span className=\"text-gray-500\">{e.time}</span></div>))}</div></div></div></div>
+{showSettings&&(<div className=\"fixed inset-0 z-50 flex items-end justify-center\"><div className=\"absolute inset-0 bg-black/60\" onClick={()=>setShowSettings(false)}/><div className=\"relative bg-gray-950 border border-gray-800 rounded-t-2xl w-full max-w-4xl p-10 space-y-10\"><div className=\"flex items-center justify-between\"><h4 className=\"text-2xl font-semibold flex items-center gap-3\"><Settings className=\"h-6 w-6\"/> Settings</h4><button onClick={()=>setShowSettings(false)} className=\"bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl\">Close</button></div>
+<div className=\"space-y-6\"><div className=\"flex items-center justify-between\"><div><div className=\"text-lg font-medium\">Autosave</div><div className=\"text-sm text-gray-400\">Automatically save work every set interval.</div></div><button onClick={()=>setAutosaveEnabled(v=>!v)} className={`px-6 py-3 rounded-xl ${autosaveEnabled?\"bg-red-600 hover:bg-red-700\":\"bg-gray-700 hover:bg-gray-600\"}`}>{autosaveEnabled?\"On\":\"Off\"}</button></div>
+<div className=\"flex items-center justify-between\"><div><div className=\"text-lg font-medium\">Autosave Interval</div><div className=\"text-sm text-gray-400\">Choose how often to autosave.</div></div><div className=\"flex items-center gap-4\">{[5,10,15].map(m=>(<button key={m} onClick={()=>setAutosaveMinutes(m)} className={`px-4 py-2 rounded-lg ${autosaveMinutes===m?\"bg-red-600\":\"bg-gray-800 hover:bg-gray-700\"}`}>{m} min</button>))}</div></div></div>
+<div className=\"space-y-4\"><div className=\"text-lg font-medium flex items-center gap-2\"><Shield className=\"h-5 w-5\"/> Secret Folder Encryption</div><div className=\"flex items-center gap-4\"><input value={passphrase} onChange={e=>setPassphrase(e.target.value)} placeholder=\"Passphrase\" className=\"bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 w-full\"/><button onClick={()=>saveAll()} className=\"bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl\">Save Passphrase</button></div><div className=\"flex items-center gap-6\"><div className=\"text-sm text-gray-400\">Auto-lock after</div><div className=\"flex gap-3\">{[5,10,15,30].map(m=>(<button key={m} onClick={()=>setAutoLockMinutes(m)} className={`px-3 py-2 rounded-lg ${autoLockMinutes===m?\"bg-red-600\":\"bg-gray-800 hover:bg-gray-700\"}`}>{m} min</button>))}</div></div></div>
+<div className=\"space-y-4\"><div className=\"text-lg font-medium flex items-center gap-2\"><Cloud className=\"h-5 w-5\"/> Cloud Sync</div><div className=\"flex items-center gap-4\"><button onClick={()=>setCloudEnabled(v=>!v)} className={`px-6 py-3 rounded-xl ${cloudEnabled?\"bg-red-600\":\"bg-gray-700 hover:bg-gray-600\"}`}>{cloudEnabled?\"Enabled\":\"Disabled\"}</button><div className=\"flex items-center gap-3\">{[\"Dropbox\",\"Google Drive\",\"OneDrive\"].map(p=>(<button key={p} onClick={()=>setCloudProvider(p)} className={`px-4 py-2 rounded-lg ${cloudProvider===p?\"bg-red-600\":\"bg-gray-800 hover:bg-gray-700\"}`}>{p}</button>))}</div></div></div>
+<div className=\"space-y-4\"><div className=\"text-lg font-medium flex items-center gap-2\"><Accessibility className=\"h-5 w-5\"/> Accessibility</div><div className=\"flex items-center gap-4\"><div className=\"text-sm text-gray-400\">Font size</div>{[1,1.25,1.5].map(s=>(<button key={s} onClick={()=>setFontScale(s)} className={`px-4 py-2 rounded-lg ${fontScale===s?\"bg-red-600\":\"bg-gray-800 hover:bg-gray-700\"}`}>{s}x</button>))}<button onClick={()=>setVoiceControl(v=>!v)} className={`px-4 py-2 rounded-lg flex items-center gap-2 ${voiceControl?\"bg-red-600\":\"bg-gray-800 hover:bg-gray-700\"}`}><Volume2 className=\"h-4 w-4\"/> Voice Controls</button></div></div>
+<div className=\"space-y-4\"><div className=\"text-lg font-medium flex items-center gap-2\"><Bell className=\"h-5 w-5\"/> Notifications</div><button onClick={()=>setNotifyOnComplete(v=>!v)} className={`px-6 py-3 rounded-xl ${notifyOnComplete?\"bg-red-600\":\"bg-gray-700 hover:bg-gray-600\"}`}>{notifyOnComplete?\"On\":\"Off\"} — Render complete</button></div></div></div>)}
+<div className=\"fixed bottom-0 left-0 right-0 z-40\"><div className=\"mx-auto max-w-6xl bg-gray-950/95 backdrop-blur border-t border-gray-800 px-6 py-4\"><div className=\"flex items-center justify-between mb-4\"><div className=\"text-sm text-gray-300\">Project Status: {isProjectRunning?\"In Progress\":elapsedMinutes>=totalMinutes?\"Completed\":\"Paused\"} — {elapsedMinutes} / {totalMinutes} min ({percent}%)</div><div className=\"flex items-center gap-4\"><button onClick={toggleRun} className=\"bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl flex items-center gap-2\">{isProjectRunning?<><Pause className=\"h-4 w-4\"/> Pause</>:<><Play className=\"h-4 w-4\"/> Start</>}</button></div></div><div className=\"w-full\"><div className=\"h-4 bg-gray-800 rounded-full overflow-hidden relative\"><div className=\"h-full bg-red-600 transition-all duration-500\" style={{width:`${percent}%`}}/>{[...Array(segments)].map((_,i)=>{const left=Math.min(100,((i+1)*5*100)/totalMinutes);const checked=i<filledSegments;return(<div key={i} className=\"absolute top-0 h-full\" style={{left:`calc(${left}% - 1px)`}}><div className={`w-0.5 h-full ${checked?\"bg-white\":\"bg-gray-600\"}`}/></div>);})}</div><div className=\"mt-4 flex items-center justify-between text-xs text-gray-400\"><div className=\"flex flex-wrap gap-3 items-center\">{[...Array(segments)].map((_,i)=>(<span key={i} className={`px-2 py-1 rounded-full border ${i<filledSegments?\"border-white text-white\":\"border-gray-600\"}`}>{i*5}-{(i+1)*5} min</span>))}</div><div className=\"font-medium\">Total: {totalMinutes} min</div></div></div></div></div>
+</div>); }
+EOF
+
+# Icons + manifest (PWA)
+mkdir -p public public/icons
+cat > public/favicon.svg << \"SVG\"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="20" fill="#111"/>
+  <rect x="24" y="20" width="80" height="88" rx="8" fill="#ef4444"/>
+  <path d="M32 28h56a8 8 0 0 1 8 8v64H32a8 8 0 0 1-8-8V36a8 8 0 0 1 8-8z" fill="#dc2626"/>
+  <path d="M40 36h48M40 48h48M40 60h32" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+  <rect x="24" y="20" width="6" height="88" rx="3" fill="#991b1b"/>
+</svg>
+SVG
+convert -background none public/favicon.svg -resize 192x192 public/icons/icon-192.png
+convert -background none public/favicon.svg -resize 512x512 public/icons/icon-512.png
+cat > public/manifest.webmanifest << \"JSON\"
+{
+  "name": "Book Animator",
+  "short_name": "Animator",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+JSON
+sed -i "s#<div id=\\\"root\\\"></div>#<div id=\\\"root\\\" class=\\\"min-h-screen\\\"></div>#" index.html
+grep -q "rel=\"icon\"" index.html || sed -i "/<head>/a \  <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" />" index.html
+grep -q "manifest.webmanifest" index.html || sed -i "/<head>/a \  <link rel=\"manifest\" href=\"/manifest.webmanifest\" />" index.html
+grep -q "apple-touch-icon" index.html || sed -i "/<head>/a \  <link rel=\"apple-touch-icon\" href=\"/icons/icon-192.png\" />" index.html
+
+echo "▶ Build web assets"
+npm run build >/dev/null 2>&1
+
+echo "▶ Add Capacitor (Android wrapper)"
+npm i @capacitor/core @capacitor/cli @capacitor/android >/dev/null 2>&1
+npx cap init "Book Animator" "$APP_ID" --web-dir=dist >/dev/null 2>&1
+npx cap add android >/dev/null 2>&1
+
+echo "▶ Initialize git and push to GitHub"
+git init >/dev/null 2>&1
+git config user.email "${GH_USERNAME}@users.noreply.github.com"
+git config user.name "${GH_USERNAME}"
+git add . && git commit -m "Initial commit: Book Animator web + Capacitor" >/dev/null 2>&1
+
+curl -u "${GH_USERNAME}:${GH_TOKEN}" -s https://api.github.com/user/repos -d "{\"name\":\"${REPO_NAME}\",\"private\":true}" >/dev/null 2>&1 || true
+git remote add origin "https://github.com/${GH_USERNAME}/${REPO_NAME}.git" || git remote set-url origin "https://github.com/${GH_USERNAME}/${REPO_NAME}.git"
+git branch -M main
+git push -u origin main >/dev/null 2>&1 || true
+
+echo "▶ Add GitHub Actions workflow to build APK"
+mkdir -p .github/workflows
+cat > .github/workflows/android.yml << \"YAML\"
+name: Android Debug APK
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install deps & build web
+        run: |
+          npm i
+          npm run build
+      - name: Install Capacitor Android
+        run: |
+          npm i @capacitor/cli @capacitor/core @capacitor/android
+          npx cap sync android
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: \"17\"
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-animator-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+YAML
+
+git add .github/workflows/android.yml
+git commit -m "Add GitHub Actions to build Android APK" >/dev/null 2>&1 || true
+git push >/dev/null 2>&1 || true
+
+echo "✅ Done! GitHub Actions will now build your APK on each push to main."
+echo "   Go to: https://github.com/${GH_USERNAME}/${REPO_NAME}/actions"
+echo "   Open the latest run -> Artifacts -> download the APK."
+'
