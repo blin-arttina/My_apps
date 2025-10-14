@@ -1,281 +1,242 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Book Animator</title>
+<!-- JSZip for ZIP export -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-  :root{
-    --bg:#000;            /* black background */
-    --fg:#fff;            /* white text */
-    --panel:#0e0e0e;      /* dark panels */
-    --border:#2a2a2a;     /* subtle borders */
-    --accent:#ff2d2d;     /* red buttons */
-    --accent-hover:#ff4747;
-    --muted:#bfbfbf;
-  }
-
+  :root{ --bg:#000; --fg:#fff; --muted:#cfcfcf; --panel:#0e0e0e; --border:#2a2a2a; --accent:#ff2d2d; --accent-hover:#ff4747; }
   html,body{height:100%}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--fg);
-    font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
-  }
-
-  /* Layout */
-  .wrap{max-width:900px;margin:4rem auto 2rem;padding:0 1rem}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
+  .wrap{max-width:900px;margin:4rem auto 4.5rem;padding:0 1rem}
   h1{margin:0 0 1rem;text-align:center;font-size:2rem;font-weight:800}
   label{display:block;margin:.5rem 0;font-weight:600;color:var(--muted)}
-  textarea{
-    width:100%;min-height:300px;padding:1rem;border-radius:10px;
-    background:#0b0b0b;color:var(--fg);border:1px solid var(--border);
-    font-size:1rem;line-height:1.5;resize:none;outline:none;
-  }
+  textarea{width:100%;min-height:300px;padding:1rem;border-radius:10px;background:#0b0b0b;color:var(--fg);border:1px solid var(--border);font-size:1rem;line-height:1.5;resize:none;outline:none}
   textarea:focus{box-shadow:0 0 0 2px rgba(255,45,45,.35);border-color:var(--accent)}
-
-  /* Red buttons */
-  .btn{
-    background:var(--accent);color:#fff;border:none;border-radius:10px;
-    padding:.6rem .9rem;cursor:pointer;font-weight:700;
-  }
+  /* Buttons */
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:.7rem 1rem;cursor:pointer;font-weight:800}
   .btn:hover{background:var(--accent-hover)}
-  .btn-outline{
-    background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;
-    padding:.5rem .85rem;cursor:pointer;font-weight:700;
-  }
+  .btn-outline{background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;padding:.6rem 1rem;cursor:pointer;font-weight:800}
   .btn-outline:hover{background:rgba(255,45,45,.15)}
-
-  /* Hamburger buttons */
-  .hambtn{
-    position:fixed;top:.75rem;z-index:1000;
-    width:46px;height:46px;display:grid;place-items:center;
-    background:var(--panel);color:var(--fg);border:2px solid var(--accent);
-    border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;
-    box-shadow:0 4px 14px rgba(0,0,0,.45);
-  }
-  .hambtn.left{left:.75rem}
-  .hambtn.right{right:.75rem}
-
-  /* Menus (dropdown panels) */
-  .menu{
-    position:fixed;top:3.9rem;z-index:999;min-width:220px;
-    background:var(--panel);color:var(--fg);
-    border:1px solid var(--border);border-radius:12px;overflow:hidden;
-    box-shadow:0 14px 40px rgba(0,0,0,.55);
-  }
-  .menu.left{left:.75rem}
-  .menu.right{right:.75rem}
-  .item{
-    padding:.75rem .95rem;cursor:pointer;
-    border-bottom:1px solid var(--border);
-  }
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}
+  /* Hamburgers & menus */
+  .hambtn{position:fixed;top:.75rem;z-index:1000;width:46px;height:46px;display:grid;place-items:center;background:var(--panel);color:var(--fg);border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  .hambtn.left{left:.75rem} .hambtn.right{right:.75rem}
+  .menu{position:fixed;top:3.9rem;z-index:999;min-width:240px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55)}
+  .menu.left{left:.75rem} .menu.right{right:.75rem}
+  .item{padding:.75rem .95rem;cursor:pointer;border-bottom:1px solid var(--border)}
   .item:last-child{border-bottom:none}
   .item:hover{background:#111}
-
   /* Modal */
-  .mask{
-    position:fixed;inset:0;display:none;place-items:center;z-index:1100;
-    background:rgba(0,0,0,.6);
-  }
+  .mask{position:fixed;inset:0;display:none;place-items:center;z-index:1100;background:rgba(0,0,0,.6)}
   .mask.show{display:grid}
-  .modal{
-    width:min(92vw,680px);background:#0d0d0d;color:var(--fg);
-    border:1px solid var(--border);border-radius:14px;
-    box-shadow:0 24px 80px rgba(0,0,0,.7);
-    padding:1rem 1.25rem;
-  }
+  .modal{width:min(92vw,880px);background:#0d0d0d;color:var(--fg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.7);padding:1rem 1.25rem}
   .row{display:flex;gap:12px;align-items:center}
-  .spaced{justify-content:space-between}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .input,.select{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}
+  .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:260px;overflow:auto}
+  .char{display:grid;grid-template-columns:1.2fr .5fr .7fr 1fr auto;gap:8px;align-items:center;padding:.4rem;border-bottom:1px solid var(--border)}
+  .char:last-child{border-bottom:none}
 </style>
 </head>
 <body>
-  <!-- Hamburger buttons -->
+  <!-- Hamburgers -->
   <button id="btnLeft"  class="hambtn left"  aria-label="Open left menu">≡</button>
   <button id="btnRight" class="hambtn right" aria-label="Open right menu">≡</button>
 
   <!-- Left menu -->
   <div id="menuLeft" class="menu left" hidden>
     <div class="item" data-left="settings">Settings</div>
+    <div class="item" data-left="characters">Characters</div>
+    <div class="item" data-left="assets">Assets</div>
+    <div class="item" data-left="secrets">Secrets (API Keys)</div>
     <div class="item" data-left="tutorial">Tutorial</div>
     <div class="item" data-left="about">About</div>
-    <div class="item" data-left="logout">Log Out</div>
   </div>
 
   <!-- Right menu -->
   <div id="menuRight" class="menu right" hidden>
     <div class="item" data-right="new">New Project</div>
-    <div class="item" data-right="save">Save</div>
+    <div class="item" data-right="save">Save Project</div>
     <div class="item" data-right="open">Open Project</div>
+    <div class="item" data-right="exportZip">Export All (ZIP)</div>
     <div class="item" data-right="exit">Exit</div>
   </div>
 
-  <!-- Content -->
-  <div class="wrap" role="main">
+  <!-- Main -->
+  <div class="wrap">
     <h1>Book Animator</h1>
     <label for="bookText">Paste your book text:</label>
-    <textarea id="bookText" placeholder="Paste text here..."></textarea>
+    <textarea id="bookText" placeholder="Paste text here…"></textarea>
+
+    <!-- NEW: prominent Export ZIP button -->
+    <div class="actions">
+      <button class="btn-outline" id="btnSave">Save</button>
+      <button class="btn" id="btnExportZip">Export Finished (ZIP)</button>
+    </div>
   </div>
 
-  <!-- Modal root -->
+  <!-- Modal -->
   <div id="mask" class="mask" role="dialog" aria-modal="true" aria-hidden="true">
     <div id="modal" class="modal" role="document"></div>
   </div>
 
 <script>
-  // Keys
-  const KEY_TEXT  = "bookAnimator:text";
-  const KEY_THEME = "bookAnimator:theme";   // 'dark' or 'light' (kept for future)
-  const KEY_FSZ   = "bookAnimator:fontSize";
+/* ===== State ===== */
+const KEY_TEXT="bookAnimator:text", KEY_CFG="bookAnimator:settings", KEY_CHARS="bookAnimator:characters", KEY_ASSETS="bookAnimator:assets";
+const DEFAULT_SETTINGS={animationStyle:"Cartoon", artStyle:"Fantasy", aspect:"16:9", fps:24};
+let settings = load(KEY_CFG, DEFAULT_SETTINGS);
+let characters = load(KEY_CHARS, [{id:"narrator", name:"Narrator", voice:"Ember"}]);
+let assets = load(KEY_ASSETS, []);
+const ta = document.getElementById("bookText");
+if(localStorage.getItem(KEY_TEXT)) ta.value = localStorage.getItem(KEY_TEXT);
 
-  // Elements
-  const ta       = document.getElementById("bookText");
-  const mask     = document.getElementById("mask");
-  const modal    = document.getElementById("modal");
-  const btnLeft  = document.getElementById("btnLeft");
-  const btnRight = document.getElementById("btnRight");
-  const menuLeft = document.getElementById("menuLeft");
-  const menuRight= document.getElementById("menuRight");
+/* ===== Helpers ===== */
+function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) || def }catch{ return def } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+function val(id){ return document.getElementById(id).value }
+function openModal(html){ modal.innerHTML=html; mask.classList.add("show"); }
+function closeModal(){ mask.classList.remove("show"); modal.innerHTML=""; }
 
-  // Init: restore text + prefs
-  (function init(){
+/* ===== Menus ===== */
+const mask=document.getElementById("mask"), modal=document.getElementById("modal");
+const btnLeft=document.getElementById("btnLeft"), btnRight=document.getElementById("btnRight");
+const menuLeft=document.getElementById("menuLeft"), menuRight=document.getElementById("menuRight");
+btnLeft.onclick=e=>{ menuLeft.hidden=!menuLeft.hidden; menuRight.hidden=true; };
+btnRight.onclick=e=>{ menuRight.hidden=!menuRight.hidden; menuLeft.hidden=true; };
+document.addEventListener("click", (e)=>{ if(!e.target.closest(".menu") && !e.target.closest(".hambtn")){ menuLeft.hidden=true; menuRight.hidden=true; }});
+mask.onclick=e=>{ if(e.target===mask) closeModal(); };
+
+/* ===== Right menu actions ===== */
+menuRight.onclick = (e)=>{
+  const a=e.target?.dataset?.right; if(!a) return; menuRight.hidden=true;
+  if(a==="new") if(confirm("Clear text?")) ta.value = "";
+  if(a==="save"){ localStorage.setItem(KEY_TEXT, ta.value||""); alert("Saved to browser storage."); }
+  if(a==="open") openProject();
+  if(a==="exportZip") exportZip();
+};
+
+/* ===== Left menu actions (stubs for brevity) ===== */
+menuLeft.onclick = (e)=>{
+  const a=e.target?.dataset?.left; if(!a) return; menuLeft.hidden=true;
+  if(a==="settings") showSettings();
+  if(a==="characters") showCharacters();
+  if(a==="assets") showAssets();
+  if(a==="secrets") alert("Secrets vault UI can live here (encrypted in localStorage).");
+  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Save or Export ZIP\n3) Settings/Characters in left menu.");
+  if(a==="about") alert("Book Animator — black/white/red demo.");
+};
+
+/* ===== NEW: Page buttons ===== */
+document.getElementById("btnSave").onclick = ()=>{ localStorage.setItem(KEY_TEXT, ta.value||""); alert("Saved."); };
+document.getElementById("btnExportZip").onclick = exportZip;
+
+/* ===== Export ZIP (button & menu both call this) ===== */
+async function exportZip(){
+  const zip = new JSZip();
+  // Main project snapshot
+  const project = { version:1, text: ta.value||"", settings, characters, assets };
+  zip.file("book-animator.bookanim.json", JSON.stringify(project, null, 2));
+  // Separate helpful files
+  zip.file("book-text.txt", ta.value||"");
+  zip.file("characters.json", JSON.stringify(characters, null, 2));
+  zip.file("assets.json", JSON.stringify(assets, null, 2));
+  // Build and download
+  const blob = await zip.generateAsync({type:"blob"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "BookAnimator_Finished.zip";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ===== Open project (.bookanim.json) ===== */
+function openProject(){
+  const input=document.createElement("input");
+  input.type="file"; input.accept=".bookanim.json,application/json";
+  input.onchange=async (e)=>{
+    const f=e.target.files?.[0]; if(!f) return;
     try{
-      const saved = localStorage.getItem(KEY_TEXT);
-      if(saved) ta.value = saved;
-      const size = parseInt(localStorage.getItem(KEY_FSZ) || "16", 10);
-      if(size) ta.style.fontSize = size + "px";
-    }catch{}
-  })();
+      const txt=await f.text(); const p=JSON.parse(txt);
+      if(p.text!=null) ta.value=p.text;
+      if(p.settings) settings=p.settings, save(KEY_CFG,settings);
+      if(Array.isArray(p.characters)) characters=p.characters, save(KEY_CHARS,characters);
+      if(Array.isArray(p.assets)) assets=p.assets, save(KEY_ASSETS,assets);
+      alert("Project loaded.");
+    }catch{ alert("Invalid project file."); }
+  };
+  input.click();
+}
 
-  // Menu helpers
-  function closeMenus(){ menuLeft.hidden = true; menuRight.hidden = true; }
-  function toggle(el){ el.hidden = !el.hidden; }
-
-  btnLeft.addEventListener("click",(e)=>{ e.stopPropagation(); toggle(menuLeft); menuRight.hidden = true; });
-  btnRight.addEventListener("click",(e)=>{ e.stopPropagation(); toggle(menuRight); menuLeft.hidden = true; });
-
-  document.addEventListener("click",()=>{ closeMenus(); });
-  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"){ closeMenus(); closeModal(); } });
-
-  // Modal helpers
-  function openModal(html){
-    modal.innerHTML = html;
-    mask.classList.add("show");
-    mask.setAttribute("aria-hidden","false");
-  }
-  function closeModal(){
-    mask.classList.remove("show");
-    mask.setAttribute("aria-hidden","true");
-    modal.innerHTML = "";
-  }
-  mask.addEventListener("click",(e)=>{ if(e.target===mask) closeModal(); });
-
-  // Left menu actions
-  menuLeft.addEventListener("click",(e)=>{
-    const k = e.target?.dataset?.left; if(!k) return;
-    closeMenus();
-    if(k==="settings") return showSettings();
-    if(k==="tutorial") return showTutorial();
-    if(k==="about")    return showAbout();
-    if(k==="logout")   return alert("Log Out is a placeholder here.");
-  });
-
-  // Right menu actions
-  menuRight.addEventListener("click",(e)=>{
-    const k = e.target?.dataset?.right; if(!k) return;
-    closeMenus();
-    if(k==="new")  return doNew();
-    if(k==="save") return doSave();
-    if(k==="open") return showOpen();
-    if(k==="exit") return alert("Exit is a placeholder in this build.");
-  });
-
-  // Features
-  function doNew(){
-    if(confirm("Start a new project? This will clear the text area.")){
-      ta.value = "";
-    }
-  }
-  function doSave(){
-    try{
-      localStorage.setItem(KEY_TEXT, ta.value || "");
-      alert("Saved to local storage.");
-    }catch{ alert("Could not save (storage not available)."); }
-  }
-  function showOpen(){
-    openModal(`
-      <h2 style="margin:0 0 .85rem">Open Project</h2>
-      <div class="row" style="gap:10px;flex-wrap:wrap">
-        <button class="btn" id="btnLoadLocal">Load from Local Storage</button>
-        <button class="btn-outline" id="btnImport">Import .txt file</button>
-      </div>
-      <div style="text-align:right;margin-top:12px">
-        <button class="btn-outline" id="btnCancel">Cancel</button>
-      </div>
-    `);
-    document.getElementById("btnCancel").onclick = closeModal;
-    document.getElementById("btnLoadLocal").onclick = () => {
-      try{
-        const saved = localStorage.getItem(KEY_TEXT);
-        if(!saved) return alert("No saved text found.");
-        ta.value = saved; closeModal();
-      }catch{ alert("Could not read local storage."); }
-    };
-    document.getElementById("btnImport").onclick = () => {
-      const input = document.createElement("input");
-      input.type = "file"; input.accept = ".txt,text/plain";
-      input.onchange = async (e)=>{
-        const f = e.target.files?.[0]; if(!f) return;
-        const txt = await f.text(); ta.value = txt; closeModal();
-      };
-      input.click();
-    };
-  }
-
-  function showSettings(){
-    const currentSize = parseInt(window.getComputedStyle(ta).fontSize,10) || 16;
-    openModal(`
-      <h2 style="margin:0 0 .85rem">Settings</h2>
-      <div class="row spaced" style="margin:.5rem 0">
-        <span>Font size</span>
-        <input id="rngSize" type="range" min="12" max="24" step="1" value="${currentSize}" />
-      </div>
-      <div style="text-align:right;margin-top:.75rem">
-        <button class="btn-outline" id="btnClose">Close</button>
-      </div>
-    `);
-    document.getElementById("rngSize").oninput = (e)=>{
-      const px = parseInt(e.target.value,10)||16;
-      ta.style.fontSize = px + "px";
-      try{ localStorage.setItem(KEY_FSZ, String(px)); }catch{}
-    };
-    document.getElementById("btnClose").onclick = closeModal;
-  }
-
-  function showTutorial(){
-    openModal(`
-      <h2 style="margin:0 0 .85rem">Tutorial</h2>
-      <p>1) Paste your story into the big box.</p>
-      <p>2) Use the left/right ≡ menus for Settings, Save, Open, etc.</p>
-      <p>3) We'll add animation generation next.</p>
-      <div style="text-align:right;margin-top:.75rem">
-        <button class="btn-outline" id="btnClose">Close</button>
-      </div>
-    `);
-    document.getElementById("btnClose").onclick = closeModal;
-  }
-
-  function showAbout(){
-    openModal(`
-      <h2 style="margin:0 0 .85rem">About</h2>
-      <p><b>Book Animator</b> — minimalist UI with black background, white text, and red buttons.</p>
-      <p>Single-file build for easy GitHub Pages deploy.</p>
-      <div style="text-align:right;margin-top:.75rem">
-        <button class="btn-outline" id="btnClose">Close</button>
-      </div>
-    `);
-    document.getElementById("btnClose").onclick = closeModal;
-  }
+/* ===== Minimal Settings/Characters/Assets (optional UI) ===== */
+function showSettings(){
+  openModal(`
+    <h2>Settings</h2>
+    <div class="grid">
+      <div class="field"><label>Animation style</label><input id="stAnim" class="input" value="${settings.animationStyle}"/></div>
+      <div class="field"><label>Art style</label><input id="stArt" class="input" value="${settings.artStyle}"/></div>
+      <div class="field"><label>Aspect</label><input id="stAspect" class="input" value="${settings.aspect}"/></div>
+      <div class="field"><label>FPS</label><input id="stFps" class="input" type="number" value="${settings.fps}"/></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="(function(){
+        settings.animationStyle=val('stAnim');settings.artStyle=val('stArt');
+        settings.aspect=val('stAspect');settings.fps=parseInt(val('stFps'))||24;
+        localStorage.setItem(KEY_CFG, JSON.stringify(settings));
+        closeModal(); alert('Settings saved.');
+      })()">Save</button>
+    </div>
+  `);
+}
+function showCharacters(){
+  openModal(`
+    <h2>Characters</h2>
+    <div class="list" id="charList">${characters.map(c=>`<div class="char" style="grid-template-columns:1fr 1fr auto"><div><b>${c.name}</b></div><div>${c.voice||'-'}</div><div><button class="btn-outline" onclick="removeChar('${c.id}')">Delete</button></div></div>`).join("")||"<div>None yet</div>"}</div>
+    <h3 style="margin:.85rem 0 .5rem">Add</h3>
+    <div class="grid">
+      <div class="field"><label>Name</label><input id="cName" class="input" /></div>
+      <div class="field"><label>Voice</label><input id="cVoice" class="input" placeholder="e.g., Ember"/></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn" onclick="(function(){
+        const n=val('cName').trim(), v=val('cVoice').trim();
+        if(!n) return alert('Name required');
+        characters.push({id:'c_'+Math.random().toString(36).slice(2,9), name:n, voice:v});
+        localStorage.setItem(KEY_CHARS, JSON.stringify(characters)); showCharacters();
+      })()">Save Character</button>
+    </div>
+  `);
+}
+function removeChar(id){
+  characters = characters.filter(c=>c.id!==id);
+  localStorage.setItem(KEY_CHARS, JSON.stringify(characters));
+  showCharacters();
+}
+function showAssets(){
+  openModal(`
+    <h2>Assets</h2>
+    <div class="list">${assets.map(a=>`<div class="char" style="grid-template-columns:1fr 2fr auto"><div><b>${a.name||'(unnamed)'}</b></div><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.url}</div><div><button class="btn-outline" onclick="window.open('${a.url}','_blank')">Open</button></div></div>`).join("")||"<div>None yet</div>"}</div>
+    <h3 style="margin:.85rem 0 .5rem">Add</h3>
+    <div class="grid">
+      <div class="field"><label>Name</label><input id="aName" class="input"/></div>
+      <div class="field"><label>URL</label><input id="aUrl" class="input" placeholder="https://..."/></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn" onclick="(function(){
+        const n=val('aName').trim(), u=val('aUrl').trim();
+        if(!u) return alert('URL required');
+        assets.push({id:'a_'+Math.random().toString(36).slice(2,9), name:n, url:u});
+        localStorage.setItem(KEY_ASSETS, JSON.stringify(assets)); showAssets();
+      })()">Save Asset</button>
+    </div>
+  `);
+}
 </script>
 </body>
 </html>
