@@ -3,207 +3,279 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Book Animator — Lite</title>
+<title>Book Animator</title>
 <style>
-  :root {
-    --bg: #0d0d0d;
-    --panel: #151515;
-    --text: #e8e8e8;
-    --muted: #b6b6b6;
-    --accent: #2b2b2b;
-    --border: #303030;
-    --focus: #3a82ff;
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  :root{
+    --bg:#000;            /* black background */
+    --fg:#fff;            /* white text */
+    --panel:#0e0e0e;      /* dark panels */
+    --border:#2a2a2a;     /* subtle borders */
+    --accent:#ff2d2d;     /* red buttons */
+    --accent-hover:#ff4747;
+    --muted:#bfbfbf;
   }
 
-  /* Title + content */
-  .wrap { max-width: 900px; margin: 4rem auto 2rem; padding: 0 1rem; }
-  h1 {
-    margin: 0 0 1rem;
-    font-size: 2rem;
-    font-weight: 700;
-    text-align: center;
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
   }
-  label { display:block; margin:.5rem 0; font-weight:600; color:var(--muted); }
-  textarea {
-    width: 100%;
-    padding: 1rem;
-    min-height: 300px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: #111;
-    color: #eee;
-    font-size: 1rem;
-    line-height: 1.5;
-    resize: none;
-    outline: none;
-  }
-  textarea:focus { border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent); }
 
-  /* Menus */
-  .hambtn {
-    position: fixed;
-    top: .75rem;
-    width: 44px; height: 44px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    border-radius: 10px;
-    display: grid; place-items: center;
-    cursor: pointer;
-    z-index: 1000;
+  /* Layout */
+  .wrap{max-width:900px;margin:4rem auto 2rem;padding:0 1rem}
+  h1{margin:0 0 1rem;text-align:center;font-size:2rem;font-weight:800}
+  label{display:block;margin:.5rem 0;font-weight:600;color:var(--muted)}
+  textarea{
+    width:100%;min-height:300px;padding:1rem;border-radius:10px;
+    background:#0b0b0b;color:var(--fg);border:1px solid var(--border);
+    font-size:1rem;line-height:1.5;resize:none;outline:none;
   }
-  .hambtn:focus-visible { outline: 3px solid var(--focus); }
-  .hambtn.left { left: .75rem; }
-  .hambtn.right { right: .75rem; }
-  .hambtn span { font-size: 1.3rem; line-height: 1; }
+  textarea:focus{box-shadow:0 0 0 2px rgba(255,45,45,.35);border-color:var(--accent)}
 
-  .menu {
-    position: fixed;
-    top: 3.75rem;
-    min-width: 220px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    border-radius: 12px;
-    padding: .35rem;
-    z-index: 999;
+  /* Red buttons */
+  .btn{
+    background:var(--accent);color:#fff;border:none;border-radius:10px;
+    padding:.6rem .9rem;cursor:pointer;font-weight:700;
   }
-  .menu.left { left: .75rem; }
-  .menu.right { right: .75rem; }
-  .item {
-    padding: .6rem .75rem;
-    border-radius: 8px;
-    cursor: pointer;
+  .btn:hover{background:var(--accent-hover)}
+  .btn-outline{
+    background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;
+    padding:.5rem .85rem;cursor:pointer;font-weight:700;
   }
-  .item:hover, .item:focus { background: var(--accent); }
-  .hide { display:none; }
+  .btn-outline:hover{background:rgba(255,45,45,.15)}
 
-  /* Small helper toast */
-  .toast {
-    position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%);
-    background: #202020; color:#ddd; padding:.6rem .9rem; border-radius:10px;
-    border:1px solid var(--border); opacity:0; transition: opacity .2s ease;
-    z-index: 1200; font-size:.95rem;
+  /* Hamburger buttons */
+  .hambtn{
+    position:fixed;top:.75rem;z-index:1000;
+    width:46px;height:46px;display:grid;place-items:center;
+    background:var(--panel);color:var(--fg);border:2px solid var(--accent);
+    border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;
+    box-shadow:0 4px 14px rgba(0,0,0,.45);
   }
-  .toast.show { opacity: 1; }
+  .hambtn.left{left:.75rem}
+  .hambtn.right{right:.75rem}
+
+  /* Menus (dropdown panels) */
+  .menu{
+    position:fixed;top:3.9rem;z-index:999;min-width:220px;
+    background:var(--panel);color:var(--fg);
+    border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    box-shadow:0 14px 40px rgba(0,0,0,.55);
+  }
+  .menu.left{left:.75rem}
+  .menu.right{right:.75rem}
+  .item{
+    padding:.75rem .95rem;cursor:pointer;
+    border-bottom:1px solid var(--border);
+  }
+  .item:last-child{border-bottom:none}
+  .item:hover{background:#111}
+
+  /* Modal */
+  .mask{
+    position:fixed;inset:0;display:none;place-items:center;z-index:1100;
+    background:rgba(0,0,0,.6);
+  }
+  .mask.show{display:grid}
+  .modal{
+    width:min(92vw,680px);background:#0d0d0d;color:var(--fg);
+    border:1px solid var(--border);border-radius:14px;
+    box-shadow:0 24px 80px rgba(0,0,0,.7);
+    padding:1rem 1.25rem;
+  }
+  .row{display:flex;gap:12px;align-items:center}
+  .spaced{justify-content:space-between}
 </style>
 </head>
 <body>
+  <!-- Hamburger buttons -->
+  <button id="btnLeft"  class="hambtn left"  aria-label="Open left menu">≡</button>
+  <button id="btnRight" class="hambtn right" aria-label="Open right menu">≡</button>
 
-<!-- Left hamburger -->
-<button id="btnLeft" class="hambtn left" aria-label="Open left menu"><span>≡</span></button>
-<!-- Right hamburger -->
-<button id="btnRight" class="hambtn right" aria-label="Open right menu"><span>≡</span></button>
+  <!-- Left menu -->
+  <div id="menuLeft" class="menu left" hidden>
+    <div class="item" data-left="settings">Settings</div>
+    <div class="item" data-left="tutorial">Tutorial</div>
+    <div class="item" data-left="about">About</div>
+    <div class="item" data-left="logout">Log Out</div>
+  </div>
 
-<!-- Left menu -->
-<div id="menuLeft" class="menu left hide" role="menu" aria-label="Left menu">
-  <div class="item" role="menuitem" data-action="settings">Settings</div>
-  <div class="item" role="menuitem" data-action="tutorial">Tutorial</div>
-  <div class="item" role="menuitem" data-action="about">About</div>
-  <div class="item" role="menuitem" data-action="logout">Log Out</div>
-</div>
+  <!-- Right menu -->
+  <div id="menuRight" class="menu right" hidden>
+    <div class="item" data-right="new">New Project</div>
+    <div class="item" data-right="save">Save</div>
+    <div class="item" data-right="open">Open Project</div>
+    <div class="item" data-right="exit">Exit</div>
+  </div>
 
-<!-- Right menu -->
-<div id="menuRight" class="menu right hide" role="menu" aria-label="Right menu">
-  <div class="item" role="menuitem" data-action="new">New Project</div>
-  <div class="item" role="menuitem" data-action="save">Save</div>
-  <div class="item" role="menuitem" data-action="open">Open Project</div>
-  <div class="item" role="menuitem" data-action="exit">Exit</div>
-</div>
+  <!-- Content -->
+  <div class="wrap" role="main">
+    <h1>Book Animator</h1>
+    <label for="bookText">Paste your book text:</label>
+    <textarea id="bookText" placeholder="Paste text here..."></textarea>
+  </div>
 
-<div class="wrap" role="main">
-  <h1>Book Animator</h1>
-  <label for="bookText">Paste your book text:</label>
-  <textarea id="bookText" placeholder="Paste text here..."></textarea>
-</div>
-
-<div id="toast" class="toast" aria-live="polite"></div>
+  <!-- Modal root -->
+  <div id="mask" class="mask" role="dialog" aria-modal="true" aria-hidden="true">
+    <div id="modal" class="modal" role="document"></div>
+  </div>
 
 <script>
-  const btnLeft  = document.getElementById('btnLeft');
-  const btnRight = document.getElementById('btnRight');
-  const menuLeft = document.getElementById('menuLeft');
-  const menuRight= document.getElementById('menuRight');
-  const textArea = document.getElementById('bookText');
-  const toast    = document.getElementById('toast');
-  const KEY = 'bookAnimatorText';
+  // Keys
+  const KEY_TEXT  = "bookAnimator:text";
+  const KEY_THEME = "bookAnimator:theme";   // 'dark' or 'light' (kept for future)
+  const KEY_FSZ   = "bookAnimator:fontSize";
 
-  function show(el){ el.classList.remove('hide'); }
-  function hide(el){ el.classList.add('hide'); }
-  function toggle(el){ el.classList.toggle('hide'); }
-  function closeAll(){ hide(menuLeft); hide(menuRight); }
+  // Elements
+  const ta       = document.getElementById("bookText");
+  const mask     = document.getElementById("mask");
+  const modal    = document.getElementById("modal");
+  const btnLeft  = document.getElementById("btnLeft");
+  const btnRight = document.getElementById("btnRight");
+  const menuLeft = document.getElementById("menuLeft");
+  const menuRight= document.getElementById("menuRight");
 
-  function note(msg, ms=1400){
-    toast.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(note._t);
-    note._t = setTimeout(()=>toast.classList.remove('show'), ms);
+  // Init: restore text + prefs
+  (function init(){
+    try{
+      const saved = localStorage.getItem(KEY_TEXT);
+      if(saved) ta.value = saved;
+      const size = parseInt(localStorage.getItem(KEY_FSZ) || "16", 10);
+      if(size) ta.style.fontSize = size + "px";
+    }catch{}
+  })();
+
+  // Menu helpers
+  function closeMenus(){ menuLeft.hidden = true; menuRight.hidden = true; }
+  function toggle(el){ el.hidden = !el.hidden; }
+
+  btnLeft.addEventListener("click",(e)=>{ e.stopPropagation(); toggle(menuLeft); menuRight.hidden = true; });
+  btnRight.addEventListener("click",(e)=>{ e.stopPropagation(); toggle(menuRight); menuLeft.hidden = true; });
+
+  document.addEventListener("click",()=>{ closeMenus(); });
+  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"){ closeMenus(); closeModal(); } });
+
+  // Modal helpers
+  function openModal(html){
+    modal.innerHTML = html;
+    mask.classList.add("show");
+    mask.setAttribute("aria-hidden","false");
   }
+  function closeModal(){
+    mask.classList.remove("show");
+    mask.setAttribute("aria-hidden","true");
+    modal.innerHTML = "";
+  }
+  mask.addEventListener("click",(e)=>{ if(e.target===mask) closeModal(); });
 
-  // Button actions
-  btnLeft.addEventListener('click', e=>{ toggle(menuLeft); hide(menuRight); });
-  btnRight.addEventListener('click', e=>{ toggle(menuRight); hide(menuLeft); });
-
-  // Click outside closes menus
-  document.addEventListener('click', (e)=>{
-    const inMenus = e.target.closest('.menu') || e.target.closest('.hambtn');
-    if(!inMenus) closeAll();
+  // Left menu actions
+  menuLeft.addEventListener("click",(e)=>{
+    const k = e.target?.dataset?.left; if(!k) return;
+    closeMenus();
+    if(k==="settings") return showSettings();
+    if(k==="tutorial") return showTutorial();
+    if(k==="about")    return showAbout();
+    if(k==="logout")   return alert("Log Out is a placeholder here.");
   });
 
-  // Keyboard: Esc closes menus
-  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeAll(); });
+  // Right menu actions
+  menuRight.addEventListener("click",(e)=>{
+    const k = e.target?.dataset?.right; if(!k) return;
+    closeMenus();
+    if(k==="new")  return doNew();
+    if(k==="save") return doSave();
+    if(k==="open") return showOpen();
+    if(k==="exit") return alert("Exit is a placeholder in this build.");
+  });
 
-  // Persist text automatically (localStorage)
-  textArea.value = localStorage.getItem(KEY) || '';
-  textArea.addEventListener('input', ()=> localStorage.setItem(KEY, textArea.value));
-
-  function handleAction(action){
-    switch(action){
-      case 'settings':
-        note('Settings (placeholder)'); break;
-      case 'tutorial':
-        alert('Tutorial:\n1) Paste your story\n2) Use menus for New/Save/Open\n3) Animations coming later.');
-        break;
-      case 'about':
-        alert('Book Animator — simple demo UI.\nCreated by Blind Art.'); break;
-      case 'logout':
-        note('Logged out (placeholder)'); break;
-
-      case 'new':
-        if(textArea.value.trim() && !confirm('Clear current text?')) return;
-        textArea.value = ''; localStorage.removeItem(KEY); note('New project');
-        break;
-      case 'save':
-        localStorage.setItem(KEY, textArea.value); note('Saved');
-        break;
-      case 'open':
-        const saved = localStorage.getItem(KEY) || '';
-        textArea.value = saved; note(saved ? 'Opened saved text' : 'No saved text');
-        break;
-      case 'exit':
-        closeAll();
-        note('Exit (close the tab manually)');
-        break;
+  // Features
+  function doNew(){
+    if(confirm("Start a new project? This will clear the text area.")){
+      ta.value = "";
     }
-    closeAll();
+  }
+  function doSave(){
+    try{
+      localStorage.setItem(KEY_TEXT, ta.value || "");
+      alert("Saved to local storage.");
+    }catch{ alert("Could not save (storage not available)."); }
+  }
+  function showOpen(){
+    openModal(`
+      <h2 style="margin:0 0 .85rem">Open Project</h2>
+      <div class="row" style="gap:10px;flex-wrap:wrap">
+        <button class="btn" id="btnLoadLocal">Load from Local Storage</button>
+        <button class="btn-outline" id="btnImport">Import .txt file</button>
+      </div>
+      <div style="text-align:right;margin-top:12px">
+        <button class="btn-outline" id="btnCancel">Cancel</button>
+      </div>
+    `);
+    document.getElementById("btnCancel").onclick = closeModal;
+    document.getElementById("btnLoadLocal").onclick = () => {
+      try{
+        const saved = localStorage.getItem(KEY_TEXT);
+        if(!saved) return alert("No saved text found.");
+        ta.value = saved; closeModal();
+      }catch{ alert("Could not read local storage."); }
+    };
+    document.getElementById("btnImport").onclick = () => {
+      const input = document.createElement("input");
+      input.type = "file"; input.accept = ".txt,text/plain";
+      input.onchange = async (e)=>{
+        const f = e.target.files?.[0]; if(!f) return;
+        const txt = await f.text(); ta.value = txt; closeModal();
+      };
+      input.click();
+    };
   }
 
-  // Delegate clicks in menus
-  menuLeft.addEventListener('click', e=>{
-    const item = e.target.closest('.item'); if(!item) return;
-    handleAction(item.dataset.action);
-  });
-  menuRight.addEventListener('click', e=>{
-    const item = e.target.closest('.item'); if(!item) return;
-    handleAction(item.dataset.action);
-  });
+  function showSettings(){
+    const currentSize = parseInt(window.getComputedStyle(ta).fontSize,10) || 16;
+    openModal(`
+      <h2 style="margin:0 0 .85rem">Settings</h2>
+      <div class="row spaced" style="margin:.5rem 0">
+        <span>Font size</span>
+        <input id="rngSize" type="range" min="12" max="24" step="1" value="${currentSize}" />
+      </div>
+      <div style="text-align:right;margin-top:.75rem">
+        <button class="btn-outline" id="btnClose">Close</button>
+      </div>
+    `);
+    document.getElementById("rngSize").oninput = (e)=>{
+      const px = parseInt(e.target.value,10)||16;
+      ta.style.fontSize = px + "px";
+      try{ localStorage.setItem(KEY_FSZ, String(px)); }catch{}
+    };
+    document.getElementById("btnClose").onclick = closeModal;
+  }
+
+  function showTutorial(){
+    openModal(`
+      <h2 style="margin:0 0 .85rem">Tutorial</h2>
+      <p>1) Paste your story into the big box.</p>
+      <p>2) Use the left/right ≡ menus for Settings, Save, Open, etc.</p>
+      <p>3) We'll add animation generation next.</p>
+      <div style="text-align:right;margin-top:.75rem">
+        <button class="btn-outline" id="btnClose">Close</button>
+      </div>
+    `);
+    document.getElementById("btnClose").onclick = closeModal;
+  }
+
+  function showAbout(){
+    openModal(`
+      <h2 style="margin:0 0 .85rem">About</h2>
+      <p><b>Book Animator</b> — minimalist UI with black background, white text, and red buttons.</p>
+      <p>Single-file build for easy GitHub Pages deploy.</p>
+      <div style="text-align:right;margin-top:.75rem">
+        <button class="btn-outline" id="btnClose">Close</button>
+      </div>
+    `);
+    document.getElementById("btnClose").onclick = closeModal;
+  }
 </script>
 </body>
 </html>
