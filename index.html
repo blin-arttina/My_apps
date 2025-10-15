@@ -5,31 +5,25 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Book Animator</title>
 
-<!-- JSZip for ZIP export -->
+<!-- ZIP export -->
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-
-<!-- PDF.js (for importing character images from your PDFs) -->
+<!-- PDF.js for PDF image importing -->
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.js"></script>
-<script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js";
-</script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js";</script>
 
 <style>
-  :root{ --bg:#000; --fg:#fff; --muted:#cfcfcf; --panel:#0e0e0e; --border:#2a2a2a; --accent:#ff2d2d; --accent-hover:#ff4747; }
+  :root{--bg:#000;--fg:#fff;--muted:#cfcfcf;--panel:#0e0e0e;--border:#2a2a2a;--accent:#ff2d2d;--accent-hover:#ff4747}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
-  .wrap{max-width:900px;margin:4rem auto 7.8rem;padding:0 1rem}
+  .wrap{max-width:900px;margin:4rem auto 8.5rem;padding:0 1rem}
   h1{margin:0 0 1rem;text-align:center;font-size:2rem;font-weight:800}
   label{display:block;margin:.5rem 0;font-weight:600;color:var(--muted)}
   textarea{width:100%;min-height:300px;padding:1rem;border-radius:10px;background:#0b0b0b;color:var(--fg);border:1px solid var(--border);font-size:1rem;line-height:1.5;resize:none;outline:none}
   textarea:focus{box-shadow:0 0 0 2px rgba(255,45,45,.35);border-color:var(--accent)}
-  /* Buttons */
   .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:.7rem 1rem;cursor:pointer;font-weight:800}
-  .btn:hover{background:var(--accent-hover)}
-  .btn[disabled]{opacity:.6;cursor:not-allowed}
+  .btn:hover{background:var(--accent-hover)} .btn[disabled]{opacity:.6;cursor:not-allowed}
   .btn-outline{background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;padding:.6rem 1rem;cursor:pointer;font-weight:800}
-  .btn-outline:hover{background:rgba(255,45,45,.15)}
-  .btn-danger{background:#b31313}
+  .btn-outline:hover{background:rgba(255,45,45,.15)} .btn-danger{background:#b31313}
   .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:12px}
   .row{display:flex;gap:12px;align-items:center}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -37,7 +31,8 @@
   .area{min-height:90px}
   .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:320px;overflow:auto}
   .thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:#111}
-  /* Hamburger menus */
+
+  /* Hamburgers & menus */
   .hambtn{position:fixed;top:.75rem;z-index:1000;width:46px;height:46px;display:grid;place-items:center;background:var(--panel);color:var(--fg);border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.45)}
   .hambtn.left{left:.75rem} .hambtn.right{right:.75rem}
   .menu{position:fixed;top:3.9rem;z-index:999;min-width:280px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55)}
@@ -45,25 +40,32 @@
   .item{padding:.75rem .95rem;cursor:pointer;border-bottom:1px solid var(--border)}
   .item:last-child{border-bottom:none}
   .item:hover{background:#111}
+
   /* Modal */
   .mask{position:fixed;inset:0;display:none;place-items:center;z-index:1100;background:rgba(0,0,0,.6)}
   .mask.show{display:grid}
   .modal{width:min(96vw,1000px);background:#0d0d0d;color:var(--fg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.7);padding:1rem 1.25rem}
+
   /* PDF grid */
   .pdfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:60vh;overflow:auto;margin-top:.5rem}
   .pdfthumb{background:#111;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
   .pdfthumb canvas{width:100%;height:auto;border-radius:6px;border:1px solid #222}
   .pdfthumb .cap{font-size:.9rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-  /* Progress bar (bottom) */
+
+  /* Progress (bottom) */
   .progress-wrap{position:fixed;left:0;right:0;bottom:0;background:#0a0a0a;border-top:1px solid var(--border);padding:.55rem 1rem;z-index:900}
   .progress-row{display:flex;gap:12px;align-items:center;max-width:900px;margin:0 auto;color:var(--muted)}
-  .bar{flex:1;height:10px;background:#1a1a1a;border-radius:6px;overflow:hidden;border:1px solid #222}
-  .fill{height:100%;background:var(--accent);width:0%}
-  /* Live thumbs strip */
+  .bar{flex:1;height:16px;background:#1a1a1a;border-radius:8px;overflow:hidden;border:1px solid #222;position:relative}
+  .fill{height:100%;background:#fff;width:0%;transition:width .3s ease}
+  .percent{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;color:#000;mix-blend-mode:screen;pointer-events:none}
+
+  /* Live thumbnails strip */
   #thumbStrip{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .thumbCard{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:6px 8px;background:#0d0d0d}
   .thumbIdx{font-weight:800;color:#ffb3b3}
   .thumb.waiting{opacity:.6;filter:grayscale(1)}
+
+  .pill{border:1px solid var(--border);padding:.2rem .5rem;border-radius:999px;color:var(--muted);font-size:.85rem}
 </style>
 </head>
 <body>
@@ -94,6 +96,11 @@
   <!-- Main -->
   <div class="wrap">
     <h1>Book Animator</h1>
+    <div class="row" style="justify-content:space-between;margin:.25rem 0 .25rem">
+      <span class="pill" id="modePill">Mode: —</span>
+      <span class="pill" id="sceneCountPill">Scenes: 0</span>
+    </div>
+
     <label for="bookText">Paste your book text:</label>
     <textarea id="bookText" placeholder="Paste text here…"></textarea>
 
@@ -108,10 +115,10 @@
       </div>
     </div>
 
-    <!-- LIVE THUMBNAILS STRIP -->
+    <!-- Live thumbs -->
     <div id="thumbStrip" aria-live="polite"></div>
 
-    <!-- Optional: quick textual scene preview -->
+    <!-- Text preview (optional) -->
     <div id="scenePreview" class="list" style="margin-top:12px;display:none"></div>
   </div>
 
@@ -119,7 +126,10 @@
   <div class="progress-wrap" id="progressWrap" hidden>
     <div class="progress-row">
       <div id="progressLabel">Idle</div>
-      <div class="bar"><div class="fill" id="progressFill"></div></div>
+      <div class="bar">
+        <div class="fill" id="progressFill"></div>
+        <div class="percent" id="progressPct">0%</div>
+      </div>
       <button class="btn-outline" id="btnProgStop">Stop</button>
     </div>
   </div>
@@ -130,526 +140,254 @@
   </div>
 
 <script>
-/* ===== Keys & storage ===== */
+/* ===== Storage keys ===== */
 const KEY_TEXT="bookAnimator:text", KEY_CFG="bookAnimator:settings", KEY_CHARS="bookAnimator:characters", KEY_ASSETS="bookAnimator:assets", KEY_FRAMES="bookAnimator:frames", KEY_OPENAI="bookAnimator:openai";
-function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) || def }catch{ return def } }
-function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+function load(k,def){try{return JSON.parse(localStorage.getItem(k))||def}catch{return def}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 
-/* ===== Default settings ===== */
-const OPENAI_VOICES = ["Maple","Juniper","Spruce","Breeze","Vale","Shimmer","Cove","Sol","Ember","Nova","Alloy","Verse","Hikari","Ari","Mori","Sage","Amber","Copper","Pearl","Onyx"];
-const ANIM_STYLES = ["Cartoon","Flipbook","Comic","Slideshow","Anime","Dark Fantasy","Lifelike","Stop-Motion","Motion-Comics","Pixar-Like","Minimalist Line-Art","Water-Ink","Claymation","Paper-Cut","Retro 8-bit","3D Toon"];
-const ART_STYLES  = ["Fantasy","Anime","Noir","Watercolor","3D","Sketch","Oil Paint","Ink & Wash","Pixel Art","Low-Poly","Photoreal","Cel-shade","Vaporwave","Cyberpunk","Steampunk","Storybook"];
-const ILLUST_MODES = ["OpenAI Images","Local Stub (no API)"]; // live + fallback
+/* ===== Settings & data ===== */
+const ANIM_STYLES=["Cartoon","Flipbook","Comic","Slideshow","Anime","Dark Fantasy","Lifelike","Stop-Motion","Motion-Comics","Pixar-Like","Minimalist Line-Art","Water-Ink","Claymation","Paper-Cut","Retro 8-bit","3D Toon"];
+const ART_STYLES=["Fantasy","Anime","Noir","Watercolor","3D","Sketch","Oil Paint","Ink & Wash","Pixel Art","Low-Poly","Photoreal","Cel-shade","Vaporwave","Cyberpunk","Steampunk","Storybook"];
+const ILLUST_MODES=["OpenAI Images","Local Stub (no API)"];
+let settings=load(KEY_CFG,{animationStyle:"Cartoon",artStyle:"Fantasy",aspect:"16:9",fps:24,audience:"Adults",illustrationMode:"OpenAI Images"});
+let characters=load(KEY_CHARS,[{id:"narrator",name:"Narrator",voice:"Ember"}]);
+let assets=load(KEY_ASSETS,[]), frames=load(KEY_FRAMES,[]);
+const ta=document.getElementById("bookText"); if(localStorage.getItem(KEY_TEXT)) ta.value=localStorage.getItem(KEY_TEXT);
 
-const DEFAULT_SETTINGS={animationStyle:"Cartoon", artStyle:"Fantasy", aspect:"16:9", fps:24, audience:"Adults", illustrationMode:"OpenAI Images"};
-let settings = load(KEY_CFG, DEFAULT_SETTINGS);
-
-/* ===== Characters (your cast) ===== */
-let characters = load(KEY_CHARS, [
-  { id:"narrator", name:"Narrator", age:"", voice:"Ember", imageData:"", imageName:"", traits:"Neutral, clear, warm", backstory:"Default narrator voice." },
-  { id:"c_sally", name:"Sidetracked Sally", age:"Teen/Young Adult", voice:"Maple", imageData:"", imageName:"", traits:"Blonde hair, blue eyes; easily distracted; notebook; flowing pink; dark-fantasy anime vibe", backstory:"Curious wanderer whose sidetracks uncover clues others miss." },
-  { id:"c_zen", name:"Zen Zena", age:"Adult", voice:"Shimmer", imageData:"", imageName:"", traits:"Silver/white hair; calm strategist; blind; tea; flowing robes", backstory:"Serene mentor with patience and foresight." },
-  { id:"c_skip", name:"Skater Skip (Chris)", age:"Teen/Young Adult", voice:"Breeze", imageData:"", imageName:"", traits:"Long blonde bun; skater gear; athletic; fantasy touches", backstory:"Adrenaline junkie; uses board skills for bold rescues." },
-  { id:"c_dan", name:"Dark Dan (Darwin)", age:"Adult", voice:"Spruce", imageData:"", imageName:"", traits:"Dark hair; lip piercing; gauged ears; gothic armor", backstory:"Brooding protector with a strict code." },
-  { id:"c_danielle", name:"Darling Danielle (Dakota)", age:"Adult", voice:"Juniper", imageData:"", imageName:"", traits:"Pregnant; blonde; warm, nurturing", backstory:"Heart of the crew; compassion in danger." },
-  { id:"c_gus", name:"Grumpy Gus (Bob)", age:"Older Adult", voice:"Cove", imageData:"", imageName:"", traits:"Short military cut; long gray goatee; gruff but loyal", backstory:"Gruff veteran whose loyalty shows when it matters." },
-  { id:"c_annie", name:"Ambush Annie (Amy)", age:"Adult", voice:"Sol", imageData:"", imageName:"", traits:"Dark hair; round face; tactical armor", backstory:"Ambush specialist executing precise strikes." },
-  { id:"c_callie", name:"Creative Callie", age:"Young Adult", voice:"Vale", imageData:"", imageName:"", traits:"Inventive; quick with ideas and sketches", backstory:"Concept artist of the crew." },
-  { id:"c_dominic", name:"Dominic (The Dominator)", age:"Teen", voice:"Verse", imageData:"", imageName:"", traits:"Farm kid; blonde; blue eyes; witty; slingshot; hero suit", backstory:"Teen hero protecting home and family." },
-  { id:"c_naomi", name:"Naomi", age:"Younger Sister", voice:"Nova", imageData:"", imageName:"", traits:"Looks up to Dominic; loves animals", backstory:"Brings heart and levity to the farm." },
-  { id:"c_oliver", name:"Oliver", age:"Teen (adopted)", voice:"Ari", imageData:"", imageName:"", traits:"Adopted; complex past; letters to grandmother", backstory:"Finding belonging while processing the past." },
-  { id:"c_teddy", name:"Teddy", age:"Young Brother", voice:"Mori", imageData:"", imageName:"", traits:"Curious, playful, energetic", backstory:"Tiny sidekick sparking mini adventures." },
-  { id:"c_journey", name:"Journey", age:"4–5", voice:"Pearl", imageData:"", imageName:"", traits:"Light brown hair; brown eyes; white dress; playful", backstory:"Imaginative child starting each adventure." },
-  { id:"c_sophie", name:"Sophie", age:"6–7", voice:"Sage", imageData:"", imageName:"", traits:"Dirty-blonde; green eyes; big-sister energy", backstory:"Protective older sister." },
-  { id:"c_abby", name:"Abby (Mom)", age:"Adult", voice:"Amber", imageData:"", imageName:"", traits:"Long dark hair; patient; loving", backstory:"Gentle guide anchoring the family." },
-  { id:"c_mark", name:"Mark (Dad)", age:"Adult", voice:"Alloy", imageData:"", imageName:"", traits:"Light red hair; playful; fun", backstory:"Dad jokes keep spirits high." },
-  { id:"c_bear", name:"Bear (Dog)", age:"Pup", voice:"Onyx", imageData:"", imageName:"", traits:"Faithful dog; senses trouble early", backstory:"Four-legged companion." }
-]);
-
-let assets = load(KEY_ASSETS, []);
-let frames = load(KEY_FRAMES, []);
-const ta = document.getElementById("bookText");
-if(localStorage.getItem(KEY_TEXT)) ta.value = localStorage.getItem(KEY_TEXT);
-
-/* ===== UI helpers ===== */
-function esc(s){return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+/* ===== Utility/UI ===== */
 const mask=document.getElementById("mask"), modal=document.getElementById("modal");
-function openModal(html){ modal.innerHTML=html; mask.classList.add("show"); }
-function closeModal(){ mask.classList.remove("show"); modal.innerHTML=""; }
+function openModal(html){modal.innerHTML=html;mask.classList.add("show")}
+function closeModal(){mask.classList.remove("show");modal.innerHTML=""}
+mask.onclick=e=>{if(e.target===mask) closeModal()}
+document.addEventListener("click",(e)=>{if(!e.target.closest(".menu")&&!e.target.closest(".hambtn")){menuLeft.hidden=true;menuRight.hidden=true}})
+const btnLeft=document.getElementById("btnLeft"),btnRight=document.getElementById("btnRight");
+const menuLeft=document.getElementById("menuLeft"),menuRight=document.getElementById("menuRight");
+btnLeft.onclick=()=>{menuLeft.hidden=!menuLeft.hidden;menuRight.hidden=true}
+btnRight.onclick=()=>{menuRight.hidden=!menuRight.hidden;menuLeft.hidden=true}
+const modePill=document.getElementById("modePill"), sceneCountPill=document.getElementById("sceneCountPill");
+function updatePills(count=0){modePill.textContent="Mode: "+settings.illustrationMode; sceneCountPill.textContent="Scenes: "+count}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
-/* ===== Menus ===== */
-const btnLeft=document.getElementById("btnLeft"), btnRight=document.getElementById("btnRight");
-const menuLeft=document.getElementById("menuLeft"), menuRight=document.getElementById("menuRight");
-btnLeft.onclick=e=>{ menuLeft.hidden=!menuLeft.hidden; menuRight.hidden=true; };
-btnRight.onclick=e=>{ menuRight.hidden=!menuRight.hidden; menuLeft.hidden=true; };
-document.addEventListener("click", (e)=>{ if(!e.target.closest(".menu") && !e.target.closest(".hambtn")){ menuLeft.hidden=true; menuRight.hidden=true; }});
-mask.onclick=e=>{ if(e.target===mask) closeModal(); };
+/* ===== Menu actions ===== */
+document.getElementById("btnSave").onclick=()=>{save(KEY_TEXT,ta.value||"");alert("Saved.")}
+document.getElementById("btnExportZip").onclick=exportZip
+document.getElementById("btnPreviewScenes").onclick=previewScenes
+menuRight.onclick=(e)=>{const a=e.target?.dataset?.right;if(!a)return;menuRight.hidden=true;
+  if(a==="new"){if(confirm("Clear text?")) ta.value=""}
+  if(a==="save"){save(KEY_TEXT,ta.value||"");alert("Saved to browser storage.")}
+  if(a==="open") openProject()
+  if(a==="exportZip") exportZip()
+}
+menuLeft.onclick=(e)=>{const a=e.target?.dataset?.left;if(!a)return;menuLeft.hidden=true;
+  if(a==="settings") showSettings()
+  if(a==="characters") showCharacters()
+  if(a==="importpdf") showPdfImport()
+  if(a==="assets") showAssets()
+  if(a==="secrets") showSecrets()
+  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Settings/Secrets\n3) Preview Scenes\n4) Start\n5) Export ZIP.")
+  if(a==="about") alert("Book Animator — AI scene illustration via OpenAI Images.")
+}
 
-/* ===== Buttons ===== */
-document.getElementById("btnSave").onclick = ()=>{ save(KEY_TEXT, ta.value||""); alert("Saved."); };
-document.getElementById("btnExportZip").onclick = exportZip;
-document.getElementById("btnPreviewScenes").onclick = previewScenes;
-
-/* ===== Right menu actions ===== */
-menuRight.onclick = (e)=>{
-  const a=e.target?.dataset?.right; if(!a) return; menuRight.hidden=true;
-  if(a==="new"){ if(confirm("Clear text?")) ta.value = ""; }
-  if(a==="save"){ save(KEY_TEXT, ta.value||""); alert("Saved to browser storage."); }
-  if(a==="open") openProject();
-  if(a==="exportZip") exportZip();
-};
-
-/* ===== Left menu actions ===== */
-menuLeft.onclick = (e)=>{
-  const a=e.target?.dataset?.left; if(!a) return; menuLeft.hidden=true;
-  if(a==="settings") showSettings();
-  if(a==="characters") showCharacters();
-  if(a==="importpdf") showPdfImport();
-  if(a==="assets") showAssets();
-  if(a==="secrets") showSecrets();
-  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Settings/Characters\n3) (Optional) Import PDF images\n4) START\n5) Export ZIP.");
-  if(a==="about") alert("Book Animator — single-file app with OpenAI Images integration and live thumbnails.");
-};
-
-/* ===== Settings (includes Illustration Mode) ===== */
+/* ===== Settings ===== */
 function showSettings(){
-  openModal(`
-    <h2>Settings</h2>
+  const options=(arr,sel)=>arr.map(o=>`<option ${o===sel?"selected":""}>${o}</option>`).join("");
+  openModal(`<h2>Settings</h2>
     <div class="grid">
-      <div class="field"><label>Animation style</label>
-        <select id="stAnim" class="select">${ANIM_STYLES.map(o=>`<option ${o===settings.animationStyle?"selected":""}>${o}</option>`).join("")}</select>
-      </div>
-      <div class="field"><label>Art style</label>
-        <select id="stArt" class="select">${ART_STYLES.map(o=>`<option ${o===settings.artStyle?"selected":""}>${o}</option>`).join("")}</select>
-      </div>
-      <div class="field"><label>Illustration Mode</label>
-        <select id="stIll" class="select">${ILLUST_MODES.map(o=>`<option ${o===settings.illustrationMode?"selected":""}>${o}</option>`).join("")}</select>
-      </div>
-      <div class="field"><label>Aspect</label>
-        <select id="stAspect" class="select">${["16:9","9:16","1:1","4:3","21:9"].map(o=>`<option ${o===settings.aspect?"selected":""}>${o}</option>`).join("")}</select>
-      </div>
+      <div class="row" style="gap:8px"><span class="pill">Tip: choose <b>OpenAI Images</b> to generate real pictures.</span></div>
+      <div class="field"><label>Illustration Mode</label><select id="stIll" class="select">${options(ILLUST_MODES,settings.illustrationMode)}</select></div>
+      <div class="field"><label>Animation style</label><select id="stAnim" class="select">${options(ANIM_STYLES,settings.animationStyle)}</select></div>
+      <div class="field"><label>Art style</label><select id="stArt" class="select">${options(ART_STYLES,settings.artStyle)}</select></div>
+      <div class="field"><label>Aspect</label><select id="stAspect" class="select">${options(["16:9","9:16","1:1","4:3","21:9"],settings.aspect)}</select></div>
       <div class="field"><label>FPS</label><input id="stFps" class="input" type="number" min="12" max="60" value="${settings.fps}"/></div>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
       <button class="btn-outline" onclick="closeModal()">Cancel</button>
       <button class="btn" onclick="(function(){
+        settings.illustrationMode=document.getElementById('stIll').value;
         settings.animationStyle=document.getElementById('stAnim').value;
         settings.artStyle=document.getElementById('stArt').value;
-        settings.illustrationMode=document.getElementById('stIll').value;
         settings.aspect=document.getElementById('stAspect').value;
-        settings.fps=parseInt(document.getElementById('stFps').value)||24; save(KEY_CFG,settings);
-        closeModal(); alert('Settings saved.');
+        settings.fps=parseInt(document.getElementById('stFps').value)||24;
+        save(KEY_CFG,settings); closeModal(); updatePills();
+        alert('Settings saved.');
       })()">Save</button>
-    </div>
-  `);
+    </div>`);
 }
 
-/* ===== Secrets (API Keys) ===== */
+/* ===== Secrets (with Test Key) ===== */
 function showSecrets(){
-  const current = load(KEY_OPENAI, {apiKey:""});
-  openModal(`
-    <h2>Secrets (API Keys)</h2>
+  const current=load(KEY_OPENAI,{apiKey:""});
+  openModal(`<h2>Secrets (API Keys)</h2>
     <div class="field"><label>OpenAI API Key</label>
       <input id="openaiKey" class="input" placeholder="sk-..." value="${esc(current.apiKey||"")}"/>
-      <small style="color:var(--muted)">Stored locally on this device. Used only to call OpenAI Images from your browser.</small>
+      <small style="color:var(--muted)">Stored only on this device. Used to call OpenAI Images from your browser.</small>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
       <button class="btn-outline" onclick="closeModal()">Close</button>
-      <button class="btn" onclick="(function(){ const k=document.getElementById('openaiKey').value.trim(); save(KEY_OPENAI,{apiKey:k}); closeModal(); alert('Saved API key.'); })()">Save Key</button>
+      <button class="btn" onclick="(function(){const k=document.getElementById('openaiKey').value.trim();save(KEY_OPENAI,{apiKey:k});alert('Saved API key.');})()">Save Key</button>
+      <button class="btn" onclick="testOpenAIKey()">Test Key</button>
     </div>
-  `);
+    <div id="testResult" style="margin-top:.5rem;color:var(--muted)"></div>`);
 }
-function getOpenAIKey(){ const s = load(KEY_OPENAI, {apiKey:""}); return (s && s.apiKey) ? s.apiKey.trim() : ""; }
+function getOpenAIKey(){const s=load(KEY_OPENAI,{apiKey:""});return (s&&s.apiKey)?s.apiKey.trim():""}
+async function testOpenAIKey(){
+  const apiKey=getOpenAIKey(); if(!apiKey){alert("No key saved.");return}
+  const r=document.getElementById("testResult"); r.textContent="Testing…"
+  try{
+    const resp=await fetch("https://api.openai.com/v1/images/generations",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+      body:JSON.stringify({model:"gpt-image-1",prompt:"tiny red sticker icon of a book, high contrast, simple",size:"256x256",n:1,response_format:"b64_json"})
+    });
+    if(!resp.ok){r.textContent="Error: "+(await resp.text());return}
+    const data=await resp.json(); r.textContent=data?.data?.[0]?.b64_json?"Success! You can start now.":"No image returned."
+  }catch(e){r.textContent="Network/other error: "+e.message}
+}
 
-/* ===== Characters (edit & image upload) ===== */
+/* ===== Characters (minimal list + add later if needed) ===== */
 function showCharacters(){
-  openModal(`
-    <h2>Characters</h2>
-    <div class="list" id="charList">
-      ${characters.map(c=>`
-        <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.4rem 0">
-          <div class="row" style="gap:10px;align-items:center">
-            ${c.imageData?`<img class="thumb" src="${c.imageData}" alt="${esc(c.name)}"/>`:`<div class="thumb" title="No image"></div>`}
-            <div><b>${esc(c.name)}</b><div class="small" style="color:var(--muted)">${esc(c.voice||"-")} · ${esc(c.age||"-")}</div></div>
-          </div>
-          <div class="row" style="gap:6px">
-            <button class="btn-outline" onclick="editChar('${c.id}')">Edit</button>
-            ${c.id!=="narrator"?`<button class="btn btn-danger" onclick="delChar('${c.id}')">Delete</button>`:""}
-          </div>
-        </div>
-      `).join("")}
-    </div>
-    <h3 style="margin:.85rem 0 .5rem">Add Character</h3>
-    <div class="grid">
-      <div class="field"><label>Name</label><input class="input" id="cName"/></div>
-      <div class="field"><label>Age</label><input class="input" id="cAge"/></div>
-      <div class="field"><label>Voice</label>
-        <select class="select" id="cVoice">${OPENAI_VOICES.map(v=>`<option>${v}</option>`).join("")}</select>
-      </div>
-      <div class="field"><label>Image</label><input class="input" type="file" id="cImg" accept="image/*"/></div>
-      <div class="field"><label>Traits</label><input class="input" id="cTraits" placeholder="brave, sarcastic, loyal"/></div>
-      <div class="field" style="grid-column:1/-1"><label>Backstory</label><textarea class="area" id="cBack"></textarea></div>
+  openModal(`<h2>Characters</h2>
+    <div class="list">${characters.map(c=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.4rem 0">
+      <div><b>${esc(c.name||"(unnamed)")}</b></div>
+    </div>`).join("")||"<div class='small'>No characters yet</div>"}
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
       <button class="btn-outline" onclick="closeModal()">Close</button>
-      <button class="btn" onclick="saveNewCharacter()">Save Character</button>
-    </div>
-  `);
-}
-async function readFileAsDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
-async function saveNewCharacter(){
-  const name = (document.getElementById("cName").value||"").trim(); if(!name) return alert("Name is required.");
-  const age = (document.getElementById("cAge").value||"").trim();
-  const voice = document.getElementById("cVoice").value;
-  const traits = (document.getElementById("cTraits").value||"").trim();
-  const backstory = (document.getElementById("cBack").value||"").trim();
-  let imageData="", imageName="";
-  const f = document.getElementById("cImg").files?.[0]; if(f){ imageData=await readFileAsDataURL(f); imageName=f.name; }
-  characters.push({ id:"c_"+Math.random().toString(36).slice(2,9), name, age, voice, imageData, imageName, traits, backstory });
-  save(KEY_CHARS, characters); showCharacters();
-}
-function delChar(id){ if(!confirm("Delete this character?")) return; characters = characters.filter(x=>x.id!==id); save(KEY_CHARS, characters); showCharacters(); }
-function editChar(id){
-  const c = characters.find(x=>x.id===id); if(!c) return;
-  openModal(`
-    <h2>Edit Character</h2>
-    <div class="grid">
-      <div class="field"><label>Name</label><input class="input" id="eName" value="${esc(c.name)}"/></div>
-      <div class="field"><label>Age</label><input class="input" id="eAge" value="${esc(c.age||"")}"/></div>
-      <div class="field"><label>Voice</label>
-        <select class="select" id="eVoice">${OPENAI_VOICES.map(v=>`<option ${v===c.voice?"selected":""}>${v}</option>`).join("")}</select>
-      </div>
-      <div class="field"><label>Replace Image</label><input class="input" type="file" id="eImg" accept="image/*"/></div>
-      <div class="field"><label>Traits</label><input class="input" id="eTraits" value="${esc(c.traits||"")}"/></div>
-      <div class="field" style="grid-column:1/-1"><label>Backstory</label><textarea class="area" id="eBack">${esc(c.backstory||"")}</textarea></div>
-    </div>
-    <div class="row" style="justify-content:flex-end;margin-top:12px">
-      <button class="btn-outline" onclick="closeModal()">Cancel</button>
-      <button class="btn" onclick="saveCharEdit('${c.id}')">Save</button>
-    </div>
-  `);
-}
-async function saveCharEdit(id){
-  const c = characters.find(x=>x.id===id); if(!c) return;
-  c.name = document.getElementById("eName").value.trim();
-  c.age = document.getElementById("eAge").value.trim();
-  c.voice = document.getElementById("eVoice").value;
-  c.traits = document.getElementById("eTraits").value.trim();
-  c.backstory = document.getElementById("eBack").value.trim();
-  const f = document.getElementById("eImg").files?.[0]; if(f){ c.imageData = await readFileAsDataURL(f); c.imageName=f.name; }
-  save(KEY_CHARS, characters); showCharacters();
+    </div>`);
 }
 
 /* ===== PDF Importer ===== */
 function showPdfImport(){
-  openModal(`
-    <h2>Import Images (PDF)</h2>
-    <p class="small">Load your illustrated PDFs. Click a page to assign to a character.</p>
+  openModal(`<h2>Import Images (PDF)</h2>
     <div class="row" style="gap:8px;flex-wrap:wrap">
       <input type="file" id="pdfFile" accept="application/pdf" class="input" />
       <button class="btn" id="btnLoadPdf">Load PDF</button>
       <button class="btn-outline" onclick="closeModal()">Close</button>
     </div>
     <div id="pdfName" class="small" style="margin-top:.5rem;color:var(--muted)"></div>
-    <div id="pdfGrid" class="pdfgrid" style="margin-top:.5rem"></div>
-  `);
-  document.getElementById("btnLoadPdf").onclick = async ()=>{
-    const f = document.getElementById("pdfFile").files?.[0];
-    if(!f) return alert("Choose a PDF first.");
-    document.getElementById("pdfName").textContent = f.name;
-    const ab = await f.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({data:ab}).promise;
-    const grid = document.getElementById("pdfGrid"); grid.innerHTML="";
+    <div id="pdfGrid" class="pdfgrid" style="margin-top:.5rem"></div>`);
+  document.getElementById("btnLoadPdf").onclick=async ()=>{
+    const f=document.getElementById("pdfFile").files?.[0]; if(!f) return alert("Choose a PDF first.");
+    document.getElementById("pdfName").textContent=f.name;
+    const ab=await f.arrayBuffer(), pdf=await pdfjsLib.getDocument({data:ab}).promise, grid=document.getElementById("pdfGrid"); grid.innerHTML="";
     for(let p=1;p<=pdf.numPages;p++){
-      const page = await pdf.getPage(p);
-      const viewport = page.getViewport({scale:0.4});
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = Math.floor(viewport.width);
-      canvas.height= Math.floor(viewport.height);
-      await page.render({canvasContext:ctx, viewport}).promise;
-
-      const card = document.createElement("div"); card.className = "pdfthumb";
-      const cap = document.createElement("div"); cap.className = "cap";
-      cap.innerHTML = `<span>Page ${p}</span> <button class="btn-outline" data-p="${p}">Assign…</button>`;
-      card.appendChild(canvas); card.appendChild(cap); grid.appendChild(card);
-
-      cap.querySelector("button").onclick = ()=>{
-        const dataURL = canvas.toDataURL("image/jpeg", 0.9);
-        pickCharacterAndAssign(dataURL, f.name + " - page " + p + ".jpg");
-      };
-    }
-  };
-}
-function pickCharacterAndAssign(dataURL, suggestedName){
-  const opts = characters.map((c)=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
-  openModal(`
-    <h2>Assign Image to Character</h2>
-    <div class="row" style="align-items:flex-start;gap:16px">
-      <img src="${dataURL}" style="max-width:240px;border:1px solid var(--border);border-radius:10px"/>
-      <div class="field" style="flex:1">
-        <label>Character</label>
-        <select id="assignChar" class="select">${opts}</select>
-        <label style="margin-top:.5rem">Image name</label>
-        <input id="assignName" class="input" value="${esc(suggestedName)}"/>
-      </div>
-    </div>
-    <div class="row" style="justify-content:flex-end;margin-top:12px">
-      <button class="btn-outline" onclick="showCharacters()">Cancel</button>
-      <button class="btn" onclick="(function(){
-        const id = document.getElementById('assignChar').value;
-        const nm = document.getElementById('assignName').value;
-        const c = characters.find(x=>x.id===id);
-        if(c){ c.imageData = dataURL; c.imageName = nm; save(KEY_CHARS, characters); }
-        showCharacters();
-      })()">Assign</button>
-    </div>
-  `);
-}
-
-/* ===== Scene splitting (SMART) & Start Animation ===== */
-function splitIntoScenesSmart(text){
-  // 1) Try blank-line paragraphs
-  let chunks = text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean);
-  if(chunks.length >= 2) return chunks.map((t,i)=>({index:i, text:t}));
-
-  // 2) Fallback: sentence-based grouping (~2–3 sentences or ~350 chars)
-  const sents = text.replace(/\n+/g,' ').match(/[^.!?]+[.!?]+|\S+$/g) || [];
-  const out = []; let buf = "";
-  for(const s of sents){
-    if((buf + " " + s).length > 350 || (buf.match(/[.!?]/g)||[]).length >= 2){
-      if(buf.trim()) out.push(buf.trim());
-      buf = s.trim();
-    }else{
-      buf = (buf?buf+" ":"") + s.trim();
+      const page=await pdf.getPage(p), viewport=page.getViewport({scale:0.4}), canvas=document.createElement("canvas"), ctx=canvas.getContext("2d");
+      canvas.width=Math.floor(viewport.width); canvas.height=Math.floor(viewport.height);
+      await page.render({canvasContext:ctx,viewport}).promise;
+      const card=document.createElement("div"); card.className="pdfthumb"; const cap=document.createElement("div"); cap.className="cap";
+      cap.innerHTML=`<span>Page ${p}</span>`; card.appendChild(canvas); card.appendChild(cap); grid.appendChild(card);
     }
   }
-  if(buf.trim()) out.push(buf.trim());
-  return out.map((t,i)=>({index:i, text:t}));
+}
+
+/* ===== Assets ===== */
+function showAssets(){ openModal(`<h2>Assets</h2><div class="list">${assets.map(a=>`<div>${esc(a.name||a.url||"(unnamed)")}</div>`).join("")||"No assets"}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn-outline" onclick="closeModal()">Close</button></div>`); }
+
+/* ===== Scene splitting ===== */
+function splitIntoScenesSmart(text){
+  let chunks=text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean); if(chunks.length>=2) return chunks.map((t,i)=>({index:i,text:t}));
+  const sents=text.replace(/\n+/g,' ').match(/[^.!?]+[.!?]+|\S+$/g)||[]; const out=[]; let buf="";
+  for(const s of sents){ if((buf+" "+s).length>350||(buf.match(/[.!?]/g)||[]).length>=2){ if(buf.trim()) out.push(buf.trim()); buf=s.trim(); } else { buf=(buf?buf+" ":"")+s.trim(); } }
+  if(buf.trim()) out.push(buf.trim()); return out.map((t,i)=>({index:i,text:t}));
 }
 function previewScenes(){
-  const scenes = splitIntoScenesSmart(ta.value||"");
-  const box = document.getElementById("scenePreview");
-  if(!scenes.length){ box.style.display="none"; alert("No scenes found."); return; }
-  box.style.display="block";
-  box.innerHTML = `<div style="padding:.4rem 0;color:var(--muted)"><b>${scenes.length}</b> scenes detected</div>` + 
+  const scenes=splitIntoScenesSmart(ta.value||""); const box=document.getElementById("scenePreview");
+  if(!scenes.length){box.style.display="none";alert("No scenes found.");return}
+  box.style.display="block"; box.innerHTML=`<div style="padding:.4rem 0;color:var(--muted)"><b>${scenes.length}</b> scenes detected</div>`+
     scenes.map(s=>`<div style="padding:.5rem;border-bottom:1px solid var(--border)"><b>Scene ${s.index+1}</b><div class="small" style="color:var(--muted)">${esc((s.text.slice(0,200)+'…').replace(/\n/g,' '))}</div></div>`).join("");
+  updatePills(scenes.length);
 }
 
-/* Progress UI */
-const progWrap  = document.getElementById("progressWrap");
-const progFill  = document.getElementById("progressFill");
-const progLabel = document.getElementById("progressLabel");
-const btnProgStop = document.getElementById("btnProgStop");
-btnProgStop.onclick = ()=> stopPipeline = true;
-let stopPipeline = false;
-function resetProgress(){ progWrap.hidden=false; progFill.style.width="0%"; progLabel.textContent="Starting…"; }
-function setProgress(p,label){ progFill.style.width = Math.max(0,Math.min(100,p))+"%"; progLabel.textContent = label; }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+/* ===== Progress & thumbnails ===== */
+const progWrap=document.getElementById("progressWrap"), progFill=document.getElementById("progressFill"), progLabel=document.getElementById("progressLabel"), progPct=document.getElementById("progressPct");
+const btnProgStop=document.getElementById("btnProgStop"); let stopPipeline=false; btnProgStop.onclick=()=>stopPipeline=true;
+function resetProgress(){progWrap.hidden=false; setProgress(0,"Starting…")}
+function setProgress(p,label){const pct=Math.max(0,Math.min(100,Math.round(p))); progFill.style.width=pct+"%"; progPct.textContent=pct+"%"; progLabel.textContent=label}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+const thumbStrip=document.getElementById("thumbStrip");
+function addThumbPlaceholder(idx){const card=document.createElement("div");card.className="thumbCard";card.id=`thumb-${idx}`;
+  card.innerHTML=`<div class="thumbIdx">#${idx+1}</div><img class="thumb waiting" alt="pending" src="" /><div style="color:var(--muted)">Rendering…</div>`; thumbStrip.appendChild(card)}
+function setThumbImage(idx,dataURL){const card=document.getElementById(`thumb-${idx}`); if(!card) return; const img=card.querySelector("img.thumb");
+  img.src=dataURL; img.classList.remove("waiting"); const text=card.querySelector("div[style]"); if(text) text.textContent="Done"}
 
-/* Live thumbnails strip */
-const thumbStrip = document.getElementById("thumbStrip");
-function addThumbPlaceholder(idx){
-  const card = document.createElement("div");
-  card.className = "thumbCard";
-  card.id = `thumb-${idx}`;
-  card.innerHTML = `<div class="thumbIdx">#${idx+1}</div><img class="thumb waiting" alt="pending" src="" /><div style="color:var(--muted)">Rendering…</div>`;
-  thumbStrip.appendChild(card);
-}
-function setThumbImage(idx, dataURL){
-  const card = document.getElementById(`thumb-${idx}`); if(!card) return;
-  const img = card.querySelector("img.thumb");
-  img.src = dataURL; img.classList.remove("waiting");
-  const text = card.querySelector("div[style]"); if(text) text.textContent = "Done";
-}
-
-document.getElementById("btnStart").onclick = startAnimation;
+/* ===== Start Animation ===== */
+document.getElementById("btnStart").onclick=startAnimation; updatePills();
 
 async function startAnimation(){
-  const btnStart = document.getElementById("btnStart");
-  btnStart.disabled = true;
+  const mode=settings.illustrationMode||"OpenAI Images"; updatePills();
+  const btnStart=document.getElementById("btnStart"); btnStart.disabled=true;
+  const scenes=splitIntoScenesSmart(ta.value||""); if(!scenes.length){alert("No scenes found."); btnStart.disabled=false; return}
+  stopPipeline=false; resetProgress(); frames=[]; thumbStrip.innerHTML=""; updatePills(scenes.length);
+  scenes.forEach(sc=>addThumbPlaceholder(sc.index));
 
-  const scenes = splitIntoScenesSmart(ta.value||"");
-  if(!scenes.length){ alert("No scenes found."); btnStart.disabled = false; return; }
-
-  // Reset UI
-  stopPipeline=false; resetProgress(); frames = []; thumbStrip.innerHTML = "";
-
-  // Placeholders so you see activity immediately
-  scenes.forEach(sc => addThumbPlaceholder(sc.index));
-
-  const mode = settings.illustrationMode || "OpenAI Images";
-
-  for(let i=0;i<scenes.length;i++){
-    if(stopPipeline){ setProgress(0,"Stopped"); break; }
-    const sc = scenes[i];
-    setProgress(Math.round(((i)/scenes.length)*90)+5, `Illustrating scene ${i+1} of ${scenes.length}…`);
-    let dataURL = "";
-    try{
-      if(mode==="OpenAI Images"){
-        dataURL = await illustrateWithOpenAI(sc, settings);
-      }else{
-        dataURL = await illustrateSceneStub(sc, settings.animationStyle, settings.artStyle);
-      }
-    }catch(err){
-      console.error(err);
-      dataURL = await illustrateSceneStub(sc, settings.animationStyle, settings.artStyle);
+  try{
+    for(let i=0;i<scenes.length;i++){
+      if(stopPipeline){setProgress(0,"Stopped");break}
+      const sc=scenes[i];
+      setProgress(((i)/scenes.length)*90+5,`Illustrating scene ${i+1} of ${scenes.length}…`);
+      let dataURL="";
+      if(mode==="OpenAI Images"){ dataURL=await illustrateWithOpenAI(sc,settings); }
+      else { dataURL=await illustrateStubImage(sc,settings) } // only if user chose stub
+      frames.push({index:sc.index,dataURL}); setThumbImage(sc.index,dataURL);
+      await sleep(50);
     }
-    frames.push({ index: sc.index, dataURL });
-    setThumbImage(sc.index, dataURL);       // <-- update live thumbnail
-    await sleep(75);
-  }
-
-  setProgress(100,"Done. Export ZIP to save frames.");
-  save(KEY_FRAMES, frames);
-
-  // Quick list view too (optional)
-  const box = document.getElementById("scenePreview");
-  box.style.display="block";
-  box.innerHTML = `<div style="padding:.4rem 0;color:var(--muted)"><b>${frames.length}</b> frames generated</div>` + 
-    frames.map(f=>`<div class="row" style="gap:8px;border-bottom:1px solid var(--border);padding:.4rem 0"><img src="${f.dataURL}" class="thumb"/><div>Scene ${f.index+1}</div></div>`).join("");
-
-  btnStart.disabled = false;
+    setProgress(100,"Done. Export ZIP to save frames."); save(KEY_FRAMES,frames);
+  }catch(err){ alert("Stopped: "+(err?.message||err)); console.error(err) }
+  finally{ btnStart.disabled=false; }
 }
 
-/* ===== Local stub (fallback) ===== */
-async function illustrateSceneStub(scene, styleText, artText){
-  const W = 960, H = 540;
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d");
-  const bgMap = {"Cartoon":"#151515","Flipbook":"#111","Comic":"#120f0f","Slideshow":"#0f1112","Anime":"#10121a","Dark Fantasy":"#0b0b12","Lifelike":"#0f0f0f","Stop-Motion":"#101010","Motion-Comics":"#110f14","Pixar-Like":"#0f1210","Minimalist Line-Art":"#0e0e0e","Water-Ink":"#0c0f12","Claymation":"#100e0e","Paper-Cut":"#12100e","Retro 8-bit":"#0e1012","3D Toon":"#0e1010"};
-  ctx.fillStyle = bgMap[styleText] || "#0d0d0d"; ctx.fillRect(0,0,W,H);
-  ctx.fillStyle = "rgba(255,45,45,0.25)"; ctx.fillRect(0,H-140,W,140);
-  ctx.fillStyle = "#fff"; ctx.font = "700 28px system-ui"; ctx.fillText(`${styleText} · ${artText}`, 24, 50);
-  ctx.font = "16px system-ui"; wrapText(ctx, scene.text.replace(/\s+/g,' ').slice(0,180), 24, 90, W-48, 22);
-  ctx.font = "700 36px system-ui"; ctx.fillStyle="#ff2d2d"; ctx.fillText(`Scene ${scene.index+1}`, 24, H-90);
-  ctx.font = "14px system-ui"; ctx.fillStyle="#fff"; ctx.fillText("Ken Burns / Parallax (stub)", 24, H-56);
-  return canvas.toDataURL("image/jpeg", 0.9);
-}
-function wrapText(ctx, text, x, y, maxWidth, lineHeight){
-  const words = text.split(' '); let line = '';
-  for (let n=0;n<words.length;n++){
-    const testLine = line + words[n] + ' '; if (ctx.measureText(testLine).width > maxWidth && n>0){ ctx.fillText(line, x, y); line = words[n] + ' '; y += lineHeight; } else { line = testLine; }
-  } ctx.fillText(line, x, y);
+/* ===== Stub (only when selected) ===== */
+async function illustrateStubImage(scene,settings){
+  const W=1024,H=1024,c=document.createElement("canvas"); c.width=W;c.height=H; const ctx=c.getContext("2d");
+  ctx.fillStyle="#111"; ctx.fillRect(0,0,W,H); ctx.fillStyle="#222"; for(let i=0;i<28;i++){ctx.fillRect(i*38,0,2,H)} return c.toDataURL("image/jpeg",0.9);
 }
 
-/* ===== OpenAI Images integration ===== */
-async function illustrateWithOpenAI(scene, settings){
-  const apiKey = getOpenAIKey();
-  if(!apiKey){ throw new Error("Missing OpenAI API key. Add it in Secrets (API Keys)."); }
-
-  const style = settings.animationStyle || "Cartoon";
-  const art   = settings.artStyle || "Fantasy";
-  const prompt = `Illustrate this scene in a ${style} animation look with ${art} art direction. Clear focal subject, cinematic composition, storybook clarity, vibrant but not noisy. Scene text: """${scene.text.slice(0,800)}"""`;
-
-  const resp = await fetch("https://api.openai.com/v1/images/generations", {
+/* ===== OpenAI Images (AI-only) ===== */
+function promptFor(scene,settings){
+  const style=settings.animationStyle||"Cartoon", art=settings.artStyle||"Fantasy";
+  return `Highly detailed illustration for a book scene in a ${style} animation look with ${art} art direction. One clear focal subject. Cinematic lighting and composition. No text, no captions.
+Scene: ${scene.text.slice(0,800)}`;
+}
+async function illustrateWithOpenAI(scene,settings){
+  const apiKey=getOpenAIKey(); if(!apiKey) throw new Error("Missing OpenAI API key (Left menu → Secrets).");
+  const prompt=promptFor(scene,settings);
+  const resp=await fetch("https://api.openai.com/v1/images/generations",{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Authorization":"Bearer "+apiKey
-    },
-    body: JSON.stringify({
-      model: "gpt-image-1",
-      prompt,
-      size: "1024x1024",
-      n: 1,
-      response_format: "b64_json"
-    })
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+    body:JSON.stringify({model:"gpt-image-1",prompt,size:"1024x1024",n:1,response_format:"b64_json"})
   });
-
-  if(!resp.ok){
-    const t = await resp.text();
-    throw new Error("OpenAI error: "+t);
-  }
-
-  const data = await resp.json();
-  if(data?.data?.[0]?.b64_json){
-    return "data:image/jpeg;base64,"+data.data[0].b64_json;
-  }
-  if(data?.data?.[0]?.url){
-    const imgUrl = data.data[0].url;
-    const imgBlob = await (await fetch(imgUrl)).blob();
-    return await blobToDataURL(imgBlob);
-  }
-  throw new Error("No image in response.");
+  if(!resp.ok){ throw new Error(await resp.text()) }
+  const data=await resp.json(); const b64=data?.data?.[0]?.b64_json; const url=data?.data?.[0]?.url;
+  if(b64) return "data:image/jpeg;base64,"+b64;
+  if(url){ const imgBlob=await (await fetch(url)).blob(); return await blobToDataURL(imgBlob) }
+  throw new Error("No image returned");
 }
-function blobToDataURL(blob){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); }
+function getOpenAIKey(){const s=load(KEY_OPENAI,{apiKey:""});return (s&&s.apiKey)?s.apiKey.trim():""}
+function blobToDataURL(blob){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(blob)})}
 
-/* ===== Project Open / ZIP Export ===== */
+/* ===== Open/Save/Export ===== */
 function openProject(){
-  const input=document.createElement("input");
-  input.type="file"; input.accept=".bookanim.json,application/json";
-  input.onchange=async (e)=>{
-    const f=e.target.files?.[0]; if(!f) return;
-    try{
-      const txt=await f.text(); const p=JSON.parse(txt);
-      if(p.text!=null) document.getElementById("bookText").value=p.text;
+  const input=document.createElement("input"); input.type="file"; input.accept=".bookanim.json,application/json";
+  input.onchange=async(e)=>{const f=e.target.files?.[0]; if(!f)return; try{
+      const txt=await f.text(), p=JSON.parse(txt);
+      if(p.text!=null) ta.value=p.text;
       if(p.settings) settings=p.settings, save(KEY_CFG,settings);
       if(Array.isArray(p.characters)) characters=p.characters, save(KEY_CHARS,characters);
       if(Array.isArray(p.assets)) assets=p.assets, save(KEY_ASSETS,assets);
       if(Array.isArray(p.frames)) frames=p.frames, save(KEY_FRAMES,frames);
-      alert("Project loaded.");
-    }catch{ alert("Invalid project file."); }
+      alert("Project loaded."); updatePills();
+    }catch{ alert("Invalid project file.") }
   };
   input.click();
 }
 async function exportZip(){
-  const zip = new JSZip();
-  const project = { version:1, text: document.getElementById("bookText").value||"", settings, characters, assets, frames };
-  zip.file("book-animator.bookanim.json", JSON.stringify(project, null, 2));
-  zip.file("book-text.txt", project.text);
-  zip.file("characters.json", JSON.stringify(characters.map(c=>({...c, imageData:undefined})), null, 2));
-  zip.file("assets.json", JSON.stringify(assets, null, 2));
-
-  const cf = zip.folder("characters");
-  for(const c of characters){
-    if(c.imageData && c.imageData.startsWith("data:")){
-      const {mime, base64} = splitDataUrl(c.imageData);
-      const ext = mimeToExt(mime);
-      const safe = (c.name||"character").replace(/[^a-z0-9]+/gi,"_").slice(0,40);
-      cf.file(`${safe}${ext}`, base64, {base64:true});
-    }
-  }
-  if(frames?.length){
-    const rf = zip.folder("renders");
-    frames.forEach((f,i)=>{ const {base64} = splitDataUrl(f.dataURL); rf.file(`scene-${String(i+1).padStart(3,'0')}.jpg`, base64, {base64:true}); });
-  }
-
-  const blob = await zip.generateAsync({type:"blob"});
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-  a.download = "BookAnimator_Finished.zip"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-}
-function splitDataUrl(d){ const m = d.match(/^data:(.+?);base64,(.*)$/); return { mime: m?m[1]:"image/jpeg", base64: m?m[2]:"" }; }
-function mimeToExt(m){ return m.includes("jpeg")?".jpg": m.includes("png")?".png": m.includes("webp")?".webp": ".bin"; }
-
-/* ===== Assets (simple) ===== */
-function showAssets(){
-  openModal(`
-    <h2>Assets</h2>
-    <div class="list">${assets.map(a=>`
-      <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.4rem 0">
-        <div><b>${esc(a.name||'(unnamed)')}</b><div class="small" style="color:var(--muted)">${esc(a.url||'')}</div></div>
-        <div class="row" style="gap:6px">
-          <button class="btn-outline" onclick="window.open('${a.url}','_blank')">Open</button>
-          <button class="btn btn-danger" onclick="(function(){assets=assets.filter(x=>x.id!=='${a.id}'); save(KEY_ASSETS,assets); showAssets();})()">Delete</button>
-        </div>
-      </div>`).join("")||"<div class='small'>No assets yet</div>"}
-    </div>
-    <h3 style="margin:.85rem 0 .5rem">Add Asset</h3>
-    <div class="grid">
-      <div class="field"><label>Name</label><input id="aName" class="input"/></div>
-      <div class="field" style="grid-column:1/-1"><label>URL</label><input id="aUrl" class="input" placeholder="https://..."/></div>
-    </div>
-    <div class="row" style="justify-content:flex-end;margin-top:12px">
-      <button class="btn-outline" onclick="closeModal()">Close</button>
-      <button class="btn" onclick="(function(){
-        const n=(document.getElementById('aName').value||'').trim(), u=(document.getElementById('aUrl').value||'').trim();
-        if(!u) return alert('URL required');
-        assets.push({id:'a_'+Math.random().toString(36).slice(2,9), name:n, url:u}); save(KEY_ASSETS, assets); showAssets();
-      })()">Save Asset</button>
-    </div>
-  `);
+  const zip=new JSZip(); const project={version:2,text:ta.value||"",settings,characters,assets,frames};
+  zip.file("book-animator.bookanim.json",JSON.stringify(project,null,2));
+  zip.file("book-text.txt",project.text);
+  zip.file("characters.json",JSON.stringify(characters.map(c=>({...c,imageData:undefined})),null,2));
+  zip.file("assets.json",JSON.stringify(assets,null,2));
+  if(frames?.length){const rf=zip.folder("renders"); frames.forEach((f,i)=>{const base64=(f.dataURL.match(/^data:.+;base64,(.*)$/)||[])[1]||""; rf.file(`scene-${String(i+1).padStart(3,'0')}.jpg`,base64,{base64:true})})}
+  const blob=await zip.generateAsync({type:"blob"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="BookAnimator_Finished.zip";
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
 }
 </script>
 </body>
