@@ -11,7 +11,6 @@
 <!-- PDF.js (for importing character images from your PDFs) -->
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.js"></script>
 <script>
-  // Point workerSrc at the same CDN
   pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js";
 </script>
 
@@ -19,7 +18,7 @@
   :root{ --bg:#000; --fg:#fff; --muted:#cfcfcf; --panel:#0e0e0e; --border:#2a2a2a; --accent:#ff2d2d; --accent-hover:#ff4747; }
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
-  .wrap{max-width:900px;margin:4rem auto 4.5rem;padding:0 1rem}
+  .wrap{max-width:900px;margin:4rem auto 6.5rem;padding:0 1rem}
   h1{margin:0 0 1rem;text-align:center;font-size:2rem;font-weight:800}
   label{display:block;margin:.5rem 0;font-weight:600;color:var(--muted)}
   textarea{width:100%;min-height:300px;padding:1rem;border-radius:10px;background:#0b0b0b;color:var(--fg);border:1px solid var(--border);font-size:1rem;line-height:1.5;resize:none;outline:none}
@@ -30,7 +29,13 @@
   .btn-outline{background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;padding:.6rem 1rem;cursor:pointer;font-weight:800}
   .btn-outline:hover{background:rgba(255,45,45,.15)}
   .btn-danger{background:#b31313}
-  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:12px}
+  .row{display:flex;gap:12px;align-items:center}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .input,.select,.area{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}
+  .area{min-height:90px}
+  .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:320px;overflow:auto}
+  .thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:#111}
   /* Hamburgers & menus */
   .hambtn{position:fixed;top:.75rem;z-index:1000;width:46px;height:46px;display:grid;place-items:center;background:var(--panel);color:var(--fg);border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.45)}
   .hambtn.left{left:.75rem} .hambtn.right{right:.75rem}
@@ -43,24 +48,16 @@
   .mask{position:fixed;inset:0;display:none;place-items:center;z-index:1100;background:rgba(0,0,0,.6)}
   .mask.show{display:grid}
   .modal{width:min(96vw,1000px);background:#0d0d0d;color:var(--fg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.7);padding:1rem 1.25rem}
-  .row{display:flex;gap:12px;align-items:center}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-  .field{display:flex;flex-direction:column;gap:6px}
-  .input,.select,.area{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}
-  .area{min-height:90px}
-  .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:320px;overflow:auto}
-  .charrow{display:grid;grid-template-columns:1.2fr .6fr .8fr 1fr auto;gap:8px;align-items:center;padding:.4rem;border-bottom:1px solid var(--border)}
-  .charrow:last-child{border-bottom:none}
-  .thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:#111}
-  .tabs{display:flex;gap:8px;margin:.25rem 0 .75rem}
-  .tab{border:2px solid var(--accent);padding:.35rem .6rem;border-radius:10px;cursor:pointer;font-weight:800;background:transparent}
-  .tab.active{background:var(--accent)}
   /* PDF grid */
   .pdfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:60vh;overflow:auto;margin-top:.5rem}
   .pdfthumb{background:#111;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
   .pdfthumb canvas{width:100%;height:auto;border-radius:6px;border:1px solid #222}
   .pdfthumb .cap{font-size:.9rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  /* Progress bar (bottom) */
+  .progress-wrap{position:fixed;left:0;right:0;bottom:0;background:#0a0a0a;border-top:1px solid var(--border);padding:.55rem 1rem;z-index:900}
+  .progress-row{display:flex;gap:12px;align-items:center;max-width:900px;margin:0 auto;color:var(--muted)}
+  .bar{flex:1;height:10px;background:#1a1a1a;border-radius:6px;overflow:hidden;border:1px solid #222}
+  .fill{height:100%;background:var(--accent);width:0%}
 </style>
 </head>
 <body>
@@ -95,8 +92,25 @@
     <textarea id="bookText" placeholder="Paste text here…"></textarea>
 
     <div class="actions">
-      <button class="btn-outline" id="btnSave">Save</button>
-      <button class="btn" id="btnExportZip">Export Finished (ZIP)</button>
+      <div class="row" style="gap:8px">
+        <button class="btn" id="btnStart">Start Animation</button>
+        <button class="btn-outline" id="btnPreviewScenes">Preview Scenes</button>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" id="btnSave">Save</button>
+        <button class="btn" id="btnExportZip">Export Finished (ZIP)</button>
+      </div>
+    </div>
+
+    <div id="scenePreview" class="list" style="margin-top:12px;display:none"></div>
+  </div>
+
+  <!-- Progress (bottom) -->
+  <div class="progress-wrap" id="progressWrap" hidden>
+    <div class="progress-row">
+      <div id="progressLabel">Idle</div>
+      <div class="bar"><div class="fill" id="progressFill"></div></div>
+      <button class="btn-outline" id="btnProgStop">Stop</button>
     </div>
   </div>
 
@@ -106,80 +120,53 @@
   </div>
 
 <script>
-/* ===== State & constants ===== */
-const KEY_TEXT="bookAnimator:text", KEY_CFG="bookAnimator:settings", KEY_CHARS="bookAnimator:characters", KEY_ASSETS="bookAnimator:assets";
-const OPENAI_VOICES = ["Maple","Juniper","Spruce","Breeze","Vale","Shimmer","Cove","Sol","Ember","Nova","Alloy","Verse","Hikari","Ari","Mori","Sage","Amber","Copper","Pearl","Onyx"];
+/* ===== Keys & storage ===== */
+const KEY_TEXT="bookAnimator:text", KEY_CFG="bookAnimator:settings", KEY_CHARS="bookAnimator:characters", KEY_ASSETS="bookAnimator:assets", KEY_FRAMES="bookAnimator:frames", KEY_OPENAI="bookAnimator:openai";
+function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) || def }catch{ return def } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 
+/* ===== Default settings ===== */
+const OPENAI_VOICES = ["Maple","Juniper","Spruce","Breeze","Vale","Shimmer","Cove","Sol","Ember","Nova","Alloy","Verse","Hikari","Ari","Mori","Sage","Amber","Copper","Pearl","Onyx"];
 const ANIM_STYLES = ["Cartoon","Flipbook","Comic","Slideshow","Anime","Dark Fantasy","Lifelike","Stop-Motion","Motion-Comics","Pixar-Like","Minimalist Line-Art","Water-Ink","Claymation","Paper-Cut","Retro 8-bit","3D Toon"];
 const ART_STYLES  = ["Fantasy","Anime","Noir","Watercolor","3D","Sketch","Oil Paint","Ink & Wash","Pixel Art","Low-Poly","Photoreal","Cel-shade","Vaporwave","Cyberpunk","Steampunk","Storybook"];
+const ILLUST_MODES = ["OpenAI Images","Local Stub (no API)"]; // <— real mode is default now
 
-const DEFAULT_SETTINGS={animationStyle:"Cartoon", artStyle:"Fantasy", aspect:"16:9", fps:24, audience:"Adults"};
+const DEFAULT_SETTINGS={animationStyle:"Cartoon", artStyle:"Fantasy", aspect:"16:9", fps:24, audience:"Adults", illustrationMode:"OpenAI Images"};
 let settings = load(KEY_CFG, DEFAULT_SETTINGS);
 
-/* === Characters: pre-seeded full cast (voices + traits + backstories) === */
+/* ===== Characters (your cast) ===== */
 let characters = load(KEY_CHARS, [
   { id:"narrator", name:"Narrator", age:"", voice:"Ember", imageData:"", imageName:"", traits:"Neutral, clear, warm", backstory:"Default narrator voice." },
-  // Sidetrack Sally crew
-  { id:"c_sally", name:"Sidetracked Sally", age:"Teen/Young Adult", voice:"Maple", imageData:"", imageName:"",
-    traits:"Blonde hair, blue eyes; easily distracted, spots hidden details; carries notebook; flowing pink clothing; dark-fantasy anime vibe",
-    backstory:"Curious wanderer whose sidetracks uncover clues others miss." },
-  { id:"c_zen", name:"Zen Zena", age:"Adult", voice:"Shimmer", imageData:"", imageName:"",
-    traits:"Silver/white hair, blue eyes; calm strategist; meditates; carries tea; blind; flowing robes; dark-fantasy anime style",
-    backstory:"Serene mentor who guides the group with patience and foresight." },
-  { id:"c_skip", name:"Skater Skip (Chris)", age:"Teen/Young Adult", voice:"Breeze", imageData:"", imageName:"",
-    traits:"Long blonde bun, blue eyes; skater gear with fantasy touches; athletic; skatepark scenes; glowing dark-fantasy vibe",
-    backstory:"Adrenaline junkie who uses board skills for bold rescues." },
-  { id:"c_dan", name:"Dark Dan (Darwin)", age:"Adult", voice:"Spruce", imageData:"", imageName:"",
-    traits:"Dark hair, blue eyes; lip piercing, gauged ears; intense; layered dark clothing with gothic armor",
-    backstory:"Brooding protector with a tough past and a strict code." },
-  { id:"c_danielle", name:"Darling Danielle (Dakota)", age:"Adult", voice:"Juniper", imageData:"", imageName:"",
-    traits:"Pregnant; blonde hair, blue eyes; warm and nurturing; soft fantasy maternity robes",
-    backstory:"Heart of the crew; balances danger with compassion and care." },
-  { id:"c_gus", name:"Grumpy Gus (Bob)", age:"Older Adult", voice:"Cove", imageData:"", imageName:"",
-    traits:"Blonde hair, blue eyes; short military cut; long gray goatee; gruff but loyal; rugged dark-fantasy attire",
-    backstory:"Gruff veteran whose loyalty shows when it matters most." },
-  { id:"c_annie", name:"Ambush Annie (Amy)", age:"Adult", voice:"Sol", imageData:"", imageName:"",
-    traits:"Dark hair, brown eyes, round face; sturdy build; tactical fantasy armor; bold and no-nonsense",
-    backstory:"Ambush specialist who plans and executes precise strikes." },
-  { id:"c_callie", name:"Creative Callie", age:"Young Adult", voice:"Vale", imageData:"", imageName:"",
-    traits:"Inventive, quick with ideas and sketches", backstory:"Concept artist of the crew; turns ideas into visuals fast." },
-  // The Dominator family
-  { id:"c_dominic", name:"Dominic (The Dominator)", age:"Teen", voice:"Verse", imageData:"", imageName:"",
-    traits:"Tall, thin but muscular farm kid; blonde; bright blue eyes; witty; crooked smile; often carries a slingshot; hero suit with green energy/red cape",
-    backstory:"Farm-raised teen hero who protects home and family while staying humble." },
-  { id:"c_naomi", name:"Naomi", age:"Younger Sister", voice:"Nova", imageData:"", imageName:"",
-    traits:"Looks up to Dominic; loves animals", backstory:"Little sister who brings heart and levity to the farm." },
-  { id:"c_oliver", name:"Oliver", age:"Teen (adopted)", voice:"Ari", imageData:"", imageName:"",
-    traits:"Adopted same-age brother; processing complex past; stays in touch with grandmother",
-    backstory:"Finding belonging with Dominic’s family while processing a hard past." },
-  { id:"c_teddy", name:"Teddy", age:"Young Brother", voice:"Mori", imageData:"", imageName:"",
-    traits:"Mixed descent; curious, playful, energetic", backstory:"Tiny sidekick whose curiosity sparks small adventures." },
-  // Journey family
-  { id:"c_journey", name:"Journey", age:"4–5", voice:"Pearl", imageData:"", imageName:"",
-    traits:"Light brown hair; brown eyes; white dress; playful and sweet", backstory:"Imaginative child whose curiosity kicks off each adventure." },
-  { id:"c_sophie", name:"Sophie", age:"6–7", voice:"Sage", imageData:"", imageName:"",
-    traits:"Light brown/dirty-blonde hair; green eyes; big-sister energy", backstory:"Protective older sister who nudges Journey the right way." },
-  { id:"c_abby", name:"Abby (Mom)", age:"Adult", voice:"Amber", imageData:"", imageName:"",
-    traits:"Long dark brown hair; patient and loving", backstory:"Gentle guide who anchors family adventures with warmth." },
-  { id:"c_mark", name:"Mark (Dad)", age:"Adult", voice:"Alloy", imageData:"", imageName:"",
-    traits:"Light red hair; playful and fun", backstory:"Playful dad whose jokes keep spirits high on tough days." },
-  { id:"c_bear", name:"Bear (Dog)", age:"Pup", voice:"Onyx", imageData:"", imageName:"",
-    traits:"Faithful dog; always part of adventures", backstory:"Four-legged companion who senses trouble before anyone else." }
+  { id:"c_sally", name:"Sidetracked Sally", age:"Teen/Young Adult", voice:"Maple", imageData:"", imageName:"", traits:"Blonde hair, blue eyes; easily distracted; notebook; flowing pink; dark-fantasy anime vibe", backstory:"Curious wanderer whose sidetracks uncover clues others miss." },
+  { id:"c_zen", name:"Zen Zena", age:"Adult", voice:"Shimmer", imageData:"", imageName:"", traits:"Silver/white hair; calm strategist; blind; tea; flowing robes", backstory:"Serene mentor with patience and foresight." },
+  { id:"c_skip", name:"Skater Skip (Chris)", age:"Teen/Young Adult", voice:"Breeze", imageData:"", imageName:"", traits:"Long blonde bun; skater gear; athletic; fantasy touches", backstory:"Adrenaline junkie; uses board skills for bold rescues." },
+  { id:"c_dan", name:"Dark Dan (Darwin)", age:"Adult", voice:"Spruce", imageData:"", imageName:"", traits:"Dark hair; lip piercing; gauged ears; gothic armor", backstory:"Brooding protector with a strict code." },
+  { id:"c_danielle", name:"Darling Danielle (Dakota)", age:"Adult", voice:"Juniper", imageData:"", imageName:"", traits:"Pregnant; blonde; warm, nurturing", backstory:"Heart of the crew; compassion in danger." },
+  { id:"c_gus", name:"Grumpy Gus (Bob)", age:"Older Adult", voice:"Cove", imageData:"", imageName:"", traits:"Short military cut; long gray goatee; gruff but loyal", backstory:"Gruff veteran whose loyalty shows when it matters." },
+  { id:"c_annie", name:"Ambush Annie (Amy)", age:"Adult", voice:"Sol", imageData:"", imageName:"", traits:"Dark hair; round face; tactical armor", backstory:"Ambush specialist executing precise strikes." },
+  { id:"c_callie", name:"Creative Callie", age:"Young Adult", voice:"Vale", imageData:"", imageName:"", traits:"Inventive; quick with ideas and sketches", backstory:"Concept artist of the crew." },
+  { id:"c_dominic", name:"Dominic (The Dominator)", age:"Teen", voice:"Verse", imageData:"", imageName:"", traits:"Farm kid; blonde; blue eyes; witty; slingshot; hero suit", backstory:"Teen hero protecting home and family." },
+  { id:"c_naomi", name:"Naomi", age:"Younger Sister", voice:"Nova", imageData:"", imageName:"", traits:"Looks up to Dominic; loves animals", backstory:"Brings heart and levity to the farm." },
+  { id:"c_oliver", name:"Oliver", age:"Teen (adopted)", voice:"Ari", imageData:"", imageName:"", traits:"Adopted; complex past; letters to grandmother", backstory:"Finding belonging while processing the past." },
+  { id:"c_teddy", name:"Teddy", age:"Young Brother", voice:"Mori", imageData:"", imageName:"", traits:"Curious, playful, energetic", backstory:"Tiny sidekick sparking mini adventures." },
+  { id:"c_journey", name:"Journey", age:"4–5", voice:"Pearl", imageData:"", imageName:"", traits:"Light brown hair; brown eyes; white dress; playful", backstory:"Imaginative child starting each adventure." },
+  { id:"c_sophie", name:"Sophie", age:"6–7", voice:"Sage", imageData:"", imageName:"", traits:"Dirty-blonde; green eyes; big-sister energy", backstory:"Protective older sister." },
+  { id:"c_abby", name:"Abby (Mom)", age:"Adult", voice:"Amber", imageData:"", imageName:"", traits:"Long dark hair; patient; loving", backstory:"Gentle guide anchoring the family." },
+  { id:"c_mark", name:"Mark (Dad)", age:"Adult", voice:"Alloy", imageData:"", imageName:"", traits:"Light red hair; playful; fun", backstory:"Dad jokes keep spirits high." },
+  { id:"c_bear", name:"Bear (Dog)", age:"Pup", voice:"Onyx", imageData:"", imageName:"", traits:"Faithful dog; senses trouble early", backstory:"Four-legged companion." }
 ]);
 
 let assets = load(KEY_ASSETS, []);
+let frames = load(KEY_FRAMES, []);
 const ta = document.getElementById("bookText");
 if(localStorage.getItem(KEY_TEXT)) ta.value = localStorage.getItem(KEY_TEXT);
 
-/* ===== Helpers ===== */
-function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) || def }catch{ return def } }
-function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+/* ===== UI helpers ===== */
 function val(id){ return document.getElementById(id).value }
-function setVal(id,v){ document.getElementById(id).value = v }
 function esc(s){return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+const mask=document.getElementById("mask"), modal=document.getElementById("modal");
 function openModal(html){ modal.innerHTML=html; mask.classList.add("show"); }
 function closeModal(){ mask.classList.remove("show"); modal.innerHTML=""; }
-const mask=document.getElementById("mask"), modal=document.getElementById("modal");
 
 /* ===== Menus ===== */
 const btnLeft=document.getElementById("btnLeft"), btnRight=document.getElementById("btnRight");
@@ -189,15 +176,16 @@ btnRight.onclick=e=>{ menuRight.hidden=!menuRight.hidden; menuLeft.hidden=true; 
 document.addEventListener("click", (e)=>{ if(!e.target.closest(".menu") && !e.target.closest(".hambtn")){ menuLeft.hidden=true; menuRight.hidden=true; }});
 mask.onclick=e=>{ if(e.target===mask) closeModal(); };
 
-/* ===== Top buttons ===== */
-document.getElementById("btnSave").onclick = ()=>{ localStorage.setItem(KEY_TEXT, ta.value||""); alert("Saved."); };
+/* ===== Buttons ===== */
+document.getElementById("btnSave").onclick = ()=>{ save(KEY_TEXT, ta.value||""); alert("Saved."); };
 document.getElementById("btnExportZip").onclick = exportZip;
+document.getElementById("btnPreviewScenes").onclick = previewScenes;
 
 /* ===== Right menu actions ===== */
 menuRight.onclick = (e)=>{
   const a=e.target?.dataset?.right; if(!a) return; menuRight.hidden=true;
   if(a==="new"){ if(confirm("Clear text?")) ta.value = ""; }
-  if(a==="save"){ localStorage.setItem(KEY_TEXT, ta.value||""); alert("Saved to browser storage."); }
+  if(a==="save"){ save(KEY_TEXT, ta.value||""); alert("Saved to browser storage."); }
   if(a==="open") openProject();
   if(a==="exportZip") exportZip();
 };
@@ -209,55 +197,12 @@ menuLeft.onclick = (e)=>{
   if(a==="characters") showCharacters();
   if(a==="importpdf") showPdfImport();
   if(a==="assets") showAssets();
-  if(a==="secrets") alert("Secrets vault will live here (encrypted in localStorage).");
-  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Use Settings/Characters\n3) Import PDF images\n4) Save or Export ZIP.");
-  if(a==="about") alert("Book Animator — one-file demo with PDF image importer.");
+  if(a==="secrets") showSecrets();
+  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Settings/Characters\n3) (Optional) Import PDF images\n4) START\n5) Export ZIP.");
+  if(a==="about") alert("Book Animator — single-file app with OpenAI Images integration and Start button.");
 };
 
-/* ===== Project Open / ZIP Export ===== */
-function openProject(){
-  const input=document.createElement("input");
-  input.type="file"; input.accept=".bookanim.json,application/json";
-  input.onchange=async (e)=>{
-    const f=e.target.files?.[0]; if(!f) return;
-    try{
-      const txt=await f.text(); const p=JSON.parse(txt);
-      if(p.text!=null) ta.value=p.text;
-      if(p.settings) settings=p.settings, save(KEY_CFG,settings);
-      if(Array.isArray(p.characters)) characters=p.characters, save(KEY_CHARS,characters);
-      if(Array.isArray(p.assets)) assets=p.assets, save(KEY_ASSETS,assets);
-      alert("Project loaded.");
-    }catch{ alert("Invalid project file."); }
-  };
-  input.click();
-}
-async function exportZip(){
-  const zip = new JSZip();
-  const project = { version:1, text: ta.value||"", settings, characters, assets };
-  zip.file("book-animator.bookanim.json", JSON.stringify(project, null, 2));
-  zip.file("book-text.txt", ta.value||"");
-  zip.file("characters.json", JSON.stringify(characters.map(c=>({...c, imageData:undefined})), null, 2));
-  zip.file("assets.json", JSON.stringify(assets, null, 2));
-  const cf = zip.folder("characters");
-  for(const c of characters){
-    if(c.imageData && c.imageData.startsWith("data:")){
-      const {mime, base64} = splitDataUrl(c.imageData);
-      const ext = mimeToExt(mime);
-      const safe = (c.name||"character").replace(/[^a-z0-9]+/gi,"_").slice(0,40);
-      cf.file(`${safe}${ext}`, base64, {base64:true});
-    }
-  }
-  const blob = await zip.generateAsync({type:"blob"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "BookAnimator_Finished.zip";
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(a.href);
-}
-function splitDataUrl(d){ const m = d.match(/^data:(.+?);base64,(.*)$/); return { mime: m?m[1]:"image/png", base64: m?m[2]:"" }; }
-function mimeToExt(m){ return m.includes("jpeg")?".jpg": m.includes("png")?".png": m.includes("webp")?".webp": ".bin"; }
-
-/* ===== Settings ===== */
+/* ===== Settings (includes Illustration Mode) ===== */
 function showSettings(){
   openModal(`
     <h2>Settings</h2>
@@ -268,8 +213,8 @@ function showSettings(){
       <div class="field"><label>Art style</label>
         <select id="stArt" class="select">${ART_STYLES.map(o=>`<option ${o===settings.artStyle?"selected":""}>${o}</option>`).join("")}</select>
       </div>
-      <div class="field"><label>Audience</label>
-        <select id="stAudience" class="select">${["Kids","Teens","Adults","All Ages"].map(o=>`<option ${o===settings.audience?"selected":""}>${o}</option>`).join("")}</select>
+      <div class="field"><label>Illustration Mode</label>
+        <select id="stIll" class="select">${ILLUST_MODES.map(o=>`<option ${o===settings.illustrationMode?"selected":""}>${o}</option>`).join("")}</select>
       </div>
       <div class="field"><label>Aspect</label>
         <select id="stAspect" class="select">${["16:9","9:16","1:1","4:3","21:9"].map(o=>`<option ${o===settings.aspect?"selected":""}>${o}</option>`).join("")}</select>
@@ -280,7 +225,7 @@ function showSettings(){
       <button class="btn-outline" onclick="closeModal()">Cancel</button>
       <button class="btn" onclick="(function(){
         settings.animationStyle=val('stAnim'); settings.artStyle=val('stArt');
-        settings.audience=val('stAudience'); settings.aspect=val('stAspect');
+        settings.illustrationMode=val('stIll'); settings.aspect=val('stAspect');
         settings.fps=parseInt(val('stFps'))||24; save(KEY_CFG,settings);
         closeModal(); alert('Settings saved.');
       })()">Save</button>
@@ -288,18 +233,35 @@ function showSettings(){
   `);
 }
 
-/* ===== Characters (library + image upload) ===== */
+/* ===== Secrets (API Keys) ===== */
+function showSecrets(){
+  const current = load(KEY_OPENAI, {apiKey:""});
+  openModal(`
+    <h2>Secrets (API Keys)</h2>
+    <div class="field"><label>OpenAI API Key</label>
+      <input id="openaiKey" class="input" placeholder="sk-..." value="${esc(current.apiKey||"")}"/>
+      <small style="color:var(--muted)">Stored locally on this device. Used only to call OpenAI Images from your browser.</small>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn" onclick="(function(){ const k=document.getElementById('openaiKey').value.trim(); save(KEY_OPENAI,{apiKey:k}); closeModal(); alert('Saved API key.'); })()">Save Key</button>
+    </div>
+  `);
+}
+function getOpenAIKey(){
+  const s = load(KEY_OPENAI, {apiKey:""}); return (s && s.apiKey) ? s.apiKey.trim() : "";
+}
+
+/* ===== Characters (edit & image upload) ===== */
 function showCharacters(){
   openModal(`
     <h2>Characters</h2>
     <div class="list" id="charList">
       ${characters.map(c=>`
-        <div class="charrow">
-          <div><b>${esc(c.name)}</b></div>
-          <div>${esc(c.age||"-")}</div>
-          <div>${esc(c.voice||"-")}</div>
-          <div class="row" style="gap:6px">
+        <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.4rem 0">
+          <div class="row" style="gap:10px;align-items:center">
             ${c.imageData?`<img class="thumb" src="${c.imageData}" alt="${esc(c.name)}"/>`:`<div class="thumb" title="No image"></div>`}
+            <div><b>${esc(c.name)}</b><div class="small" style="color:var(--muted)">${esc(c.voice||"-")} · ${esc(c.age||"-")}</div></div>
           </div>
           <div class="row" style="gap:6px">
             <button class="btn-outline" onclick="editChar('${c.id}')">Edit</button>
@@ -311,12 +273,12 @@ function showCharacters(){
     <h3 style="margin:.85rem 0 .5rem">Add Character</h3>
     <div class="grid">
       <div class="field"><label>Name</label><input class="input" id="cName"/></div>
-      <div class="field"><label>Age</label><input class="input" id="cAge" placeholder="e.g., 12 or adult"/></div>
+      <div class="field"><label>Age</label><input class="input" id="cAge"/></div>
       <div class="field"><label>Voice</label>
         <select class="select" id="cVoice">${OPENAI_VOICES.map(v=>`<option>${v}</option>`).join("")}</select>
       </div>
       <div class="field"><label>Image</label><input class="input" type="file" id="cImg" accept="image/*"/></div>
-      <div class="field"><label>Characteristics (short traits)</label><input class="input" id="cTraits" placeholder="e.g., brave, sarcastic, loyal"/></div>
+      <div class="field"><label>Traits</label><input class="input" id="cTraits" placeholder="brave, sarcastic, loyal"/></div>
       <div class="field" style="grid-column:1/-1"><label>Backstory</label><textarea class="area" id="cBack"></textarea></div>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
@@ -327,19 +289,17 @@ function showCharacters(){
 }
 async function readFileAsDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 async function saveNewCharacter(){
-  const name = val("cName").trim(); if(!name) return alert("Name is required.");
-  const age = val("cAge").trim(); const voice = val("cVoice");
-  const traits = val("cTraits").trim(); const backstory = val("cBack").trim();
-  let imageData = "", imageName = "";
-  const f = document.getElementById("cImg").files?.[0];
-  if(f){ imageData = await readFileAsDataURL(f); imageName = f.name; }
-  const ch = { id:"c_"+Math.random().toString(36).slice(2,9), name, age, voice, imageData, imageName, traits, backstory };
-  characters.push(ch); save(KEY_CHARS, characters); showCharacters();
+  const name = (document.getElementById("cName").value||"").trim(); if(!name) return alert("Name is required.");
+  const age = (document.getElementById("cAge").value||"").trim();
+  const voice = document.getElementById("cVoice").value;
+  const traits = (document.getElementById("cTraits").value||"").trim();
+  const backstory = (document.getElementById("cBack").value||"").trim();
+  let imageData="", imageName="";
+  const f = document.getElementById("cImg").files?.[0]; if(f){ imageData=await readFileAsDataURL(f); imageName=f.name; }
+  characters.push({ id:"c_"+Math.random().toString(36).slice(2,9), name, age, voice, imageData, imageName, traits, backstory });
+  save(KEY_CHARS, characters); showCharacters();
 }
-function delChar(id){
-  if(!confirm("Delete this character?")) return;
-  characters = characters.filter(x=>x.id!==id); save(KEY_CHARS, characters); showCharacters();
-}
+function delChar(id){ if(!confirm("Delete this character?")) return; characters = characters.filter(x=>x.id!==id); save(KEY_CHARS, characters); showCharacters(); }
 function editChar(id){
   const c = characters.find(x=>x.id===id); if(!c) return;
   openModal(`
@@ -351,7 +311,7 @@ function editChar(id){
         <select class="select" id="eVoice">${OPENAI_VOICES.map(v=>`<option ${v===c.voice?"selected":""}>${v}</option>`).join("")}</select>
       </div>
       <div class="field"><label>Replace Image</label><input class="input" type="file" id="eImg" accept="image/*"/></div>
-      <div class="field"><label>Characteristics</label><input class="input" id="eTraits" value="${esc(c.traits||"")}"/></div>
+      <div class="field"><label>Traits</label><input class="input" id="eTraits" value="${esc(c.traits||"")}"/></div>
       <div class="field" style="grid-column:1/-1"><label>Backstory</label><textarea class="area" id="eBack">${esc(c.backstory||"")}</textarea></div>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
@@ -362,24 +322,26 @@ function editChar(id){
 }
 async function saveCharEdit(id){
   const c = characters.find(x=>x.id===id); if(!c) return;
-  c.name = val("eName").trim(); c.age = val("eAge").trim(); c.voice = val("eVoice");
-  c.traits = val("eTraits").trim(); c.backstory = val("eBack").trim();
-  const f = document.getElementById("eImg").files?.[0];
-  if(f){ c.imageData = await readFileAsDataURL(f); c.imageName=f.name; }
+  c.name = document.getElementById("eName").value.trim();
+  c.age = document.getElementById("eAge").value.trim();
+  c.voice = document.getElementById("eVoice").value;
+  c.traits = document.getElementById("eTraits").value.trim();
+  c.backstory = document.getElementById("eBack").value.trim();
+  const f = document.getElementById("eImg").files?.[0]; if(f){ c.imageData = await readFileAsDataURL(f); c.imageName=f.name; }
   save(KEY_CHARS, characters); showCharacters();
 }
 
-/* ===== PDF Importer (assign page to character) ===== */
+/* ===== PDF Importer ===== */
 function showPdfImport(){
   openModal(`
     <h2>Import Images (PDF)</h2>
-    <p class="small">Load your PDF (e.g., <i>Sidetrack_Sally_Illustrated_Book (4).pdf</i> or <i>Journey_Final_Corrected_Book (1).pdf</i>). Click a page to assign it as the image for a character.</p>
+    <p class="small">Load your illustrated PDFs. Click a page to assign to a character.</p>
     <div class="row" style="gap:8px;flex-wrap:wrap">
       <input type="file" id="pdfFile" accept="application/pdf" class="input" />
       <button class="btn" id="btnLoadPdf">Load PDF</button>
       <button class="btn-outline" onclick="closeModal()">Close</button>
     </div>
-    <div id="pdfName" class="small" style="margin-top:.5rem;color:${'var(--muted)'}"></div>
+    <div id="pdfName" class="small" style="margin-top:.5rem;color:var(--muted)"></div>
     <div id="pdfGrid" class="pdfgrid" style="margin-top:.5rem"></div>
   `);
   document.getElementById("btnLoadPdf").onclick = async ()=>{
@@ -391,32 +353,27 @@ function showPdfImport(){
     const grid = document.getElementById("pdfGrid"); grid.innerHTML="";
     for(let p=1;p<=pdf.numPages;p++){
       const page = await pdf.getPage(p);
-      const viewport = page.getViewport({scale:0.4}); // thumbnail scale
+      const viewport = page.getViewport({scale:0.4});
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       canvas.width = Math.floor(viewport.width);
       canvas.height= Math.floor(viewport.height);
       await page.render({canvasContext:ctx, viewport}).promise;
 
-      const card = document.createElement("div");
-      card.className = "pdfthumb";
-      const cap = document.createElement("div");
-      cap.className = "cap";
+      const card = document.createElement("div"); card.className = "pdfthumb";
+      const cap = document.createElement("div"); cap.className = "cap";
       cap.innerHTML = `<span>Page ${p}</span> <button class="btn-outline" data-p="${p}">Assign…</button>`;
-      card.appendChild(canvas); card.appendChild(cap);
-      grid.appendChild(card);
+      card.appendChild(canvas); card.appendChild(cap); grid.appendChild(card);
 
-      // Assign handler
       cap.querySelector("button").onclick = ()=>{
-        const dataURL = canvas.toDataURL("image/jpeg", 0.9); // thumbnail quality
+        const dataURL = canvas.toDataURL("image/jpeg", 0.9);
         pickCharacterAndAssign(dataURL, f.name + " - page " + p + ".jpg");
       };
     }
   };
 }
 function pickCharacterAndAssign(dataURL, suggestedName){
-  // Simple chooser
-  const opts = characters.map((c,i)=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  const opts = characters.map((c)=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
   openModal(`
     <h2>Assign Image to Character</h2>
     <div class="row" style="align-items:flex-start;gap:16px">
@@ -441,14 +398,185 @@ function pickCharacterAndAssign(dataURL, suggestedName){
   `);
 }
 
+/* ===== Scenes & Start Animation ===== */
+function splitIntoScenes(text){
+  return text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean).map((t,i)=>({index:i, text:t}));
+}
+function previewScenes(){
+  const scenes = splitIntoScenes(ta.value||"");
+  const box = document.getElementById("scenePreview");
+  if(!scenes.length){ box.style.display="none"; alert("No scenes found. Add blank lines between paragraphs to create scenes."); return; }
+  box.style.display="block";
+  box.innerHTML = scenes.map(s=>`<div style="padding:.5rem;border-bottom:1px solid var(--border)"><b>Scene ${s.index+1}</b><div class="small" style="color:var(--muted)">${esc((s.text.slice(0,200)+'…').replace(/\n/g,' '))}</div></div>`).join("");
+}
+
+const progWrap  = document.getElementById("progressWrap");
+const progFill  = document.getElementById("progressFill");
+const progLabel = document.getElementById("progressLabel");
+const btnProgStop = document.getElementById("btnProgStop");
+btnProgStop.onclick = ()=> stopPipeline = true;
+let stopPipeline = false;
+function resetProgress(){ progWrap.hidden=false; progFill.style.width="0%"; progLabel.textContent="Starting…"; }
+function setProgress(p,label){ progFill.style.width = Math.max(0,Math.min(100,p))+"%"; progLabel.textContent = label; }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+document.getElementById("btnStart").onclick = startAnimation;
+
+async function startAnimation(){
+  const scenes = splitIntoScenes(ta.value||"");
+  if(!scenes.length){ alert("No scenes found. Add blank lines between paragraphs, then press Start."); return; }
+  stopPipeline=false; resetProgress(); frames = [];
+  const mode = settings.illustrationMode || "OpenAI Images";
+
+  for(let i=0;i<scenes.length;i++){
+    if(stopPipeline){ setProgress(0,"Stopped"); return; }
+    const sc = scenes[i];
+    setProgress(Math.round((i/scenes.length)*80)+10, `Illustrating scene ${i+1}/${scenes.length}…`);
+    let dataURL = "";
+    try{
+      if(mode==="OpenAI Images"){
+        dataURL = await illustrateWithOpenAI(sc, settings);
+      }else{
+        dataURL = await illustrateSceneStub(sc, settings.animationStyle, settings.artStyle);
+      }
+    }catch(err){
+      console.error(err);
+      dataURL = await illustrateSceneStub(sc, settings.animationStyle, settings.artStyle);
+    }
+    frames.push({ index: sc.index, dataURL });
+    await sleep(150);
+  }
+
+  setProgress(100,"Done. Export ZIP to save frames.");
+  save(KEY_FRAMES, frames);
+
+  const box = document.getElementById("scenePreview");
+  box.style.display="block";
+  box.innerHTML = frames.map(f=>`<div class="row" style="gap:8px;border-bottom:1px solid var(--border);padding:.4rem 0"><img src="${f.dataURL}" class="thumb"/><div>Scene ${f.index+1}</div></div>`).join("");
+}
+
+/* ===== Local stub (fallback) ===== */
+async function illustrateSceneStub(scene, styleText, artText){
+  const W = 960, H = 540;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  const bgMap = {"Cartoon":"#151515","Flipbook":"#111","Comic":"#120f0f","Slideshow":"#0f1112","Anime":"#10121a","Dark Fantasy":"#0b0b12","Lifelike":"#0f0f0f","Stop-Motion":"#101010","Motion-Comics":"#110f14","Pixar-Like":"#0f1210","Minimalist Line-Art":"#0e0e0e","Water-Ink":"#0c0f12","Claymation":"#100e0e","Paper-Cut":"#12100e","Retro 8-bit":"#0e1012","3D Toon":"#0e1010"};
+  ctx.fillStyle = bgMap[styleText] || "#0d0d0d"; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = "rgba(255,45,45,0.25)"; ctx.fillRect(0,H-140,W,140);
+  ctx.fillStyle = "#fff"; ctx.font = "700 28px system-ui"; ctx.fillText(`${styleText} · ${artText}`, 24, 50);
+  ctx.font = "16px system-ui"; wrapText(ctx, scene.text.replace(/\s+/g,' ').slice(0,180), 24, 90, W-48, 22);
+  ctx.font = "700 36px system-ui"; ctx.fillStyle="#ff2d2d"; ctx.fillText(`Scene ${scene.index+1}`, 24, H-90);
+  ctx.font = "14px system-ui"; ctx.fillStyle="#fff"; ctx.fillText("Ken Burns / Parallax (stub)", 24, H-56);
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(' '); let line = '';
+  for (let n=0;n<words.length;n++){
+    const testLine = line + words[n] + ' '; if (ctx.measureText(testLine).width > maxWidth && n>0){ ctx.fillText(line, x, y); line = words[n] + ' '; y += lineHeight; } else { line = testLine; }
+  } ctx.fillText(line, x, y);
+}
+
+/* ===== OpenAI Images integration ===== */
+async function illustrateWithOpenAI(scene, settings){
+  const apiKey = getOpenAIKey();
+  if(!apiKey){ throw new Error("Missing OpenAI API key. Add it in Secrets (API Keys)."); }
+
+  // Build a prompt that respects style & art choices
+  const style = settings.animationStyle || "Cartoon";
+  const art   = settings.artStyle || "Fantasy";
+  const prompt = `Illustrate this scene in a ${style} animation look with ${art} art direction. Clear focal subject, cinematic composition, storybook clarity, vibrant but not noisy. Scene text: """${scene.text.slice(0,800)}"""`;
+
+  // Prefer gpt-image-1 (b64) but also accept URL responses
+  const resp = await fetch("https://api.openai.com/v1/images/generations", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":"Bearer "+apiKey
+    },
+    body: JSON.stringify({
+      model: "gpt-image-1",
+      prompt,
+      size: "1024x1024",
+      n: 1,
+      response_format: "b64_json"
+    })
+  });
+
+  if(!resp.ok){
+    const t = await resp.text();
+    throw new Error("OpenAI error: "+t);
+  }
+
+  const data = await resp.json();
+  // If API returns b64_json:
+  if(data?.data?.[0]?.b64_json){
+    return "data:image/jpeg;base64,"+data.data[0].b64_json;
+  }
+  // If API returns URL:
+  if(data?.data?.[0]?.url){
+    const imgUrl = data.data[0].url;
+    const imgBlob = await (await fetch(imgUrl)).blob();
+    return await blobToDataURL(imgBlob);
+  }
+  throw new Error("No image in response.");
+}
+function blobToDataURL(blob){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); }
+
+/* ===== Project Open / ZIP Export ===== */
+function openProject(){
+  const input=document.createElement("input");
+  input.type="file"; input.accept=".bookanim.json,application/json";
+  input.onchange=async (e)=>{
+    const f=e.target.files?.[0]; if(!f) return;
+    try{
+      const txt=await f.text(); const p=JSON.parse(txt);
+      if(p.text!=null) document.getElementById("bookText").value=p.text;
+      if(p.settings) settings=p.settings, save(KEY_CFG,settings);
+      if(Array.isArray(p.characters)) characters=p.characters, save(KEY_CHARS,characters);
+      if(Array.isArray(p.assets)) assets=p.assets, save(KEY_ASSETS,assets);
+      if(Array.isArray(p.frames)) frames=p.frames, save(KEY_FRAMES,frames);
+      alert("Project loaded.");
+    }catch{ alert("Invalid project file."); }
+  };
+  input.click();
+}
+async function exportZip(){
+  const zip = new JSZip();
+  const project = { version:1, text: document.getElementById("bookText").value||"", settings, characters, assets, frames };
+  zip.file("book-animator.bookanim.json", JSON.stringify(project, null, 2));
+  zip.file("book-text.txt", project.text);
+  zip.file("characters.json", JSON.stringify(characters.map(c=>({...c, imageData:undefined})), null, 2));
+  zip.file("assets.json", JSON.stringify(assets, null, 2));
+
+  const cf = zip.folder("characters");
+  for(const c of characters){
+    if(c.imageData && c.imageData.startsWith("data:")){
+      const {mime, base64} = splitDataUrl(c.imageData);
+      const ext = mimeToExt(mime);
+      const safe = (c.name||"character").replace(/[^a-z0-9]+/gi,"_").slice(0,40);
+      cf.file(`${safe}${ext}`, base64, {base64:true});
+    }
+  }
+  if(frames?.length){
+    const rf = zip.folder("renders");
+    frames.forEach((f,i)=>{ const {base64} = splitDataUrl(f.dataURL); rf.file(`scene-${String(i+1).padStart(3,'0')}.jpg`, base64, {base64:true}); });
+  }
+
+  const blob = await zip.generateAsync({type:"blob"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "BookAnimator_Finished.zip"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+}
+function splitDataUrl(d){ const m = d.match(/^data:(.+?);base64,(.*)$/); return { mime: m?m[1]:"image/jpeg", base64: m?m[2]:"" }; }
+function mimeToExt(m){ return m.includes("jpeg")?".jpg": m.includes("png")?".png": m.includes("webp")?".webp": ".bin"; }
+
 /* ===== Assets (simple) ===== */
 function showAssets(){
   openModal(`
     <h2>Assets</h2>
     <div class="list">${assets.map(a=>`
-      <div class="charrow" style="grid-template-columns:1fr 2fr auto">
-        <div><b>${esc(a.name||'(unnamed)')}</b></div>
-        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.url||'')}</div>
+      <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.4rem 0">
+        <div><b>${esc(a.name||'(unnamed)')}</b><div class="small" style="color:var(--muted)">${esc(a.url||'')}</div></div>
         <div class="row" style="gap:6px">
           <button class="btn-outline" onclick="window.open('${a.url}','_blank')">Open</button>
           <button class="btn btn-danger" onclick="(function(){assets=assets.filter(x=>x.id!=='${a.id}'); save(KEY_ASSETS,assets); showAssets();})()">Delete</button>
@@ -463,7 +591,7 @@ function showAssets(){
     <div class="row" style="justify-content:flex-end;margin-top:12px">
       <button class="btn-outline" onclick="closeModal()">Close</button>
       <button class="btn" onclick="(function(){
-        const n=val('aName').trim(), u=val('aUrl').trim();
+        const n=(document.getElementById('aName').value||'').trim(), u=(document.getElementById('aUrl').value||'').trim();
         if(!u) return alert('URL required');
         assets.push({id:'a_'+Math.random().toString(36).slice(2,9), name:n, url:u}); save(KEY_ASSETS, assets); showAssets();
       })()">Save Asset</button>
