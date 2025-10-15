@@ -4,8 +4,17 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Book Animator</title>
+
 <!-- JSZip for ZIP export -->
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<!-- PDF.js (for importing character images from your PDFs) -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.js"></script>
+<script>
+  // Point workerSrc at the same CDN
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js";
+</script>
+
 <style>
   :root{ --bg:#000; --fg:#fff; --muted:#cfcfcf; --panel:#0e0e0e; --border:#2a2a2a; --accent:#ff2d2d; --accent-hover:#ff4747; }
   html,body{height:100%}
@@ -20,11 +29,12 @@
   .btn:hover{background:var(--accent-hover)}
   .btn-outline{background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;padding:.6rem 1rem;cursor:pointer;font-weight:800}
   .btn-outline:hover{background:rgba(255,45,45,.15)}
+  .btn-danger{background:#b31313}
   .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}
   /* Hamburgers & menus */
   .hambtn{position:fixed;top:.75rem;z-index:1000;width:46px;height:46px;display:grid;place-items:center;background:var(--panel);color:var(--fg);border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.45)}
   .hambtn.left{left:.75rem} .hambtn.right{right:.75rem}
-  .menu{position:fixed;top:3.9rem;z-index:999;min-width:240px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55)}
+  .menu{position:fixed;top:3.9rem;z-index:999;min-width:280px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55)}
   .menu.left{left:.75rem} .menu.right{right:.75rem}
   .item{padding:.75rem .95rem;cursor:pointer;border-bottom:1px solid var(--border)}
   .item:last-child{border-bottom:none}
@@ -32,14 +42,25 @@
   /* Modal */
   .mask{position:fixed;inset:0;display:none;place-items:center;z-index:1100;background:rgba(0,0,0,.6)}
   .mask.show{display:grid}
-  .modal{width:min(92vw,880px);background:#0d0d0d;color:var(--fg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.7);padding:1rem 1.25rem}
+  .modal{width:min(96vw,1000px);background:#0d0d0d;color:var(--fg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.7);padding:1rem 1.25rem}
   .row{display:flex;gap:12px;align-items:center}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .field{display:flex;flex-direction:column;gap:6px}
-  .input,.select{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}
-  .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:260px;overflow:auto}
-  .char{display:grid;grid-template-columns:1.2fr .5fr .7fr 1fr auto;gap:8px;align-items:center;padding:.4rem;border-bottom:1px solid var(--border)}
-  .char:last-child{border-bottom:none}
+  .input,.select,.area{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}
+  .area{min-height:90px}
+  .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:320px;overflow:auto}
+  .charrow{display:grid;grid-template-columns:1.2fr .6fr .8fr 1fr auto;gap:8px;align-items:center;padding:.4rem;border-bottom:1px solid var(--border)}
+  .charrow:last-child{border-bottom:none}
+  .thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:#111}
+  .tabs{display:flex;gap:8px;margin:.25rem 0 .75rem}
+  .tab{border:2px solid var(--accent);padding:.35rem .6rem;border-radius:10px;cursor:pointer;font-weight:800;background:transparent}
+  .tab.active{background:var(--accent)}
+  /* PDF grid */
+  .pdfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:60vh;overflow:auto;margin-top:.5rem}
+  .pdfthumb{background:#111;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
+  .pdfthumb canvas{width:100%;height:auto;border-radius:6px;border:1px solid #222}
+  .pdfthumb .cap{font-size:.9rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
 </style>
 </head>
 <body>
@@ -51,6 +72,7 @@
   <div id="menuLeft" class="menu left" hidden>
     <div class="item" data-left="settings">Settings</div>
     <div class="item" data-left="characters">Characters</div>
+    <div class="item" data-left="importpdf">Import Images (PDF)</div>
     <div class="item" data-left="assets">Assets</div>
     <div class="item" data-left="secrets">Secrets (API Keys)</div>
     <div class="item" data-left="tutorial">Tutorial</div>
@@ -62,7 +84,7 @@
     <div class="item" data-right="new">New Project</div>
     <div class="item" data-right="save">Save Project</div>
     <div class="item" data-right="open">Open Project</div>
-    <div class="item" data-right="exportZip">Export All (ZIP)</div>
+    <div class="item" data-right="exportZip">Export Finished (ZIP)</div>
     <div class="item" data-right="exit">Exit</div>
   </div>
 
@@ -72,7 +94,6 @@
     <label for="bookText">Paste your book text:</label>
     <textarea id="bookText" placeholder="Paste text here…"></textarea>
 
-    <!-- NEW: prominent Export ZIP button -->
     <div class="actions">
       <button class="btn-outline" id="btnSave">Save</button>
       <button class="btn" id="btnExportZip">Export Finished (ZIP)</button>
@@ -85,11 +106,67 @@
   </div>
 
 <script>
-/* ===== State ===== */
+/* ===== State & constants ===== */
 const KEY_TEXT="bookAnimator:text", KEY_CFG="bookAnimator:settings", KEY_CHARS="bookAnimator:characters", KEY_ASSETS="bookAnimator:assets";
-const DEFAULT_SETTINGS={animationStyle:"Cartoon", artStyle:"Fantasy", aspect:"16:9", fps:24};
+const OPENAI_VOICES = ["Maple","Juniper","Spruce","Breeze","Vale","Shimmer","Cove","Sol","Ember","Nova","Alloy","Verse","Hikari","Ari","Mori","Sage","Amber","Copper","Pearl","Onyx"];
+
+const ANIM_STYLES = ["Cartoon","Flipbook","Comic","Slideshow","Anime","Dark Fantasy","Lifelike","Stop-Motion","Motion-Comics","Pixar-Like","Minimalist Line-Art","Water-Ink","Claymation","Paper-Cut","Retro 8-bit","3D Toon"];
+const ART_STYLES  = ["Fantasy","Anime","Noir","Watercolor","3D","Sketch","Oil Paint","Ink & Wash","Pixel Art","Low-Poly","Photoreal","Cel-shade","Vaporwave","Cyberpunk","Steampunk","Storybook"];
+
+const DEFAULT_SETTINGS={animationStyle:"Cartoon", artStyle:"Fantasy", aspect:"16:9", fps:24, audience:"Adults"};
 let settings = load(KEY_CFG, DEFAULT_SETTINGS);
-let characters = load(KEY_CHARS, [{id:"narrator", name:"Narrator", voice:"Ember"}]);
+
+/* === Characters: pre-seeded full cast (voices + traits + backstories) === */
+let characters = load(KEY_CHARS, [
+  { id:"narrator", name:"Narrator", age:"", voice:"Ember", imageData:"", imageName:"", traits:"Neutral, clear, warm", backstory:"Default narrator voice." },
+  // Sidetrack Sally crew
+  { id:"c_sally", name:"Sidetracked Sally", age:"Teen/Young Adult", voice:"Maple", imageData:"", imageName:"",
+    traits:"Blonde hair, blue eyes; easily distracted, spots hidden details; carries notebook; flowing pink clothing; dark-fantasy anime vibe",
+    backstory:"Curious wanderer whose sidetracks uncover clues others miss." },
+  { id:"c_zen", name:"Zen Zena", age:"Adult", voice:"Shimmer", imageData:"", imageName:"",
+    traits:"Silver/white hair, blue eyes; calm strategist; meditates; carries tea; blind; flowing robes; dark-fantasy anime style",
+    backstory:"Serene mentor who guides the group with patience and foresight." },
+  { id:"c_skip", name:"Skater Skip (Chris)", age:"Teen/Young Adult", voice:"Breeze", imageData:"", imageName:"",
+    traits:"Long blonde bun, blue eyes; skater gear with fantasy touches; athletic; skatepark scenes; glowing dark-fantasy vibe",
+    backstory:"Adrenaline junkie who uses board skills for bold rescues." },
+  { id:"c_dan", name:"Dark Dan (Darwin)", age:"Adult", voice:"Spruce", imageData:"", imageName:"",
+    traits:"Dark hair, blue eyes; lip piercing, gauged ears; intense; layered dark clothing with gothic armor",
+    backstory:"Brooding protector with a tough past and a strict code." },
+  { id:"c_danielle", name:"Darling Danielle (Dakota)", age:"Adult", voice:"Juniper", imageData:"", imageName:"",
+    traits:"Pregnant; blonde hair, blue eyes; warm and nurturing; soft fantasy maternity robes",
+    backstory:"Heart of the crew; balances danger with compassion and care." },
+  { id:"c_gus", name:"Grumpy Gus (Bob)", age:"Older Adult", voice:"Cove", imageData:"", imageName:"",
+    traits:"Blonde hair, blue eyes; short military cut; long gray goatee; gruff but loyal; rugged dark-fantasy attire",
+    backstory:"Gruff veteran whose loyalty shows when it matters most." },
+  { id:"c_annie", name:"Ambush Annie (Amy)", age:"Adult", voice:"Sol", imageData:"", imageName:"",
+    traits:"Dark hair, brown eyes, round face; sturdy build; tactical fantasy armor; bold and no-nonsense",
+    backstory:"Ambush specialist who plans and executes precise strikes." },
+  { id:"c_callie", name:"Creative Callie", age:"Young Adult", voice:"Vale", imageData:"", imageName:"",
+    traits:"Inventive, quick with ideas and sketches", backstory:"Concept artist of the crew; turns ideas into visuals fast." },
+  // The Dominator family
+  { id:"c_dominic", name:"Dominic (The Dominator)", age:"Teen", voice:"Verse", imageData:"", imageName:"",
+    traits:"Tall, thin but muscular farm kid; blonde; bright blue eyes; witty; crooked smile; often carries a slingshot; hero suit with green energy/red cape",
+    backstory:"Farm-raised teen hero who protects home and family while staying humble." },
+  { id:"c_naomi", name:"Naomi", age:"Younger Sister", voice:"Nova", imageData:"", imageName:"",
+    traits:"Looks up to Dominic; loves animals", backstory:"Little sister who brings heart and levity to the farm." },
+  { id:"c_oliver", name:"Oliver", age:"Teen (adopted)", voice:"Ari", imageData:"", imageName:"",
+    traits:"Adopted same-age brother; processing complex past; stays in touch with grandmother",
+    backstory:"Finding belonging with Dominic’s family while processing a hard past." },
+  { id:"c_teddy", name:"Teddy", age:"Young Brother", voice:"Mori", imageData:"", imageName:"",
+    traits:"Mixed descent; curious, playful, energetic", backstory:"Tiny sidekick whose curiosity sparks small adventures." },
+  // Journey family
+  { id:"c_journey", name:"Journey", age:"4–5", voice:"Pearl", imageData:"", imageName:"",
+    traits:"Light brown hair; brown eyes; white dress; playful and sweet", backstory:"Imaginative child whose curiosity kicks off each adventure." },
+  { id:"c_sophie", name:"Sophie", age:"6–7", voice:"Sage", imageData:"", imageName:"",
+    traits:"Light brown/dirty-blonde hair; green eyes; big-sister energy", backstory:"Protective older sister who nudges Journey the right way." },
+  { id:"c_abby", name:"Abby (Mom)", age:"Adult", voice:"Amber", imageData:"", imageName:"",
+    traits:"Long dark brown hair; patient and loving", backstory:"Gentle guide who anchors family adventures with warmth." },
+  { id:"c_mark", name:"Mark (Dad)", age:"Adult", voice:"Alloy", imageData:"", imageName:"",
+    traits:"Light red hair; playful and fun", backstory:"Playful dad whose jokes keep spirits high on tough days." },
+  { id:"c_bear", name:"Bear (Dog)", age:"Pup", voice:"Onyx", imageData:"", imageName:"",
+    traits:"Faithful dog; always part of adventures", backstory:"Four-legged companion who senses trouble before anyone else." }
+]);
+
 let assets = load(KEY_ASSETS, []);
 const ta = document.getElementById("bookText");
 if(localStorage.getItem(KEY_TEXT)) ta.value = localStorage.getItem(KEY_TEXT);
@@ -98,11 +175,13 @@ if(localStorage.getItem(KEY_TEXT)) ta.value = localStorage.getItem(KEY_TEXT);
 function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) || def }catch{ return def } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 function val(id){ return document.getElementById(id).value }
+function setVal(id,v){ document.getElementById(id).value = v }
+function esc(s){return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function openModal(html){ modal.innerHTML=html; mask.classList.add("show"); }
 function closeModal(){ mask.classList.remove("show"); modal.innerHTML=""; }
+const mask=document.getElementById("mask"), modal=document.getElementById("modal");
 
 /* ===== Menus ===== */
-const mask=document.getElementById("mask"), modal=document.getElementById("modal");
 const btnLeft=document.getElementById("btnLeft"), btnRight=document.getElementById("btnRight");
 const menuLeft=document.getElementById("menuLeft"), menuRight=document.getElementById("menuRight");
 btnLeft.onclick=e=>{ menuLeft.hidden=!menuLeft.hidden; menuRight.hidden=true; };
@@ -110,50 +189,32 @@ btnRight.onclick=e=>{ menuRight.hidden=!menuRight.hidden; menuLeft.hidden=true; 
 document.addEventListener("click", (e)=>{ if(!e.target.closest(".menu") && !e.target.closest(".hambtn")){ menuLeft.hidden=true; menuRight.hidden=true; }});
 mask.onclick=e=>{ if(e.target===mask) closeModal(); };
 
+/* ===== Top buttons ===== */
+document.getElementById("btnSave").onclick = ()=>{ localStorage.setItem(KEY_TEXT, ta.value||""); alert("Saved."); };
+document.getElementById("btnExportZip").onclick = exportZip;
+
 /* ===== Right menu actions ===== */
 menuRight.onclick = (e)=>{
   const a=e.target?.dataset?.right; if(!a) return; menuRight.hidden=true;
-  if(a==="new") if(confirm("Clear text?")) ta.value = "";
+  if(a==="new"){ if(confirm("Clear text?")) ta.value = ""; }
   if(a==="save"){ localStorage.setItem(KEY_TEXT, ta.value||""); alert("Saved to browser storage."); }
   if(a==="open") openProject();
   if(a==="exportZip") exportZip();
 };
 
-/* ===== Left menu actions (stubs for brevity) ===== */
+/* ===== Left menu actions ===== */
 menuLeft.onclick = (e)=>{
   const a=e.target?.dataset?.left; if(!a) return; menuLeft.hidden=true;
   if(a==="settings") showSettings();
   if(a==="characters") showCharacters();
+  if(a==="importpdf") showPdfImport();
   if(a==="assets") showAssets();
-  if(a==="secrets") alert("Secrets vault UI can live here (encrypted in localStorage).");
-  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Save or Export ZIP\n3) Settings/Characters in left menu.");
-  if(a==="about") alert("Book Animator — black/white/red demo.");
+  if(a==="secrets") alert("Secrets vault will live here (encrypted in localStorage).");
+  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Use Settings/Characters\n3) Import PDF images\n4) Save or Export ZIP.");
+  if(a==="about") alert("Book Animator — one-file demo with PDF image importer.");
 };
 
-/* ===== NEW: Page buttons ===== */
-document.getElementById("btnSave").onclick = ()=>{ localStorage.setItem(KEY_TEXT, ta.value||""); alert("Saved."); };
-document.getElementById("btnExportZip").onclick = exportZip;
-
-/* ===== Export ZIP (button & menu both call this) ===== */
-async function exportZip(){
-  const zip = new JSZip();
-  // Main project snapshot
-  const project = { version:1, text: ta.value||"", settings, characters, assets };
-  zip.file("book-animator.bookanim.json", JSON.stringify(project, null, 2));
-  // Separate helpful files
-  zip.file("book-text.txt", ta.value||"");
-  zip.file("characters.json", JSON.stringify(characters, null, 2));
-  zip.file("assets.json", JSON.stringify(assets, null, 2));
-  // Build and download
-  const blob = await zip.generateAsync({type:"blob"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "BookAnimator_Finished.zip";
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(a.href);
-}
-
-/* ===== Open project (.bookanim.json) ===== */
+/* ===== Project Open / ZIP Export ===== */
 function openProject(){
   const input=document.createElement("input");
   input.type="file"; input.accept=".bookanim.json,application/json";
@@ -170,69 +231,241 @@ function openProject(){
   };
   input.click();
 }
+async function exportZip(){
+  const zip = new JSZip();
+  const project = { version:1, text: ta.value||"", settings, characters, assets };
+  zip.file("book-animator.bookanim.json", JSON.stringify(project, null, 2));
+  zip.file("book-text.txt", ta.value||"");
+  zip.file("characters.json", JSON.stringify(characters.map(c=>({...c, imageData:undefined})), null, 2));
+  zip.file("assets.json", JSON.stringify(assets, null, 2));
+  const cf = zip.folder("characters");
+  for(const c of characters){
+    if(c.imageData && c.imageData.startsWith("data:")){
+      const {mime, base64} = splitDataUrl(c.imageData);
+      const ext = mimeToExt(mime);
+      const safe = (c.name||"character").replace(/[^a-z0-9]+/gi,"_").slice(0,40);
+      cf.file(`${safe}${ext}`, base64, {base64:true});
+    }
+  }
+  const blob = await zip.generateAsync({type:"blob"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "BookAnimator_Finished.zip";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+}
+function splitDataUrl(d){ const m = d.match(/^data:(.+?);base64,(.*)$/); return { mime: m?m[1]:"image/png", base64: m?m[2]:"" }; }
+function mimeToExt(m){ return m.includes("jpeg")?".jpg": m.includes("png")?".png": m.includes("webp")?".webp": ".bin"; }
 
-/* ===== Minimal Settings/Characters/Assets (optional UI) ===== */
+/* ===== Settings ===== */
 function showSettings(){
   openModal(`
     <h2>Settings</h2>
     <div class="grid">
-      <div class="field"><label>Animation style</label><input id="stAnim" class="input" value="${settings.animationStyle}"/></div>
-      <div class="field"><label>Art style</label><input id="stArt" class="input" value="${settings.artStyle}"/></div>
-      <div class="field"><label>Aspect</label><input id="stAspect" class="input" value="${settings.aspect}"/></div>
-      <div class="field"><label>FPS</label><input id="stFps" class="input" type="number" value="${settings.fps}"/></div>
+      <div class="field"><label>Animation style</label>
+        <select id="stAnim" class="select">${ANIM_STYLES.map(o=>`<option ${o===settings.animationStyle?"selected":""}>${o}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Art style</label>
+        <select id="stArt" class="select">${ART_STYLES.map(o=>`<option ${o===settings.artStyle?"selected":""}>${o}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Audience</label>
+        <select id="stAudience" class="select">${["Kids","Teens","Adults","All Ages"].map(o=>`<option ${o===settings.audience?"selected":""}>${o}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Aspect</label>
+        <select id="stAspect" class="select">${["16:9","9:16","1:1","4:3","21:9"].map(o=>`<option ${o===settings.aspect?"selected":""}>${o}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>FPS</label><input id="stFps" class="input" type="number" min="12" max="60" value="${settings.fps}"/></div>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
       <button class="btn-outline" onclick="closeModal()">Cancel</button>
       <button class="btn" onclick="(function(){
-        settings.animationStyle=val('stAnim');settings.artStyle=val('stArt');
-        settings.aspect=val('stAspect');settings.fps=parseInt(val('stFps'))||24;
-        localStorage.setItem(KEY_CFG, JSON.stringify(settings));
+        settings.animationStyle=val('stAnim'); settings.artStyle=val('stArt');
+        settings.audience=val('stAudience'); settings.aspect=val('stAspect');
+        settings.fps=parseInt(val('stFps'))||24; save(KEY_CFG,settings);
         closeModal(); alert('Settings saved.');
       })()">Save</button>
     </div>
   `);
 }
+
+/* ===== Characters (library + image upload) ===== */
 function showCharacters(){
   openModal(`
     <h2>Characters</h2>
-    <div class="list" id="charList">${characters.map(c=>`<div class="char" style="grid-template-columns:1fr 1fr auto"><div><b>${c.name}</b></div><div>${c.voice||'-'}</div><div><button class="btn-outline" onclick="removeChar('${c.id}')">Delete</button></div></div>`).join("")||"<div>None yet</div>"}</div>
-    <h3 style="margin:.85rem 0 .5rem">Add</h3>
+    <div class="list" id="charList">
+      ${characters.map(c=>`
+        <div class="charrow">
+          <div><b>${esc(c.name)}</b></div>
+          <div>${esc(c.age||"-")}</div>
+          <div>${esc(c.voice||"-")}</div>
+          <div class="row" style="gap:6px">
+            ${c.imageData?`<img class="thumb" src="${c.imageData}" alt="${esc(c.name)}"/>`:`<div class="thumb" title="No image"></div>`}
+          </div>
+          <div class="row" style="gap:6px">
+            <button class="btn-outline" onclick="editChar('${c.id}')">Edit</button>
+            ${c.id!=="narrator"?`<button class="btn btn-danger" onclick="delChar('${c.id}')">Delete</button>`:""}
+          </div>
+        </div>
+      `).join("")}
+    </div>
+    <h3 style="margin:.85rem 0 .5rem">Add Character</h3>
     <div class="grid">
-      <div class="field"><label>Name</label><input id="cName" class="input" /></div>
-      <div class="field"><label>Voice</label><input id="cVoice" class="input" placeholder="e.g., Ember"/></div>
+      <div class="field"><label>Name</label><input class="input" id="cName"/></div>
+      <div class="field"><label>Age</label><input class="input" id="cAge" placeholder="e.g., 12 or adult"/></div>
+      <div class="field"><label>Voice</label>
+        <select class="select" id="cVoice">${OPENAI_VOICES.map(v=>`<option>${v}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Image</label><input class="input" type="file" id="cImg" accept="image/*"/></div>
+      <div class="field"><label>Characteristics (short traits)</label><input class="input" id="cTraits" placeholder="e.g., brave, sarcastic, loyal"/></div>
+      <div class="field" style="grid-column:1/-1"><label>Backstory</label><textarea class="area" id="cBack"></textarea></div>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
       <button class="btn-outline" onclick="closeModal()">Close</button>
-      <button class="btn" onclick="(function(){
-        const n=val('cName').trim(), v=val('cVoice').trim();
-        if(!n) return alert('Name required');
-        characters.push({id:'c_'+Math.random().toString(36).slice(2,9), name:n, voice:v});
-        localStorage.setItem(KEY_CHARS, JSON.stringify(characters)); showCharacters();
-      })()">Save Character</button>
+      <button class="btn" onclick="saveNewCharacter()">Save Character</button>
     </div>
   `);
 }
-function removeChar(id){
-  characters = characters.filter(c=>c.id!==id);
-  localStorage.setItem(KEY_CHARS, JSON.stringify(characters));
-  showCharacters();
+async function readFileAsDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+async function saveNewCharacter(){
+  const name = val("cName").trim(); if(!name) return alert("Name is required.");
+  const age = val("cAge").trim(); const voice = val("cVoice");
+  const traits = val("cTraits").trim(); const backstory = val("cBack").trim();
+  let imageData = "", imageName = "";
+  const f = document.getElementById("cImg").files?.[0];
+  if(f){ imageData = await readFileAsDataURL(f); imageName = f.name; }
+  const ch = { id:"c_"+Math.random().toString(36).slice(2,9), name, age, voice, imageData, imageName, traits, backstory };
+  characters.push(ch); save(KEY_CHARS, characters); showCharacters();
 }
+function delChar(id){
+  if(!confirm("Delete this character?")) return;
+  characters = characters.filter(x=>x.id!==id); save(KEY_CHARS, characters); showCharacters();
+}
+function editChar(id){
+  const c = characters.find(x=>x.id===id); if(!c) return;
+  openModal(`
+    <h2>Edit Character</h2>
+    <div class="grid">
+      <div class="field"><label>Name</label><input class="input" id="eName" value="${esc(c.name)}"/></div>
+      <div class="field"><label>Age</label><input class="input" id="eAge" value="${esc(c.age||"")}"/></div>
+      <div class="field"><label>Voice</label>
+        <select class="select" id="eVoice">${OPENAI_VOICES.map(v=>`<option ${v===c.voice?"selected":""}>${v}</option>`).join("")}</select>
+      </div>
+      <div class="field"><label>Replace Image</label><input class="input" type="file" id="eImg" accept="image/*"/></div>
+      <div class="field"><label>Characteristics</label><input class="input" id="eTraits" value="${esc(c.traits||"")}"/></div>
+      <div class="field" style="grid-column:1/-1"><label>Backstory</label><textarea class="area" id="eBack">${esc(c.backstory||"")}</textarea></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveCharEdit('${c.id}')">Save</button>
+    </div>
+  `);
+}
+async function saveCharEdit(id){
+  const c = characters.find(x=>x.id===id); if(!c) return;
+  c.name = val("eName").trim(); c.age = val("eAge").trim(); c.voice = val("eVoice");
+  c.traits = val("eTraits").trim(); c.backstory = val("eBack").trim();
+  const f = document.getElementById("eImg").files?.[0];
+  if(f){ c.imageData = await readFileAsDataURL(f); c.imageName=f.name; }
+  save(KEY_CHARS, characters); showCharacters();
+}
+
+/* ===== PDF Importer (assign page to character) ===== */
+function showPdfImport(){
+  openModal(`
+    <h2>Import Images (PDF)</h2>
+    <p class="small">Load your PDF (e.g., <i>Sidetrack_Sally_Illustrated_Book (4).pdf</i> or <i>Journey_Final_Corrected_Book (1).pdf</i>). Click a page to assign it as the image for a character.</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <input type="file" id="pdfFile" accept="application/pdf" class="input" />
+      <button class="btn" id="btnLoadPdf">Load PDF</button>
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+    </div>
+    <div id="pdfName" class="small" style="margin-top:.5rem;color:${'var(--muted)'}"></div>
+    <div id="pdfGrid" class="pdfgrid" style="margin-top:.5rem"></div>
+  `);
+  document.getElementById("btnLoadPdf").onclick = async ()=>{
+    const f = document.getElementById("pdfFile").files?.[0];
+    if(!f) return alert("Choose a PDF first.");
+    document.getElementById("pdfName").textContent = f.name;
+    const ab = await f.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:ab}).promise;
+    const grid = document.getElementById("pdfGrid"); grid.innerHTML="";
+    for(let p=1;p<=pdf.numPages;p++){
+      const page = await pdf.getPage(p);
+      const viewport = page.getViewport({scale:0.4}); // thumbnail scale
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = Math.floor(viewport.width);
+      canvas.height= Math.floor(viewport.height);
+      await page.render({canvasContext:ctx, viewport}).promise;
+
+      const card = document.createElement("div");
+      card.className = "pdfthumb";
+      const cap = document.createElement("div");
+      cap.className = "cap";
+      cap.innerHTML = `<span>Page ${p}</span> <button class="btn-outline" data-p="${p}">Assign…</button>`;
+      card.appendChild(canvas); card.appendChild(cap);
+      grid.appendChild(card);
+
+      // Assign handler
+      cap.querySelector("button").onclick = ()=>{
+        const dataURL = canvas.toDataURL("image/jpeg", 0.9); // thumbnail quality
+        pickCharacterAndAssign(dataURL, f.name + " - page " + p + ".jpg");
+      };
+    }
+  };
+}
+function pickCharacterAndAssign(dataURL, suggestedName){
+  // Simple chooser
+  const opts = characters.map((c,i)=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  openModal(`
+    <h2>Assign Image to Character</h2>
+    <div class="row" style="align-items:flex-start;gap:16px">
+      <img src="${dataURL}" style="max-width:240px;border:1px solid var(--border);border-radius:10px"/>
+      <div class="field" style="flex:1">
+        <label>Character</label>
+        <select id="assignChar" class="select">${opts}</select>
+        <label style="margin-top:.5rem">Image name</label>
+        <input id="assignName" class="input" value="${esc(suggestedName)}"/>
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn-outline" onclick="showCharacters()">Cancel</button>
+      <button class="btn" onclick="(function(){
+        const id = document.getElementById('assignChar').value;
+        const nm = document.getElementById('assignName').value;
+        const c = characters.find(x=>x.id===id);
+        if(c){ c.imageData = dataURL; c.imageName = nm; save(KEY_CHARS, characters); }
+        showCharacters();
+      })()">Assign</button>
+    </div>
+  `);
+}
+
+/* ===== Assets (simple) ===== */
 function showAssets(){
   openModal(`
     <h2>Assets</h2>
-    <div class="list">${assets.map(a=>`<div class="char" style="grid-template-columns:1fr 2fr auto"><div><b>${a.name||'(unnamed)'}</b></div><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.url}</div><div><button class="btn-outline" onclick="window.open('${a.url}','_blank')">Open</button></div></div>`).join("")||"<div>None yet</div>"}</div>
-    <h3 style="margin:.85rem 0 .5rem">Add</h3>
+    <div class="list">${assets.map(a=>`
+      <div class="charrow" style="grid-template-columns:1fr 2fr auto">
+        <div><b>${esc(a.name||'(unnamed)')}</b></div>
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.url||'')}</div>
+        <div class="row" style="gap:6px">
+          <button class="btn-outline" onclick="window.open('${a.url}','_blank')">Open</button>
+          <button class="btn btn-danger" onclick="(function(){assets=assets.filter(x=>x.id!=='${a.id}'); save(KEY_ASSETS,assets); showAssets();})()">Delete</button>
+        </div>
+      </div>`).join("")||"<div class='small'>No assets yet</div>"}
+    </div>
+    <h3 style="margin:.85rem 0 .5rem">Add Asset</h3>
     <div class="grid">
       <div class="field"><label>Name</label><input id="aName" class="input"/></div>
-      <div class="field"><label>URL</label><input id="aUrl" class="input" placeholder="https://..."/></div>
+      <div class="field" style="grid-column:1/-1"><label>URL</label><input id="aUrl" class="input" placeholder="https://..."/></div>
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
       <button class="btn-outline" onclick="closeModal()">Close</button>
       <button class="btn" onclick="(function(){
         const n=val('aName').trim(), u=val('aUrl').trim();
         if(!u) return alert('URL required');
-        assets.push({id:'a_'+Math.random().toString(36).slice(2,9), name:n, url:u});
-        localStorage.setItem(KEY_ASSETS, JSON.stringify(assets)); showAssets();
+        assets.push({id:'a_'+Math.random().toString(36).slice(2,9), name:n, url:u}); save(KEY_ASSETS, assets); showAssets();
       })()">Save Asset</button>
     </div>
   `);
