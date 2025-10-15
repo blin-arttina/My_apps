@@ -59,13 +59,14 @@
   .fill{height:100%;background:#fff;width:0%;transition:width .3s ease}
   .percent{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;color:#000;mix-blend-mode:screen;pointer-events:none}
 
-  /* Live thumbnails strip */
+  /* Live thumbnails */
   #thumbStrip{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .thumbCard{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:6px 8px;background:#0d0d0d}
   .thumbIdx{font-weight:800;color:#ffb3b3}
   .thumb.waiting{opacity:.6;filter:grayscale(1)}
 
   .pill{border:1px solid var(--border);padding:.2rem .5rem;border-radius:999px;color:var(--muted);font-size:.85rem}
+  .small{font-size:.9rem}
 </style>
 </head>
 <body>
@@ -76,6 +77,7 @@
   <!-- Left menu -->
   <div id="menuLeft" class="menu left" hidden>
     <div class="item" data-left="settings">Settings</div>
+    <div class="item" data-left="voices">Voices</div>
     <div class="item" data-left="characters">Characters</div>
     <div class="item" data-left="importpdf">Import Images (PDF)</div>
     <div class="item" data-left="assets">Assets</div>
@@ -118,7 +120,7 @@
     <!-- Live thumbs -->
     <div id="thumbStrip" aria-live="polite"></div>
 
-    <!-- Text preview (optional) -->
+    <!-- Text preview -->
     <div id="scenePreview" class="list" style="margin-top:12px;display:none"></div>
   </div>
 
@@ -141,7 +143,7 @@
 
 <script>
 /* ===== Storage keys ===== */
-const KEY_TEXT="bookAnimator:text", KEY_CFG="bookAnimator:settings", KEY_CHARS="bookAnimator:characters", KEY_ASSETS="bookAnimator:assets", KEY_FRAMES="bookAnimator:frames", KEY_OPENAI="bookAnimator:openai";
+const KEY_TEXT="bookAnimator:text", KEY_CFG="bookAnimator:settings", KEY_CHARS="bookAnimator:characters", KEY_ASSETS="bookAnimator:assets", KEY_FRAMES="bookAnimator:frames", KEY_OPENAI="bookAnimator:openai", KEY_ELEVEN="bookAnimator:eleven";
 function load(k,def){try{return JSON.parse(localStorage.getItem(k))||def}catch{return def}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 
@@ -149,12 +151,29 @@ function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 const ANIM_STYLES=["Cartoon","Flipbook","Comic","Slideshow","Anime","Dark Fantasy","Lifelike","Stop-Motion","Motion-Comics","Pixar-Like","Minimalist Line-Art","Water-Ink","Claymation","Paper-Cut","Retro 8-bit","3D Toon"];
 const ART_STYLES=["Fantasy","Anime","Noir","Watercolor","3D","Sketch","Oil Paint","Ink & Wash","Pixel Art","Low-Poly","Photoreal","Cel-shade","Vaporwave","Cyberpunk","Steampunk","Storybook"];
 const ILLUST_MODES=["OpenAI Images","Local Stub (no API)"];
-let settings=load(KEY_CFG,{animationStyle:"Cartoon",artStyle:"Fantasy",aspect:"16:9",fps:24,audience:"Adults",illustrationMode:"OpenAI Images"});
-let characters=load(KEY_CHARS,[{id:"narrator",name:"Narrator",voice:"Ember"}]);
-let assets=load(KEY_ASSETS,[]), frames=load(KEY_FRAMES,[]);
-const ta=document.getElementById("bookText"); if(localStorage.getItem(KEY_TEXT)) ta.value=localStorage.getItem(KEY_TEXT);
 
-/* ===== Utility/UI ===== */
+/* OpenAI official TTS voices */
+const OPENAI_VOICE_IDS=["alloy","amber","copper","juniper","pearl","sage"];
+/* Voice providers */
+const VOICE_PROVIDERS=["OpenAI","Browser (Device)","ElevenLabs"];
+
+/* Settings also store narrator voice */
+let settings=load(KEY_CFG,{animationStyle:"Cartoon",artStyle:"Fantasy",aspect:"16:9",fps:24,audience:"Adults",illustrationMode:"OpenAI Images", narratorProvider:"OpenAI", narrator:"amber"});
+let characters=load(KEY_CHARS,[
+  {id:"narrator",name:"Narrator",voiceProvider:"OpenAI",voice:"amber",traits:"neutral, warm"},
+  {id:"c_sally", name:"Sidetracked Sally", voiceProvider:"OpenAI", voice:"juniper", traits:"young, curious"},
+  {id:"c_zen", name:"Zen Zena", voiceProvider:"OpenAI", voice:"sage", traits:"calm, wise adult"},
+  {id:"c_skip", name:"Skater Skip", voiceProvider:"OpenAI", voice:"alloy", traits:"youthful, energetic"},
+  {id:"c_dan", name:"Dark Dan", voiceProvider:"OpenAI", voice:"copper", traits:"deep, brooding"}
+]);
+let assets=load(KEY_ASSETS,[]), frames=load(KEY_FRAMES,[]);
+
+/* Secrets */
+function getOpenAIKey(){const s=load(KEY_OPENAI,{apiKey:""});return (s&&s.apiKey)?s.apiKey.trim():""}
+function getElevenKey(){const s=load(KEY_ELEVEN,{apiKey:""});return (s&&s.apiKey)?s.apiKey.trim():""}
+
+/* ===== DOM helpers ===== */
+const ta=document.getElementById("bookText"); if(localStorage.getItem(KEY_TEXT)) ta.value=localStorage.getItem(KEY_TEXT);
 const mask=document.getElementById("mask"), modal=document.getElementById("modal");
 function openModal(html){modal.innerHTML=html;mask.classList.add("show")}
 function closeModal(){mask.classList.remove("show");modal.innerHTML=""}
@@ -166,9 +185,9 @@ btnLeft.onclick=()=>{menuLeft.hidden=!menuLeft.hidden;menuRight.hidden=true}
 btnRight.onclick=()=>{menuRight.hidden=!menuRight.hidden;menuLeft.hidden=true}
 const modePill=document.getElementById("modePill"), sceneCountPill=document.getElementById("sceneCountPill");
 function updatePills(count=0){modePill.textContent="Mode: "+settings.illustrationMode; sceneCountPill.textContent="Scenes: "+count}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
-/* ===== Menu actions ===== */
+/* ===== Menus ===== */
 document.getElementById("btnSave").onclick=()=>{save(KEY_TEXT,ta.value||"");alert("Saved.")}
 document.getElementById("btnExportZip").onclick=exportZip
 document.getElementById("btnPreviewScenes").onclick=previewScenes
@@ -180,12 +199,13 @@ menuRight.onclick=(e)=>{const a=e.target?.dataset?.right;if(!a)return;menuRight.
 }
 menuLeft.onclick=(e)=>{const a=e.target?.dataset?.left;if(!a)return;menuLeft.hidden=true;
   if(a==="settings") showSettings()
+  if(a==="voices") showVoices()
   if(a==="characters") showCharacters()
   if(a==="importpdf") showPdfImport()
   if(a==="assets") showAssets()
   if(a==="secrets") showSecrets()
-  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Settings/Secrets\n3) Preview Scenes\n4) Start\n5) Export ZIP.")
-  if(a==="about") alert("Book Animator — AI scene illustration via OpenAI Images.")
+  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Settings/Secrets/Voices\n3) Preview Scenes\n4) Start\n5) Export ZIP.")
+  if(a==="about") alert("Book Animator — AI scene illustration + multi-provider TTS (OpenAI / Browser / ElevenLabs).")
 }
 
 /* ===== Settings ===== */
@@ -214,40 +234,249 @@ function showSettings(){
     </div>`);
 }
 
-/* ===== Secrets (with Test Key) ===== */
+/* ===== Secrets (OpenAI + ElevenLabs) ===== */
 function showSecrets(){
-  const current=load(KEY_OPENAI,{apiKey:""});
+  const o=load(KEY_OPENAI,{apiKey:""}), e=load(KEY_ELEVEN,{apiKey:""});
   openModal(`<h2>Secrets (API Keys)</h2>
-    <div class="field"><label>OpenAI API Key</label>
-      <input id="openaiKey" class="input" placeholder="sk-..." value="${esc(current.apiKey||"")}"/>
-      <small style="color:var(--muted)">Stored only on this device. Used to call OpenAI Images from your browser.</small>
+    <div class="grid">
+      <div class="field" style="grid-column:1/-1"><label>OpenAI API Key</label>
+        <input id="openaiKey" class="input" placeholder="sk-..." value="${esc(o.apiKey||"")}"/>
+        <small class="small" style="color:var(--muted)">Used for AI images and OpenAI TTS.</small>
+      </div>
+      <div class="field" style="grid-column:1/-1"><label>ElevenLabs API Key</label>
+        <input id="elevenKey" class="input" placeholder="elevenlabs key" value="${esc(e.apiKey||"")}"/>
+        <small class="small" style="color:var(--muted)">Optional. Enables stock ElevenLabs voices (no cloning).</small>
+      </div>
     </div>
-    <div class="row" style="justify-content:flex-end;margin-top:12px">
-      <button class="btn-outline" onclick="closeModal()">Close</button>
-      <button class="btn" onclick="(function(){const k=document.getElementById('openaiKey').value.trim();save(KEY_OPENAI,{apiKey:k});alert('Saved API key.');})()">Save Key</button>
-      <button class="btn" onclick="testOpenAIKey()">Test Key</button>
+    <div class="row" style="justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px">
+      <div class="row" style="gap:8px">
+        <button class="btn" onclick="testOpenAIKey()">Test OpenAI</button>
+        <button class="btn" onclick="testElevenKey()">Test ElevenLabs</button>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" onclick="closeModal()">Close</button>
+        <button class="btn" onclick="(function(){
+          const ok=document.getElementById('openaiKey').value.trim();
+          const ek=document.getElementById('elevenKey').value.trim();
+          save(KEY_OPENAI,{apiKey:ok}); save(KEY_ELEVEN,{apiKey:ek});
+          alert('Keys saved.');
+        })()">Save Keys</button>
+      </div>
     </div>
     <div id="testResult" style="margin-top:.5rem;color:var(--muted)"></div>`);
 }
-function getOpenAIKey(){const s=load(KEY_OPENAI,{apiKey:""});return (s&&s.apiKey)?s.apiKey.trim():""}
 async function testOpenAIKey(){
-  const apiKey=getOpenAIKey(); if(!apiKey){alert("No key saved.");return}
-  const r=document.getElementById("testResult"); r.textContent="Testing…"
+  const apiKey=getOpenAIKey(); if(!apiKey){alert("No OpenAI key saved.");return}
+  const r=document.getElementById("testResult"); r.textContent="Testing OpenAI (image + audio)…";
   try{
-    const resp=await fetch("https://api.openai.com/v1/images/generations",{
-      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
-      body:JSON.stringify({model:"gpt-image-1",prompt:"tiny red sticker icon of a book, high contrast, simple",size:"256x256",n:1,response_format:"b64_json"})
-    });
-    if(!resp.ok){r.textContent="Error: "+(await resp.text());return}
-    const data=await resp.json(); r.textContent=data?.data?.[0]?.b64_json?"Success! You can start now.":"No image returned."
-  }catch(e){r.textContent="Network/other error: "+e.message}
+    const img=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},body:JSON.stringify({model:"gpt-image-1",prompt:"tiny red sticker icon of a book, high contrast, simple",size:"256x256",n:1,response_format:"b64_json"})});
+    if(!img.ok){r.textContent="OpenAI image error: "+(await img.text());return}
+    const tts=await fetch("https://api.openai.com/v1/audio/speech",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},body:JSON.stringify({model:"gpt-4o-mini-tts",voice:"amber",input:"Your OpenAI key works."})});
+    if(!tts.ok){r.textContent="OpenAI TTS error: "+(await tts.text());return}
+    r.textContent="OpenAI OK ✅";
+  }catch(e){r.textContent="OpenAI test failed: "+e.message}
+}
+async function testElevenKey(){
+  const k=getElevenKey(); if(!k){alert("No ElevenLabs key saved.");return}
+  const r=document.getElementById("testResult"); r.textContent="Testing ElevenLabs (voices list)…";
+  try{
+    const resp=await fetch("https://api.elevenlabs.io/v1/voices",{headers:{"xi-api-key":k}});
+    if(!resp.ok){r.textContent="ElevenLabs error: "+(await resp.text());return}
+    const js=await resp.json(); const n=(js?.voices||[]).length||0;
+    r.textContent=`ElevenLabs OK — ${n} voices available ✅`;
+  }catch(e){r.textContent="ElevenLabs test failed: "+e.message}
 }
 
-/* ===== Characters (minimal list + add later if needed) ===== */
+/* ===== Voices (multi-provider) ===== */
+let browserVoices=[]; // filled via Web Speech API
+function loadBrowserVoices(){
+  browserVoices = speechSynthesis.getVoices().map(v=>({id:v.voiceURI,name:v.name,lang:v.lang}));
+}
+if('speechSynthesis' in window){
+  loadBrowserVoices();
+  window.speechSynthesis.onvoiceschanged = loadBrowserVoices;
+}
+
+let elevenVoicesCache=null;
+async function getElevenVoices(){
+  if(elevenVoicesCache) return elevenVoicesCache;
+  const key=getElevenKey(); if(!key) return [];
+  const resp=await fetch("https://api.elevenlabs.io/v1/voices",{headers:{"xi-api-key":key}});
+  if(!resp.ok) return [];
+  const js=await resp.json();
+  elevenVoicesCache=(js?.voices||[]).map(v=>({id:v.voice_id,name:v.name}));
+  return elevenVoicesCache;
+}
+
+function showVoices(){
+  const providerOptions = (sel)=>VOICE_PROVIDERS.map(p=>`<option ${p===sel?"selected":""}>${p}</option>`).join("");
+  const openaiOptions = (sel)=>OPENAI_VOICE_IDS.map(v=>`<option ${v===sel?"selected":""} value="${v}">${v}</option>`).join("");
+  const browserOptions = (sel)=>browserVoices.map(v=>`<option ${v.id===sel?"selected":""} value="${v.id}">${esc(v.name)} (${esc(v.lang)})</option>`).join("") || `<option value="">(No device voices found)</option>`;
+
+  const rows = characters.filter(c=>c.id!=="narrator").map(c=>{
+    const prov = c.voiceProvider||"OpenAI";
+    const currentId = c.voice||"";
+    const providerSel = `<select class="select voice-prov" data-char="${c.id}">${providerOptions(prov)}</select>`;
+    const voiceSel = `<select class="select voice-id" data-char="${c.id}" data-prov="${prov}">
+      ${prov==="OpenAI"?openaiOptions(currentId):prov==="Browser (Device)"?browserOptions(currentId):`<option value="">(Pick provider or load ElevenLabs)</option>`}
+    </select>`;
+    return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.4rem 0">
+      <div><b>${esc(c.name)}</b><div class="small" style="color:var(--muted)">${esc(c.traits||"")}</div></div>
+      <div class="row" style="gap:8px;min-width:320px">${providerSel}${voiceSel}</div>
+    </div>`;
+  }).join("");
+
+  openModal(`
+    <h2>Voices</h2>
+    <div class="grid">
+      <div class="field"><label>Narrator Provider</label>
+        <select id="narProv" class="select">${providerOptions(settings.narratorProvider||"OpenAI")}</select>
+      </div>
+      <div class="field"><label>Narrator Voice</label>
+        <select id="narVoice" class="select" data-for="narrator">${openaiOptions(settings.narrator||"amber")}</select>
+      </div>
+
+      <div class="field" style="grid-column:1/-1"><label>Preview text</label>
+        <input id="pvText" class="input" placeholder="Type a line to preview"/>
+      </div>
+      <div class="field"><label>Preview provider</label>
+        <select id="pvProv" class="select">${providerOptions("OpenAI")}</select>
+      </div>
+      <div class="field"><label>Preview voice</label>
+        <select id="pvVoice" class="select">${openaiOptions("amber")}</select>
+      </div>
+      <div class="row" style="align-items:flex-end"><button class="btn" onclick="previewVoice()">Play Preview</button></div>
+    </div>
+
+    <h3 style="margin:1rem 0 .4rem">Characters → Voice Assignments</h3>
+    <div class="list" id="voiceList">${rows || "<div class='small'>No characters yet</div>"}</div>
+
+    <div class="row" style="justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px">
+      <button class="btn-outline" onclick="autoMapVoices()">Generate Voice Mapping (AI)</button>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" onclick="closeModal()">Close</button>
+        <button class="btn" onclick="saveVoices()">Save Voices</button>
+      </div>
+    </div>
+    <p class="small" style="color:var(--muted);margin-top:.5rem">
+      Providers: <b>OpenAI</b> (fixed voices), <b>Browser</b> (your device voices), <b>ElevenLabs</b> (stock voices; no cloning). Save your keys in <i>Secrets</i>.
+    </p>
+  `);
+
+  // Hook provider changes for narrator & preview
+  document.getElementById('narProv').addEventListener('change', async (e)=>{
+    const prov=e.target.value; const sel=document.getElementById('narVoice');
+    await rebuildVoiceSelect(sel, prov, settings.narrator);
+  });
+  document.getElementById('pvProv').addEventListener('change', async (e)=>{
+    const prov=e.target.value; const sel=document.getElementById('pvVoice');
+    await rebuildVoiceSelect(sel, prov, document.getElementById('pvVoice').value);
+  });
+
+  // Hook provider changes for characters
+  document.querySelectorAll('.voice-prov').forEach(el=>{
+    el.addEventListener('change', async (e)=>{
+      const prov=e.target.value; const id=e.target.getAttribute('data-char');
+      const voiceSel=document.querySelector(`.voice-id[data-char="${id}"]`);
+      await rebuildVoiceSelect(voiceSel, prov, "");
+      voiceSel.setAttribute('data-prov', prov);
+    });
+  });
+}
+
+async function rebuildVoiceSelect(selectEl, provider, current){
+  if(!selectEl) return;
+  let html="";
+  if(provider==="OpenAI"){
+    html = OPENAI_VOICE_IDS.map(v=>`<option ${v===current?"selected":""} value="${v}">${v}</option>`).join("");
+  }else if(provider==="Browser (Device)"){
+    html = (browserVoices.length?browserVoices:[{id:"",name:"(No device voices found)",lang:""}])
+      .map(v=>`<option ${v.id===current?"selected":""} value="${v.id}">${esc(v.name)}${v.lang?(" ("+esc(v.lang)+")"):""}</option>`).join("");
+  }else if(provider==="ElevenLabs"){
+    const k=getElevenKey(); if(!k){ html=`<option value="">(Save ElevenLabs key in Secrets)</option>`; }
+    else{
+      const list=await getElevenVoices();
+      html = (list.length?list:[{id:"",name:"(No voices found)"}]).map(v=>`<option ${v.id===current?"selected":""} value="${v.id}">${esc(v.name)}</option>`).join("");
+    }
+  }
+  selectEl.innerHTML = html;
+}
+
+/* Save voices */
+function saveVoices(){
+  // Narrator
+  const narProv=document.getElementById('narProv').value;
+  const narVoice=document.getElementById('narVoice').value;
+  settings.narratorProvider=narProv; settings.narrator=narVoice; save(KEY_CFG,settings);
+
+  // Characters
+  document.querySelectorAll('.voice-prov').forEach(el=>{
+    const id=el.getAttribute('data-char'); const prov=el.value;
+    const voiceSel=document.querySelector(`.voice-id[data-char="${id}"]`);
+    const voiceId=voiceSel?.value||"";
+    const c=characters.find(x=>x.id===id); if(c){ c.voiceProvider=prov; c.voice=voiceId; }
+  });
+  save(KEY_CHARS,characters);
+  alert("Voices saved.");
+}
+
+/* Auto voice mapping — uses OpenAI voices; you can switch provider later */
+function autoMapVoices(){
+  const pick = (c)=>{
+    const s=(c.traits||c.backstory||"").toLowerCase();
+    if(/(child|kid|young|teen|sister|playful|energetic)/.test(s)) return "juniper";
+    if(/(gentle|soft|mom|caring|warm|comfort)/.test(s)) return "pearl";
+    if(/(calm|wise|mentor|narrator|neutral|guide)/.test(s)) return "sage";
+    if(/(deep|gruff|brooding|soldier|veteran|dark)/.test(s)) return "copper";
+    if(/(hero|dad|balanced|clear|male)/.test(s)) return "alloy";
+    if(/(friendly|bright|welcoming|host)/.test(s)) return "amber";
+    return "amber";
+  };
+  characters.filter(c=>c.id!=="narrator").forEach(c=>{ c.voiceProvider="OpenAI"; c.voice=pick(c); });
+  save(KEY_CHARS,characters);
+  showVoices();
+  alert("Auto-mapped with OpenAI voices. You can switch any to Browser or ElevenLabs.");
+}
+
+/* Voice preview with provider */
+async function previewVoice(){
+  const text=(document.getElementById("pvText").value||"Hello from Book Animator.").slice(0,500);
+  const prov=document.getElementById("pvProv").value;
+  const voice=document.getElementById("pvVoice").value;
+
+  try{
+    if(prov==="OpenAI"){
+      const apiKey=getOpenAIKey(); if(!apiKey) return alert("Add your OpenAI key in Secrets.");
+      const resp=await fetch("https://api.openai.com/v1/audio/speech",{
+        method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
+        body:JSON.stringify({model:"gpt-4o-mini-tts",voice,input:text,format:"mp3"})
+      });
+      if(!resp.ok) return alert("OpenAI TTS error: "+(await resp.text()));
+      const buf=await resp.arrayBuffer(); playBlob(buf,"audio/mpeg");
+    }else if(prov==="Browser (Device)"){
+      if(!('speechSynthesis' in window)) return alert("Browser TTS not supported here.");
+      const v = speechSynthesis.getVoices().find(v=>v.voiceURI===voice);
+      const ut=new SpeechSynthesisUtterance(text); if(v) ut.voice=v; speechSynthesis.cancel(); speechSynthesis.speak(ut);
+    }else if(prov==="ElevenLabs"){
+      const k=getElevenKey(); if(!k) return alert("Add your ElevenLabs key in Secrets.");
+      if(!voice) return alert("Pick a ElevenLabs voice first.");
+      const resp=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`,{
+        method:"POST",
+        headers:{"xi-api-key":k,"Content-Type":"application/json"},
+        body:JSON.stringify({text,model_id:"eleven_multilingual_v2",voice_settings:{stability:0.5,similarity_boost:0.7}})
+      });
+      if(!resp.ok) return alert("ElevenLabs error: "+(await resp.text()));
+      const buf=await resp.arrayBuffer(); playBlob(buf,"audio/mpeg");
+    }
+  }catch(e){ alert("Preview failed: "+e.message) }
+}
+function playBlob(buf,mime){ const blob=new Blob([buf],{type:mime}); const url=URL.createObjectURL(blob); const audio=new Audio(url); audio.onended=()=>URL.revokeObjectURL(url); audio.play(); }
+
+/* ===== Characters (simple list) ===== */
 function showCharacters(){
   openModal(`<h2>Characters</h2>
     <div class="list">${characters.map(c=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.4rem 0">
-      <div><b>${esc(c.name||"(unnamed)")}</b></div>
+      <div><b>${esc(c.name||"(unnamed)")}</b><div class="small" style="color:var(--muted)">${esc(c.voiceProvider||"-")} · ${esc(c.voice||"-")}</div></div>
     </div>`).join("")||"<div class='small'>No characters yet</div>"}
     </div>
     <div class="row" style="justify-content:flex-end;margin-top:12px">
@@ -309,7 +538,7 @@ function addThumbPlaceholder(idx){const card=document.createElement("div");card.
 function setThumbImage(idx,dataURL){const card=document.getElementById(`thumb-${idx}`); if(!card) return; const img=card.querySelector("img.thumb");
   img.src=dataURL; img.classList.remove("waiting"); const text=card.querySelector("div[style]"); if(text) text.textContent="Done"}
 
-/* ===== Start Animation ===== */
+/* ===== Start Animation (images) ===== */
 document.getElementById("btnStart").onclick=startAnimation; updatePills();
 
 async function startAnimation(){
@@ -349,11 +578,10 @@ Scene: ${scene.text.slice(0,800)}`;
 }
 async function illustrateWithOpenAI(scene,settings){
   const apiKey=getOpenAIKey(); if(!apiKey) throw new Error("Missing OpenAI API key (Left menu → Secrets).");
-  const prompt=promptFor(scene,settings);
   const resp=await fetch("https://api.openai.com/v1/images/generations",{
     method:"POST",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},
-    body:JSON.stringify({model:"gpt-image-1",prompt,size:"1024x1024",n:1,response_format:"b64_json"})
+    body:JSON.stringify({model:"gpt-image-1",prompt:promptFor(scene,settings),size:"1024x1024",n:1,response_format:"b64_json"})
   });
   if(!resp.ok){ throw new Error(await resp.text()) }
   const data=await resp.json(); const b64=data?.data?.[0]?.b64_json; const url=data?.data?.[0]?.url;
@@ -361,7 +589,6 @@ async function illustrateWithOpenAI(scene,settings){
   if(url){ const imgBlob=await (await fetch(url)).blob(); return await blobToDataURL(imgBlob) }
   throw new Error("No image returned");
 }
-function getOpenAIKey(){const s=load(KEY_OPENAI,{apiKey:""});return (s&&s.apiKey)?s.apiKey.trim():""}
 function blobToDataURL(blob){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(blob)})}
 
 /* ===== Open/Save/Export ===== */
@@ -380,7 +607,7 @@ function openProject(){
   input.click();
 }
 async function exportZip(){
-  const zip=new JSZip(); const project={version:2,text:ta.value||"",settings,characters,assets,frames};
+  const zip=new JSZip(); const project={version:4,text:ta.value||"",settings,characters,assets,frames};
   zip.file("book-animator.bookanim.json",JSON.stringify(project,null,2));
   zip.file("book-text.txt",project.text);
   zip.file("characters.json",JSON.stringify(characters.map(c=>({...c,imageData:undefined})),null,2));
