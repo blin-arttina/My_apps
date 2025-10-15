@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Book Animator</title>
+
+<!-- ZIP export -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<!-- PDF.js for PDF image importing -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js";</script>
+
+<style>
+  :root{--bg:#000;--fg:#fff;--muted:#cfcfcf;--panel:#0e0e0e;--border:#2a2a2a;--accent:#ff2d2d;--accent-hover:#ff4747}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
+  .wrap{max-width:900px;margin:4rem auto 8.5rem;padding:0 1rem}
+  h1{margin:0 0 1rem;text-align:center;font-size:2rem;font-weight:800}
+  label{display:block;margin:.5rem 0;font-weight:600;color:var(--muted)}
+  textarea{width:100%;min-height:300px;padding:1rem;border-radius:10px;background:#0b0b0b;color:var(--fg);border:1px solid var(--border);font-size:1rem;line-height:1.5;resize:none;outline:none}
+  textarea:focus{box-shadow:0 0 0 2px rgba(255,45,45,.35);border-color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:.7rem 1rem;cursor:pointer;font-weight:800}
+  .btn:hover{background:var(--accent-hover)} .btn[disabled]{opacity:.6;cursor:not-allowed}
+  .btn-outline{background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;padding:.6rem 1rem;cursor:pointer;font-weight:800}
+  .btn-outline:hover{background:rgba(255,45,45,.15)} .btn-danger{background:#b31313}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:12px}
+  .row{display:flex;gap:12px;align-items:center}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .input,.select,.area{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}
+  .area{min-height:90px}
+  .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:360px;overflow:auto}
+  .thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:#111}
+  .small{font-size:.9rem}
+
+  /* Hamburgers & menus */
+  .hambtn{position:fixed;top:.75rem;z-index:1000;width:46px;height:46px;display:grid;place-items:center;background:var(--panel);color:var(--fg);border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  .hambtn.left{left:.75rem} .hambtn.right{right:.75rem}
+  .menu{position:fixed;top:3.9rem;z-index:999;min-width:300px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55)}
+  .menu.left{left:.75rem} .menu.right{right:.75rem}
+  .item{padding:.75rem .95rem;cursor:pointer;border-bottom:1px solid var(--border)}
+  .item:last-child{border-bottom:none}
+  .item:hover{background:#111}
+
+  /* Modal */
+  .mask{position:fixed;inset:0;display:none;place-items:center;z-index:1100;background:rgba(0,0,0,.6)}
+  .mask.show{display:grid}
+  .modal{width:min(96vw,1000px);background:#0d0d0d;color:var(--fg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.7);padding:1rem 1.25rem}
+
+  /* PDF grid */
+  .pdfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:60vh;overflow:auto;margin-top:.5rem}
+  .pdfthumb{background:#111;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
+  .pdfthumb canvas{width:100%;height:auto;border-radius:6px;border:1px solid #222}
+  .pdfthumb .cap{font-size:.9rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+
+  /* Progress (bottom) */
+  .progress-wrap{position:fixed;left:0;right:0;bottom:0;background:#0a0a0a;border-top:1px solid var(--border);padding:.55rem 1rem;z-index:900}
+  .progress-row{display:flex;gap:12px;align-items:center;max-width:900px;margin:0 auto;color:var(--muted)}
+  .bar{flex:1;height:16px;background:#1a1a1a;border-radius:8px;overflow:hidden;border:1px solid #222;position:relative}
+  .fill{height:100%;background:#fff;width:0%;transition:width .3s ease}
+  .percent{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;color:#000;mix-blend-mode:screen;pointer-events:none}
+
+  /* Live thumbnails */
+  #thumbStrip{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .thumbCard{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:6px 8px;background:#0d0d0d}
+  .thumbIdx{font-weight:800;color:#ffb3b3}
+  .thumb.waiting{opacity:.6;filter:grayscale(1)}
+
+  .pill{border:1px solid var(--border);padding:.2rem .5rem;border-radius:999px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+  <!-- Hamburgers -->
+  <button id="btnLeft"  class="hambtn left"  aria-label="Open left menu">≡</button>
+  <button id="btnRight" class="hambtn right" aria-label="Open right menu">≡</button>
+
+  <!-- Left menu -->
+  <div id="menuLeft" class="menu left" hidden>
+    <div class="item" data-left="settings">Settings</div>
+    <div class="item" data-left="voices">Voices</div>
+    <div class="item" data-left="characters">Characters</div>
+    <div class="item" data-left="importpdf">Import Images (PDF)</div>
+    <div class="item" data-left="assets">Assets</div>
+    <div class="item" data-left="secrets">Secrets (API Keys)</div>
+    <div class="item" data-left="tutorial">Tutorial</div>
+    <div class="item" data-left="about">About</div>
+  </div>
+
+  <!-- Right menu -->
+  <div id="menuRight" class="menu right" hidden>
+    <div class="item" data-right="new">New Project</div>
+    <div class="item" data-right="save">Save Project</div>
+    <div class="item" data-right="open">Open Project</div>
+    <div class="item" data-right="exportZip">Export Finished (ZIP)</div>
+    <div class="item" data-right="exit">Exit</div>
+  </div>
+
+  <!-- Main -->
+  <div class="wrap">
+    <h1>Book Animator</h1>
+    <div class="row" style="justify-content:space-between;margin:.25rem 0 .25rem">
+      <span class="pill" id="modePill">Mode: —</span>
+      <span class="pill" id="sceneCountPill">Scenes: 0</span>
+    </div>
+
+    <label for="bookText">Paste your book text:</label>
+    <textarea id="bookText" placeholder="Paste text here…"></textarea>
+
+    <div class="actions">
+      <div class="row" style="gap:8px">
+        <button class="btn" id="btnStart">Start Animation</button>
+        <button class="btn-outline" id="btnPreviewScenes">Preview Scenes</button>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" id="btnSave">Save</button>
+        <button class="btn" id="btnExportZip">Export Finished (ZIP)</button>
+      </div>
+    </div>
+
+    <!-- Live thumbs -->
+    <div id="thumbStrip" aria-live="polite"></div>
+    <div id="scenePreview" class="list" style="margin-top:12px;display:none"></div>
+  </div>
+
+  <!-- Progress (bottom) -->
+  <div class="progress-wrap" id="progressWrap" hidden>
+    <div class="progress-row">
+      <div id="progressLabel">Idle</div>
+      <div class="bar">
+        <div class="fill" id="progressFill"></div>
+        <div class="percent" id="progressPct">0%</div>
+      </div>
+      <button class="btn-outline" id="btnProgStop">Stop</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="mask" class="mask" role="dialog" aria-modal="true" aria-hidden="true">
+    <div id="modal" class="modal" role="document"></div>
+  </div>
+
+<script>
+/* ===== Storage keys ===== */
+const KEY_TEXT="bookAnimator:text";
+const KEY_CFG="bookAnimator:settings";
+const KEY_CHARS="bookAnimator:characters";
+const KEY_ASSETS="bookAnimator:assets";
+const KEY_FRAMES="bookAnimator:frames";
+const KEY_OPENAI="bookAnimator:openai";
+const KEY_ELEVEN="bookAnimator:eleven";
+const KEY_CUSTOM="bookAnimator:customProviders";
+
+function load(k,def){try{return JSON.parse(localStorage.getItem(k))||def}catch{return def}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+
+/* ===== Settings & data ===== */
+const ANIM_STYLES=["Cartoon","Flipbook","Comic","Slideshow","Anime","Dark Fantasy","Lifelike","Stop-Motion","Motion-Comics","Pixar-Like","Minimalist Line-Art","Water-Ink","Claymation","Paper-Cut","Retro 8-bit","3D Toon"];
+const ART_STYLES=["Fantasy","Anime","Noir","Watercolor","3D","Sketch","Oil Paint","Ink & Wash","Pixel Art","Low-Poly","Photoreal","Cel-shade","Vaporwave","Cyberpunk","Steampunk","Storybook"];
+const ILLUST_MODES=["OpenAI Images","Local Stub (no API)"];
+
+/* OpenAI voices now include "ember" (you wanted Narrator=Ember) */
+const OPENAI_VOICE_IDS=["alloy","amber","copper","juniper","pearl","sage","ember"];
+const VOICE_PROVIDERS=["OpenAI","Browser (Device)","ElevenLabs"];
+const ATTACH_ACCEPT=".txt,.md,.pdf,.doc,.docx,.json,.jpg,.jpeg,.png";
+
+/* ==== Characters seeded from your files (traits/ages/backstories) ==== */
+function seedCharacters(){
+  return [
+    /* Narrator */
+    {id:"narrator",name:"Narrator",age:null,traits:"neutral, warm guide",backstory:"Narrates scenes and transitions.",voiceProvider:"OpenAI",voice:"ember",images:[],files:[]},
+
+    /* Sidetrack Sally set (from Master sheet) */
+    {id:"c_sally", name:"Sidetracked Sally", age:null,
+      traits:"Blonde hair, blue eyes; easily distracted; spots hidden details; carries notebook of unfinished ideas; flowing pink clothing; dark fantasy anime vibe.",
+      backstory:"Curious wanderer whose habit of sidetracking often reveals clues others miss.",
+      voiceProvider:"OpenAI", voice:"juniper", images:[], files:[]},
+
+    {id:"c_zena",  name:"Zen Zena", age:null,
+      traits:"Silver/white hair, blue eyes; calm, collected strategist; master of meditation and patience; carries a cup of tea; blind; flowing robes; dark fantasy anime style.",
+      backstory:"Serene mentor figure who guides the group with insight and poise.",
+      voiceProvider:"OpenAI", voice:"sage", images:[], files:[]},
+
+    {id:"c_skip",  name:"Skater Skip (Chris)", age:null,
+      traits:"Long blonde hair in a bun, blue eyes; skater-style clothing with fantasy embellishments; athletic; skatepark settings with a glowing dark fantasy vibe.",
+      backstory:"Street-smart trickster who uses agility and flair to help the team.",
+      voiceProvider:"OpenAI", voice:"alloy", images:[], files:[]},
+
+    {id:"c_dan",   name:"Dark Dan (Darwin)", age:null,
+      traits:"Dark hair, blue eyes; lip piercing; gauged earlobes; intense expression; layered gothic fantasy armor; stormy magical landscapes with glowing ruins.",
+      backstory:"Brooding protector with a complicated past.",
+      voiceProvider:"OpenAI", voice:"copper", images:[], files:[]},
+
+    {id:"c_dani",  name:"Darling Danielle (Dakota)", age:null,
+      traits:"Pregnant; blonde hair, blue eyes; warm, kind, nurturing; flowing maternity robes in soft fantasy tones.",
+      backstory:"Heart of the group, grounds everyone with compassion.",
+      voiceProvider:"OpenAI", voice:"juniper", images:[], files:[]},
+
+    {id:"c_gus",   name:"Grumpy Gus (Bob)", age:null,
+      traits:"Blonde hair, blue eyes; short military haircut; long gray goatee; gruff exterior yet deeply loyal; rugged dark fantasy attire.",
+      backstory:"Veteran guardian who pretends not to care—but always does.",
+      voiceProvider:"OpenAI", voice:"copper", images:[], files:[]},
+
+    {id:"c_annie", name:"Ambush Annie (Amy)", age:null,
+      traits:"Dark hair, brown eyes; round face; slightly overweight; tactical fantasy armor; bold, no-nonsense attitude.",
+      backstory:"Decisive and fearless, first into danger and last to retreat.",
+      voiceProvider:"OpenAI", voice:"amber", images:[], files:[]},
+
+    {id:"c_callie",name:"Creative Callie", age:null,
+      traits:"Imaginative, upbeat problem solver; artful flair.",
+      backstory:"Turns obstacles into opportunities with creativity.",
+      voiceProvider:"OpenAI", voice:"pearl", images:[], files:[]},
+
+    /* Journey family (from Journey Master sheet) */
+    {id:"c_journey", name:"Journey", age:5,
+      traits:"Light brown hair, brown eyes; playful and sweet; often in a white dress.",
+      backstory:"Curious child whose small adventures bloom into big lessons.",
+      voiceProvider:"OpenAI", voice:"juniper", images:[], files:[]},
+
+    {id:"c_sophie",  name:"Sophie", age:7,
+      traits:"Light brown/dirty blonde hair; green eyes; big-sister energy.",
+      backstory:"Protective and a little competitive, always looking out for Journey.",
+      voiceProvider:"OpenAI", voice:"amber", images:[], files:[]},
+
+    {id:"c_abby",    name:"Abby (Mom)", age:null,
+      traits:"Long dark brown hair; patient and loving.",
+      backstory:"The steady center of the family.",
+      voiceProvider:"OpenAI", voice:"pearl", images:[], files:[]},
+
+    {id:"c_mark",    name:"Mark (Dad)", age:null,
+      traits:"Light red hair; playful and fun.",
+      backstory:"Encourages exploration and laughter.",
+      voiceProvider:"OpenAI", voice:"alloy", images:[], files:[]},
+
+    {id:"c_bear",    name:"Bear (Dog)", age:null,
+      traits:"Faithful companion, always part of the adventures.",
+      backstory:"Furry hero with a nose for trouble (and treats).",
+      voiceProvider:"OpenAI", voice:"copper", images:[], files:[]},
+
+    /* The Dominator set (from DOCX) */
+    {id:"c_dominic", name:"Dominic (The Dominator)", age:"teen",
+      traits:"Tall, thin, blonde teen farm boy; protective, selfless; becomes a superhero with black/red suit; confident stance and crooked smile.",
+      backstory:"Balances farm life and hero work; inspires hope while protecting family and community.",
+      voiceProvider:"OpenAI", voice:"alloy", images:[], files:[]},
+
+    {id:"c_naomi", name:"Naomi (Younger Sister)", age:"younger",
+      traits:"Looks up to Dominic; prefers animals to field work.",
+      backstory:"Gentle spirit who bonds with the farm’s creatures.",
+      voiceProvider:"OpenAI", voice:"pearl", images:[], files:[]},
+
+    {id:"c_oliver", name:"Oliver (Adopted Brother, Same Age)", age:"teen",
+      traits:"Adopted; same age as Dominic; hasn’t seen biological family in ~10 years.",
+      backstory:"Finding belonging with Dominic’s family; loyal and resilient.",
+      voiceProvider:"OpenAI", voice:"amber", images:[], files:[]},
+
+    {id:"c_teddy", name:"Teddy (Younger Brother, Mixed Descent)", age:"younger",
+      traits:"Much younger; follows older siblings; learning about farm animals.",
+      backstory:"Eager little helper with a big heart.",
+      voiceProvider:"OpenAI", voice:"juniper", images:[], files:[]},
+
+    /* Extra renameable slots to reach ≥20 */
+    {id:"c_slot19", name:"Character Slot 19", age:null, traits:"", backstory:"", voiceProvider:"OpenAI", voice:"amber", images:[], files:[]},
+    {id:"c_slot20", name:"Character Slot 20", age:null, traits:"", backstory:"", voiceProvider:"OpenAI", voice:"amber", images:[], files:[]}
+  ];
+}
+
+/* default settings use Narrator=ember */
+let settings=load(KEY_CFG,{animationStyle:"Cartoon",artStyle:"Fantasy",aspect:"16:9",fps:24,audience:"Adults",illustrationMode:"OpenAI Images", narratorProvider:"OpenAI", narrator:"ember"});
+let characters=load(KEY_CHARS,null) || seedCharacters();
+let assets=load(KEY_ASSETS,[]), frames=load(KEY_FRAMES,[]);
+let customProviders=load(KEY_CUSTOM,[]);
+
+/* Secrets getters */
+function getOpenAIKey(){const s=load(KEY_OPENAI,{apiKey:""});return (s&&s.apiKey)?s.apiKey.trim():""}
+function getElevenKey(){const s=load(KEY_ELEVEN,{apiKey:""});return (s&&s.apiKey)?s.apiKey.trim():""}
+
+/* ===== DOM helpers ===== */
+const ta=document.getElementById("bookText"); if(localStorage.getItem(KEY_TEXT)) ta.value=localStorage.getItem(KEY_TEXT);
+const mask=document.getElementById("mask"), modal=document.getElementById("modal");
+function openModal(html){modal.innerHTML=html;mask.classList.add("show")}
+function closeModal(){mask.classList.remove("show");modal.innerHTML=""}
+mask.onclick=e=>{if(e.target===mask) closeModal()}
+document.addEventListener("click",(e)=>{if(!e.target.closest(".menu")&&!e.target.closest(".hambtn")){menuLeft.hidden=true;menuRight.hidden=true}})
+const btnLeft=document.getElementById("btnLeft"),btnRight=document.getElementById("btnRight");
+const menuLeft=document.getElementById("menuLeft"),menuRight=document.getElementById("menuRight");
+btnLeft.onclick=()=>{menuLeft.hidden=!menuLeft.hidden;menuRight.hidden=true}
+btnRight.onclick=()=>{menuRight.hidden=!menuRight.hidden;menuLeft.hidden=true}
+const modePill=document.getElementById("modePill"), sceneCountPill=document.getElementById("sceneCountPill");
+function updatePills(count=0){modePill.textContent="Mode: "+settings.illustrationMode; sceneCountPill.textContent="Scenes: "+count}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||"unnamed"}
+
+/* ===== Menus ===== */
+document.getElementById("btnSave").onclick=()=>{save(KEY_TEXT,ta.value||"");alert("Saved.")}
+document.getElementById("btnExportZip").onclick=exportZip
+document.getElementById("btnPreviewScenes").onclick=previewScenes
+menuRight.onclick=(e)=>{const a=e.target?.dataset?.right;if(!a)return;menuRight.hidden=true;
+  if(a==="new"){if(confirm("Clear text?")) ta.value=""}
+  if(a==="save"){save(KEY_TEXT,ta.value||"");alert("Saved to browser storage.")}
+  if(a==="open") openProject()
+  if(a==="exportZip") exportZip()
+}
+menuLeft.onclick=(e)=>{const a=e.target?.dataset?.left;if(!a)return;menuLeft.hidden=true;
+  if(a==="settings") showSettings()
+  if(a==="voices") showVoices()
+  if(a==="characters") showCharacters()
+  if(a==="importpdf") showPdfImport()
+  if(a==="assets") showAssets()
+  if(a==="secrets") showSecrets()
+  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Settings/Secrets/Voices/Characters\n3) Preview Scenes\n4) Start\n5) Export ZIP.")
+  if(a==="about") alert("Book Animator — AI illustration + multi-provider TTS + per-character uploads.\nCreated by Blind Art.")
+}
+
+/* ===== Settings ===== */
+function showSettings(){
+  const options=(arr,sel)=>arr.map(o=>`<option ${o===sel?"selected":""}>${o}</option>`).join("");
+  openModal(`<h2>Settings</h2>
+    <div class="grid">
+      <div class="row" style="gap:8px"><span class="pill">Tip: choose <b>OpenAI Images</b> to generate real pictures.</span></div>
+      <div class="field"><label>Illustration Mode</label><select id="stIll" class="select">${options(ILLUST_MODES,settings.illustrationMode)}</select></div>
+      <div class="field"><label>Animation style</label><select id="stAnim" class="select">${options(ANIM_STYLES,settings.animationStyle)}</select></div>
+      <div class="field"><label>Art style</label><select id="stArt" class="select">${options(ART_STYLES,settings.artStyle)}</select></div>
+      <div class="field"><label>Aspect</label><select id="stAspect" class="select">${options(["16:9","9:16","1:1","4:3","21:9"],settings.aspect)}</select></div>
+      <div class="field"><label>FPS</label><input id="stFps" class="input" type="number" min="12" max="60" value="${settings.fps}"/></div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="(function(){
+        settings.illustrationMode=document.getElementById('stIll').value;
+        settings.animationStyle=document.getElementById('stAnim').value;
+        settings.artStyle=document.getElementById('stArt').value;
+        settings.aspect=document.getElementById('stAspect').value;
+        settings.fps=parseInt(document.getElementById('stFps').value)||24;
+        save(KEY_CFG,settings); closeModal(); updatePills();
+        alert('Settings saved.');
+      })()">Save</button>
+    </div>`);
+}
+
+/* ===== Secrets (OpenAI + ElevenLabs + Custom Providers) ===== */
+function showSecrets(){
+  const o=load(KEY_OPENAI,{apiKey:""}), e=load(KEY_ELEVEN,{apiKey:""});
+  const customList = (load(KEY_CUSTOM,[])||[]).map(p=>`
+    <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.45rem 0">
+      <div>
+        <b>${esc(p.name)}</b>
+        <div class="small" style="color:var(--muted)">${esc(p.header||"Authorization")}: ${esc((p.scheme||"")+" ***")}</div>
+        ${p.baseUrl?`<div class="small" style="color:var(--muted)">${esc(p.baseUrl)}</div>`:""}
+        ${p.testUrl?`<div class="small" style="color:var(--muted)">Test: ${esc(p.method||"GET")} ${esc(p.testUrl)}</div>`:""}
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" onclick="editCustomProvider('${p.id}')">Edit</button>
+        <button class="btn" onclick="testCustomProvider('${p.id}')">Test</button>
+        <button class="btn-danger" onclick="deleteCustomProvider('${p.id}')">Delete</button>
+      </div>
+    </div>
+  `).join("") || "<div class='small'>No custom providers yet.</div>";
+
+  openModal(`<h2>Secrets (API Keys)</h2>
+    <div class="grid">
+      <div class="field" style="grid-column:1/-1"><label>OpenAI API Key</label>
+        <input id="openaiKey" class="input" placeholder="sk-..." value="${esc(o.apiKey||"")}"/>
+        <small class="small" style="color:var(--muted)">Used for AI images and OpenAI TTS.</small>
+      </div>
+      <div class="field" style="grid-column:1/-1"><label>ElevenLabs API Key</label>
+        <input id="elevenKey" class="input" placeholder="elevenlabs key" value="${esc(e.apiKey||"")}"/>
+        <small class="small" style="color:var(--muted)">Optional. Enables stock ElevenLabs voices (no cloning).</small>
+      </div>
+    </div>
+
+    <div class="row" style="justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px">
+      <div class="row" style="gap:8px">
+        <button class="btn" onclick="testOpenAIKey()">Test OpenAI</button>
+        <button class="btn" onclick="testElevenKey()">Test ElevenLabs</button>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" onclick="closeModal()">Close</button>
+        <button class="btn" onclick="(function(){
+          const ok=document.getElementById('openaiKey').value.trim();
+          const ek=document.getElementById('elevenKey').value.trim();
+          save(KEY_OPENAI,{apiKey:ok}); save(KEY_ELEVEN,{apiKey:ek});
+          alert('Keys saved.');
+        })()">Save Keys</button>
+      </div>
+    </div>
+
+    <h3 style="margin:1rem 0 .4rem">Custom Providers</h3>
+    <div class="list" id="customList">${customList}</div>
+
+    <h4 style="margin:.8rem 0 .4rem">Add / Edit Provider</h4>
+    <div class="grid" id="customForm">
+      <input class="input" id="cp_name" placeholder="Provider name (e.g., Pika, Runway, Custom API)"/>
+      <input class="input" id="cp_header" placeholder="Header name (default: Authorization)"/>
+      <input class="input" id="cp_scheme" placeholder="Scheme/prefix (e.g., Bearer)"/>
+      <input class="input" id="cp_key" placeholder="API key value"/>
+      <input class="input" id="cp_base" placeholder="Base URL (optional)"/>
+      <input class="input" id="cp_test" placeholder="Test endpoint URL (optional)"/>
+      <select class="select" id="cp_method">
+        <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+      </select>
+      <input class="input" id="cp_body" placeholder='Test body JSON (optional)'/>
+      <input type="hidden" id="cp_id" value=""/>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:8px">
+      <button class="btn-outline" onclick="resetCustomForm()">Clear</button>
+      <button class="btn" onclick="saveCustomProvider()">Save Provider</button>
+    </div>
+
+    <div id="testResult" style="margin-top:.6rem;color:var(--muted)"></div>
+  `);
+}
+function resetCustomForm(){
+  ["cp_id","cp_name","cp_header","cp_scheme","cp_key","cp_base","cp_test","cp_method","cp_body"].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    if(id==="cp_method") el.value="GET"; else el.value="";
+  });
+}
+function saveCustomProvider(){
+  const id=document.getElementById("cp_id").value || ("cp_"+crypto.randomUUID());
+  const obj={
+    id,
+    name:document.getElementById("cp_name").value.trim(),
+    header:document.getElementById("cp_header").value.trim()||"Authorization",
+    scheme:document.getElementById("cp_scheme").value.trim(),
+    apiKey:document.getElementById("cp_key").value.trim(),
+    baseUrl:document.getElementById("cp_base").value.trim(),
+    testUrl:document.getElementById("cp_test").value.trim(),
+    method:document.getElementById("cp_method").value.trim()||"GET",
+    body:document.getElementById("cp_body").value.trim()
+  };
+  if(!obj.name || !obj.apiKey){ alert("Name and API key are required."); return; }
+  const list=load(KEY_CUSTOM,[]); const idx=list.findIndex(p=>p.id===id); if(idx>=0) list[idx]=obj; else list.push(obj);
+  customProviders=list; save(KEY_CUSTOM,list); showSecrets(); alert("Provider saved.");
+}
+function editCustomProvider(id){
+  const p=customProviders.find(x=>x.id===id); if(!p) return;
+  document.getElementById("cp_id").value=p.id;
+  document.getElementById("cp_name").value=p.name||"";
+  document.getElementById("cp_header").value=p.header||"Authorization";
+  document.getElementById("cp_scheme").value=p.scheme||"";
+  document.getElementById("cp_key").value=p.apiKey||"";
+  document.getElementById("cp_base").value=p.baseUrl||"";
+  document.getElementById("cp_test").value=p.testUrl||"";
+  document.getElementById("cp_method").value=p.method||"GET";
+  document.getElementById("cp_body").value=p.body||"";
+}
+function deleteCustomProvider(id){
+  if(!confirm("Delete this provider?")) return;
+  customProviders=customProviders.filter(p=>p.id!==id);
+  save(KEY_CUSTOM,customProviders);
+  showSecrets();
+}
+async function testCustomProvider(id){
+  const p=customProviders.find(x=>x.id===id); if(!p){alert("Not found.");return}
+  if(!p.testUrl){alert("Add a Test endpoint URL first.");return}
+  const headers={};
+  const hdr=p.header||"Authorization";
+  const val = (p.scheme?p.scheme+" ":"") + p.apiKey;
+  headers[hdr]=val;
+  let body, method=p.method||"GET";
+  if(p.body && method!=="GET"){
+    headers["Content-Type"]="application/json";
+    try{body=JSON.stringify(JSON.parse(p.body))}catch{body=p.body}
+  }
+  const r=document.getElementById("testResult"); r.textContent="Testing "+p.name+" …";
+  try{
+    const resp=await fetch(p.testUrl,{method,headers,body});
+    const ok=resp.ok; let text=""; try{text=await resp.text()}catch{}
+    r.textContent = (ok?"OK ✅ ":"Error ❌ ")+ (text?(" • "+text.slice(0,200)):"");
+  }catch(e){ r.textContent="Test failed: "+e.message }
+}
+
+/* ===== Voices (OpenAI + Browser + ElevenLabs) ===== */
+let browserVoices=[];
+function loadBrowserVoices(){browserVoices = speechSynthesis.getVoices().map(v=>({id:v.voiceURI,name:v.name,lang:v.lang}))}
+if('speechSynthesis' in window){loadBrowserVoices();window.speechSynthesis.onvoiceschanged=loadBrowserVoices}
+let elevenVoicesCache=null;
+async function getElevenVoices(){
+  if(elevenVoicesCache) return elevenVoicesCache;
+  const key=getElevenKey(); if(!key) return [];
+  const resp=await fetch("https://api.elevenlabs.io/v1/voices",{headers:{"xi-api-key":key}});
+  if(!resp.ok) return [];
+  const js=await resp.json(); elevenVoicesCache=(js?.voices||[]).map(v=>({id:v.voice_id,name:v.name}));
+  return elevenVoicesCache;
+}
+function showVoices(){
+  const providerOptions = (sel)=>VOICE_PROVIDERS.map(p=>`<option ${p===sel?"selected":""}>${p}</option>`).join("");
+  const openaiOptions = (sel)=>OPENAI_VOICE_IDS.map(v=>`<option ${v===sel?"selected":""} value="${v}">${v}</option>`).join("");
+  const browserOptions = (sel)=>browserVoices.map(v=>`<option ${v.id===sel?"selected":""} value="${v.id}">${esc(v.name)} (${esc(v.lang)})</option>`).join("") || `<option value="">(No device voices found)</option>`;
+  const rows = characters.filter(c=>c.id!=="narrator").map(c=>{
+    const prov = c.voiceProvider||"OpenAI"; const currentId=c.voice||"";
+    const providerSel = `<select class="select voice-prov" data-char="${c.id}">${providerOptions(prov)}</select>`;
+    const voiceSel = `<select class="select voice-id" data-char="${c.id}" data-prov="${prov}">
+      ${prov==="OpenAI"?openaiOptions(currentId):prov==="Browser (Device)"?browserOptions(currentId):`<option value="">(Pick provider or load ElevenLabs)</option>`}
+    </select>`;
+    return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.4rem 0">
+      <div><b>${esc(c.name)}</b><div class="small" style="color:var(--muted)">${esc(c.traits||"")}</div></div>
+      <div class="row" style="gap:8px;min-width:320px">${providerSel}${voiceSel}</div>
+      <button class="btn-outline" onclick="editCharacter('${c.id}')">Edit</button>
+    </div>`;
+  }).join("");
+
+  openModal(`
+    <h2>Voices</h2>
+    <div class="grid">
+      <div class="field"><label>Narrator Provider</label>
+        <select id="narProv" class="select">${providerOptions(settings.narratorProvider||"OpenAI")}</select>
+      </div>
+      <div class="field"><label>Narrator Voice</label>
+        <select id="narVoice" class="select" data-for="narrator">${openaiOptions(settings.narrator||"ember")}</select>
+      </div>
+
+      <div class="field" style="grid-column:1/-1"><label>Preview text</label>
+        <input id="pvText" class="input" placeholder="Type a line to preview"/>
+      </div>
+      <div class="field"><label>Preview provider</label>
+        <select id="pvProv" class="select">${providerOptions("OpenAI")}</select>
+      </div>
+      <div class="field"><label>Preview voice</label>
+        <select id="pvVoice" class="select">${openaiOptions("ember")}</select>
+      </div>
+      <div class="row" style="align-items:flex-end"><button class="btn" onclick="previewVoice()">Play Preview</button></div>
+    </div>
+
+    <h3 style="margin:1rem 0 .4rem">Characters → Voice Assignments</h3>
+    <div class="list" id="voiceList">${rows}</div>
+
+    <div class="row" style="justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px">
+      <button class="btn-outline" onclick="autoMapVoices()">Generate Voice Mapping (AI)</button>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" onclick="closeModal()">Close</button>
+        <button class="btn" onclick="saveVoices()">Save Voices</button>
+      </div>
+    </div>
+  `);
+
+  document.getElementById('narProv').addEventListener('change', async (e)=>{
+    const prov=e.target.value; const sel=document.getElementById('narVoice'); await rebuildVoiceSelect(sel, prov, settings.narrator);
+  });
+  document.getElementById('pvProv').addEventListener('change', async (e)=>{
+    const prov=e.target.value; const sel=document.getElementById('pvVoice'); await rebuildVoiceSelect(sel, prov, document.getElementById('pvVoice').value);
+  });
+  document.querySelectorAll('.voice-prov').forEach(el=>{
+    el.addEventListener('change', async (e)=>{
+      const prov=e.target.value; const id=e.target.getAttribute('data-char');
+      const voiceSel=document.querySelector(`.voice-id[data-char="${id}"]`);
+      await rebuildVoiceSelect(voiceSel, prov, "");
+      voiceSel.setAttribute('data-prov', prov);
+    });
+  });
+}
+async function rebuildVoiceSelect(selectEl, provider, current){
+  if(!selectEl) return; let html="";
+  if(provider==="OpenAI"){
+    html = OPENAI_VOICE_IDS.map(v=>`<option ${v===current?"selected":""} value="${v}">${v}</option>`).join("");
+  }else if(provider==="Browser (Device)"){
+    html = (browserVoices.length?browserVoices:[{id:"",name:"(No device voices found)",lang:""}])
+      .map(v=>`<option ${v.id===current?"selected":""} value="${v.id}">${esc(v.name)}${v.lang?(" ("+esc(v.lang)+")"):""}</option>`).join("");
+  }else if(provider==="ElevenLabs"){
+    const k=getElevenKey(); if(!k){ html=`<option value="">(Save ElevenLabs key in Secrets)</option>`; }
+    else{
+      const list=await getElevenVoices();
+      html = (list.length?list:[{id:"",name:"(No voices found)"}]).map(v=>`<option ${v.id===current?"selected":""} value="${v.id}">${esc(v.name)}</option>`).join("");
+    }
+  }
+  selectEl.innerHTML = html;
+}
+function saveVoices(){
+  const narProv=document.getElementById('narProv').value;
+  const narVoice=document.getElementById('narVoice').value;
+  settings.narratorProvider=narProv; settings.narrator=narVoice; save(KEY_CFG,settings);
+  document.querySelectorAll('.voice-prov').forEach(el=>{
+    const id=el.getAttribute('data-char'); const prov=el.value;
+    const voiceSel=document.querySelector(`.voice-id[data-char="${id}"]`);
+    const voiceId=voiceSel?.value||"";
+    const c=characters.find(x=>x.id===id); if(c){ c.voiceProvider=prov; c.voice=voiceId; }
+  });
+  save(KEY_CHARS,characters);
+  alert("Voices saved.");
+}
+function autoMapVoices(){
+  const pick = (c)=>{
+    const s=(c.traits||c.backstory||"").toLowerCase();
+    if(/(child|kid|young|teen|playful|energetic)/.test(s)) return "juniper";
+    if(/(gentle|soft|caring|warm|mom)/.test(s)) return "pearl";
+    if(/(calm|wise|mentor|neutral|guide)/.test(s)) return "sage";
+    if(/(deep|gruff|brooding|soldier|dark|dad)/.test(s)) return "copper";
+    if(/(hero|balanced|clear|male)/.test(s)) return "alloy";
+    return "amber";
+  };
+  characters.filter(c=>c.id!=="narrator").forEach(c=>{ c.voiceProvider="OpenAI"; c.voice=pick(c); });
+  save(KEY_CHARS,characters);
+  showVoices();
+  alert("Auto-mapped with OpenAI voices. You can switch any to Browser or ElevenLabs.");
+}
+
+/* ===== Character Editor (upload portraits & attachments) ===== */
+function showCharacters(){
+  const rows=characters.map(c=>{
+    const portrait=c.images?.[0]?.dataURL;
+    return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.5rem 0">
+      <div class="row" style="gap:10px">
+        ${portrait?`<img class="thumb" src="${portrait}" alt="${esc(c.name)} portrait"/>`:`<div class="thumb" style="display:grid;place-items:center;color:#666">—</div>`}
+        <div>
+          <b>${esc(c.name)}</b> ${c.age?`<span class="small" style="color:#aaa">• age: ${esc(c.age)}</span>`:""}
+          <div class="small" style="color:var(--muted)">${esc(c.traits||"")}</div>
+          <div class="small" style="color:var(--muted)">${esc(c.voiceProvider||"-")} · ${esc(c.voice||"-")}</div>
+          ${c.files?.length?`<div class="small" style="color:var(--muted)">${c.files.length} attachment(s)</div>`:""}
+        </div>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" onclick="editCharacter('${c.id}')">Edit</button>
+        <button class="btn-danger" onclick="deleteCharacter('${c.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join("");
+  openModal(`<h2>Characters</h2>
+    <div class="row" style="justify-content:space-between;margin-bottom:.5rem">
+      <button class="btn" onclick="addCharacter()">Add Character</button>
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+    </div>
+    <div class="list">${rows}</div>`);
+}
+function addCharacter(){
+  const id="c_"+crypto.randomUUID().slice(0,8);
+  characters.push({id,name:"New Character",age:null,traits:"",backstory:"",voiceProvider:"OpenAI",voice:"amber",images:[],files:[]});
+  save(KEY_CHARS,characters); showCharacters();
+}
+function deleteCharacter(id){
+  if(!confirm("Delete this character?")) return;
+  characters=characters.filter(c=>c.id!==id);
+  save(KEY_CHARS,characters); showCharacters();
+}
+function editCharacter(id){
+  const c=characters.find(x=>x.id===id); if(!c) return;
+  const providerOptions = (sel)=>VOICE_PROVIDERS.map(p=>`<option ${p===sel?"selected":""}>${p}</option>`).join("");
+  const openaiOptions = (sel)=>OPENAI_VOICE_IDS.map(v=>`<option ${v===sel?"selected":""} value="${v}">${v}</option>`).join("");
+  const imgThumbs=(c.images||[]).map((im,i)=>`<div class="row" style="gap:8px"><img class="thumb" src="${im.dataURL}"/><div class="small">${esc(im.name||("image-"+(i+1)))}</div><button class="btn-outline" onclick="removeCharacterImage('${id}',${i})">Remove</button></div>`).join("") || "<div class='small' style='color:var(--muted)'>No portrait yet.</div>";
+  const fileList=(c.files||[]).map((f,i)=>`<div class="row" style="justify-content:space-between;border-bottom:1px dashed #222;padding:.3rem 0">
+    <div class="small">${esc(f.name)} <span style="color:#777">(${Math.round(f.size/1024)} KB)</span></div>
+    <button class="btn-outline" onclick="removeCharacterFile('${id}',${i})">Remove</button>
+  </div>`).join("") || "<div class='small' style='color:var(--muted)'>No attachments yet.</div>";
+
+  openModal(`<h2>Edit Character</h2>
+    <div class="grid">
+      <div class="field"><label>Name</label><input id="ch_name" class="input" value="${esc(c.name||"")}"/></div>
+      <div class="field"><label>Age</label><input id="ch_age" class="input" value="${esc(c.age??"")}"/></div>
+      <div class="field" style="grid-column:1/-1"><label>Traits</label><input id="ch_traits" class="input" value="${esc(c.traits||"")}"/></div>
+      <div class="field" style="grid-column:1/-1"><label>Backstory</label><textarea id="ch_back" class="area">${esc(c.backstory||"")}</textarea></div>
+      <div class="field"><label>Voice Provider</label><select id="ch_prov" class="select">${providerOptions(c.voiceProvider||"OpenAI")}</select></div>
+      <div class="field"><label>Voice</label><select id="ch_voice" class="select">${openaiOptions(c.voice||"amber")}</select></div>
+    </div>
+
+    <h3 style="margin:.8rem 0 .4rem">Portrait</h3>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <input type="file" id="ch_img" accept=".jpg,.jpeg,.png" class="input"/>
+      <button class="btn" onclick="uploadCharacterImage('${id}')">Upload Portrait</button>
+    </div>
+    <div class="list" id="imgList">${imgThumbs}</div>
+
+    <h3 style="margin:.8rem 0 .4rem">Attachments (text / docs / PDFs / images)</h3>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <input type="file" id="ch_files" multiple accept="${ATTACH_ACCEPT}" class="input"/>
+      <button class="btn" onclick="uploadCharacterFiles('${id}')">Upload Files</button>
+    </div>
+    <div class="list" id="fileList">${fileList}</div>
+
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn" onclick="saveCharacter('${id}')">Save</button>
+    </div>`);
+}
+function arrayBufferToBase64(buf){let binary='';const bytes=new Uint8Array(buf);for(let i=0;i<bytes.byteLength;i++)binary+=String.fromCharCode(bytes[i]);return btoa(binary)}
+async function uploadCharacterImage(id){
+  const f=document.getElementById("ch_img").files?.[0]; if(!f) return alert("Pick an image.");
+  const c=characters.find(x=>x.id===id); if(!c) return;
+  const buf=await f.arrayBuffer(); const b64=arrayBufferToBase64(buf);
+  const dataURL=`data:${f.type||"image/png"};base64,${b64}`;
+  c.images = [{name:f.name,type:f.type,size:f.size,dataURL}];
+  save(KEY_CHARS,characters); editCharacter(id);
+}
+async function uploadCharacterFiles(id){
+  const files=[...(document.getElementById("ch_files").files||[])]; if(!files.length) return alert("Pick files.");
+  const c=characters.find(x=>x.id===id); if(!c) return;
+  for(const f of files){
+    const buf=await f.arrayBuffer(); const b64=arrayBufferToBase64(buf);
+    const dataURL=`data:${f.type||"application/octet-stream"};base64,${b64}`;
+    (c.files ||= []).push({name:f.name,type:f.type,size:f.size,dataURL});
+  }
+  save(KEY_CHARS,characters); editCharacter(id);
+}
+function removeCharacterImage(id,idx){
+  const c=characters.find(x=>x.id===id); if(!c) return;
+  (c.images||[]).splice(idx,1); save(KEY_CHARS,characters); editCharacter(id);
+}
+function removeCharacterFile(id,idx){
+  const c=characters.find(x=>x.id===id); if(!c) return;
+  (c.files||[]).splice(idx,1); save(KEY_CHARS,characters); editCharacter(id);
+}
+function saveCharacter(id){
+  const c=characters.find(x=>x.id===id); if(!c) return;
+  c.name=document.getElementById("ch_name").value.trim()||c.name;
+  c.age=document.getElementById("ch_age").value.trim()||null;
+  c.traits=document.getElementById("ch_traits").value;
+  c.backstory=document.getElementById("ch_back").value;
+  c.voiceProvider=document.getElementById("ch_prov").value;
+  c.voice=document.getElementById("ch_voice").value;
+  save(KEY_CHARS,characters); showCharacters();
+}
+
+/* ===== PDF Import (general images) ===== */
+function showPdfImport(){
+  openModal(`<h2>Import Images (PDF)</h2>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <input type="file" id="pdfFile" accept="application/pdf" class="input" />
+      <button class="btn" id="btnLoadPdf">Load PDF</button>
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+    </div>
+    <div id="pdfName" class="small" style="margin-top:.5rem;color:var(--muted)"></div>
+    <div id="pdfGrid" class="pdfgrid" style="margin-top:.5rem"></div>`);
+  document.getElementById("btnLoadPdf").onclick=async ()=>{
+    const f=document.getElementById("pdfFile").files?.[0]; if(!f) return alert("Choose a PDF first.");
+    document.getElementById("pdfName").textContent=f.name;
+    const ab=await f.arrayBuffer(), pdf=await pdfjsLib.getDocument({data:ab}).promise, grid=document.getElementById("pdfGrid"); grid.innerHTML="";
+    for(let p=1;p<=pdf.numPages;p++){
+      const page=await pdf.getPage(p), viewport=page.getViewport({scale:0.4}), canvas=document.createElement("canvas"), ctx=canvas.getContext("2d");
+      canvas.width=Math.floor(viewport.width); canvas.height=Math.floor(viewport.height);
+      await page.render({canvasContext:ctx,viewport}).promise;
+      const card=document.createElement("div"); card.className="pdfthumb"; const cap=document.createElement("div"); cap.className="cap";
+      cap.innerHTML=`<span>Page ${p}</span>`; card.appendChild(canvas); card.appendChild(cap); grid.appendChild(card);
+    }
+  }
+}
+
+/* ===== Assets ===== */
+function showAssets(){ openModal(`<h2>Assets</h2><div class="list">${assets.map(a=>`<div>${esc(a.name||a.url||"(unnamed)")}</div>`).join("")||"No assets"}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn-outline" onclick="closeModal()">Close</button></div>`); }
+
+/* ===== Scene splitting ===== */
+function splitIntoScenesSmart(text){
+  let chunks=text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean); if(chunks.length>=2) return chunks.map((t,i)=>({index:i,text:t}));
+  const sents=text.replace(/\n+/g,' ').match(/[^.!?]+[.!?]+|\S+$/g)||[]; const out=[]; let buf="";
+  for(const s of sents){ if((buf+" "+s).length>350||(buf.match(/[.!?]/g)||[]).length>=2){ if(buf.trim()) out.push(buf.trim()); buf=s.trim(); } else { buf=(buf?buf+" ":"")+s.trim(); } }
+  if(buf.trim()) out.push(buf.trim()); return out.map((t,i)=>({index:i,text:t}));
+}
+function previewScenes(){
+  const scenes=splitIntoScenesSmart(ta.value||""); const box=document.getElementById("scenePreview");
+  if(!scenes.length){box.style.display="none";alert("No scenes found.");return}
+  box.style.display="block"; box.innerHTML=`<div style="padding:.4rem 0;color:var(--muted)"><b>${scenes.length}</b> scenes detected</div>`+
+    scenes.map(s=>`<div style="padding:.5rem;border-bottom:1px solid var(--border)"><b>Scene ${s.index+1}</b><div class="small" style="color:var(--muted)">${esc((s.text.slice(0,200)+'…').replace(/\n/g,' '))}</div></div>`).join("");
+  updatePills(scenes.length);
+}
+
+/* ===== Progress & thumbnails ===== */
+const progWrap=document.getElementById("progressWrap"), progFill=document.getElementById("progressFill"), progLabel=document.getElementById("progressLabel"), progPct=document.getElementById("progressPct");
+const btnProgStop=document.getElementById("btnProgStop"); let stopPipeline=false; btnProgStop.onclick=()=>stopPipeline=true;
+function resetProgress(){progWrap.hidden=false; setProgress(0,"Starting…")}
+function setProgress(p,label){const pct=Math.max(0,Math.min(100,Math.round(p))); progFill.style.width=pct+"%"; progPct.textContent=pct+"%"; progLabel.textContent=label}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+const thumbStrip=document.getElementById("thumbStrip");
+function addThumbPlaceholder(idx){const card=document.createElement("div");card.className="thumbCard";card.id=`thumb-${idx}`;
+  card.innerHTML=`<div class="thumbIdx">#${idx+1}</div><img class="thumb waiting" alt="pending" src="" /><div style="color:var(--muted)">Rendering…</div>`; thumbStrip.appendChild(card)}
+function setThumbImage(idx,dataURL){const card=document.getElementById(`thumb-${idx}`); if(!card) return; const img=card.querySelector("img.thumb");
+  img.src=dataURL; img.classList.remove("waiting"); const text=card.querySelector("div[style]"); if(text) text.textContent="Done"}
+
+/* ===== Start Animation (images) ===== */
+document.getElementById("btnStart").onclick=startAnimation; updatePills();
+async function startAnimation(){
+  const mode=settings.illustrationMode||"OpenAI Images"; updatePills();
+  const btnStart=document.getElementById("btnStart"); btnStart.disabled=true;
+  const scenes=splitIntoScenesSmart(ta.value||""); if(!scenes.length){alert("No scenes found."); btnStart.disabled=false; return}
+  stopPipeline=false; resetProgress(); frames=[]; thumbStrip.innerHTML=""; updatePills(scenes.length);
+  scenes.forEach(sc=>addThumbPlaceholder(sc.index));
+  try{
+    for(let i=0;i<scenes.length;i++){
+      if(stopPipeline){setProgress(0,"Stopped");break}
+      const sc=scenes[i];
+      setProgress(((i)/scenes.length)*90+5,`Illustrating scene ${i+1} of ${scenes.length}…`);
+      let dataURL=""; if(mode==="OpenAI Images"){ dataURL=await illustrateWithOpenAI(sc,settings); } else { dataURL=await illustrateStubImage(sc,settings) }
+      frames.push({index:sc.index,dataURL}); setThumbImage(sc.index,dataURL); await sleep(50);
+    }
+    setProgress(100,"Done. Export ZIP to save frames."); save(KEY_FRAMES,frames);
+  }catch(err){ alert("Stopped: "+(err?.message||err)); console.error(err) } finally{ btnStart.disabled=false; }
+}
+
+/* ===== Stub (only when selected) ===== */
+async function illustrateStubImage(scene,settings){
+  const W=1024,H=1024,c=document.createElement("canvas"); c.width=W;c.height=H; const ctx=c.getContext("2d");
+  ctx.fillStyle="#111"; ctx.fillRect(0,0,W,H); ctx.fillStyle="#222"; for(let i=0;i<28;i++){ctx.fillRect(i*38,0,2,H)} return c.toDataURL("image/jpeg",0.9);
+}
+
+/* ===== OpenAI Images (AI-only) ===== */
+function promptFor(scene,settings){
+  const style=settings.animationStyle||"Cartoon", art=settings.artStyle||"Fantasy";
+  return `Highly detailed illustration for a book scene in a ${style} animation look with ${art} art direction. One clear focal subject. Cinematic lighting and composition. No text, no captions.
+Scene: ${scene.text.slice(0,800)}`;
+}
+async function illustrateWithOpenAI(scene,settings){
+  const apiKey=getOpenAIKey(); if(!apiKey) throw new Error("Missing OpenAI API key (Left menu → Secrets).");
+  const resp=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},body:JSON.stringify({model:"gpt-image-1",prompt:promptFor(scene,settings),size:"1024x1024",n:1,response_format:"b64_json"})});
+  if(!resp.ok){ throw new Error(await resp.text()) }
+  const data=await resp.json(); const b64=data?.data?.[0]?.b64_json; const url=data?.data?.[0]?.url;
+  if(b64) return "data:image/jpeg;base64,"+b64;
+  if(url){ const imgBlob=await (await fetch(url)).blob(); return await blobToDataURL(imgBlob) }
+  throw new Error("No image returned");
+}
+function blobToDataURL(blob){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(blob)})}
+
+/* ===== Open/Save/Export ===== */
+function openProject(){
+  const input=document.createElement("input"); input.type="file"; input.accept=".bookanim.json,application/json";
+  input.onchange=async(e)=>{const f=e.target.files?.[0]; if(!f)return; try{
+      const txt=await f.text(), p=JSON.parse(txt);
+      if(p.text!=null) ta.value=p.text;
+      if(p.settings) settings=p.settings, save(KEY_CFG,settings);
+      if(Array.isArray(p.characters)) characters=p.characters, save(KEY_CHARS,characters);
+      if(Array.isArray(p.assets)) assets=p.assets, save(KEY_ASSETS,assets);
+      if(Array.isArray(p.frames)) frames=p.frames, save(KEY_FRAMES,frames);
+      if(Array.isArray(p.customProviders)) customProviders=p.customProviders, save(KEY_CUSTOM,customProviders);
+      alert("Project loaded."); updatePills();
+    }catch{ alert("Invalid project file.") }
+  };
+  input.click();
+}
+async function exportZip(){
+  const zip=new JSZip();
+  const project={version:7,text:ta.value||"",settings,characters,assets,frames,customProviders};
+  zip.file("book-animator.bookanim.json",JSON.stringify(project,null,2));
+  zip.file("book-text.txt",project.text);
+  zip.file("characters.json",JSON.stringify(characters.map(c=>({...c,
+    images:(c.images||[]).map(im=>({name:im.name,type:im.type,size:im.size})),
+    files:(c.files||[]).map(f=>({name:f.name,type:f.type,size:f.size}))
+  })),null,2));
+  zip.file("assets.json",JSON.stringify(assets,null,2));
+  zip.file("custom-providers.json",JSON.stringify(customProviders,null,2));
+
+  if(frames?.length){
+    const rf=zip.folder("renders");
+    frames.forEach((f,i)=>{const base64=(f.dataURL.match(/^data:.+;base64,(.*)$/)||[])[1]||""; rf.file(`scene-${String(i+1).padStart(3,'0')}.jpg`,base64,{base64:true})});
+  }
+  for(const c of characters){
+    const base = `characters/${slugify(c.name)}`;
+    const cf = zip.folder(base);
+    if(c.images?.[0]){
+      const im=c.images[0];
+      const base64=(im.dataURL.match(/^data:.+;base64,(.*)$/)||[])[1]||"";
+      const ext = (im.type==="image/png"||im.type==="/image/png")?".png":".jpg";
+      cf.file(`portrait${ext}`,base64,{base64:true});
+    }
+    if(c.files?.length){
+      const af = zip.folder(base+"/attachments");
+      c.files.forEach(f=>{
+        const base64=(f.dataURL.match(/^data:.+;base64,(.*)$/)||[])[1]||"";
+        af.file(f.name||"file.bin",base64,{base64:true});
+      });
+    }
+  }
+  const blob=await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="BookAnimator_Finished.zip";
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+}
+
+/* ===== Init ===== */
+document.getElementById("btnPreviewScenes").onclick=previewScenes;
+document.getElementById("btnExportZip").onclick=exportZip;
+document.getElementById("btnSave").onclick=()=>{save(KEY_TEXT,ta.value||"");alert("Saved.")};
+document.getElementById("btnProgStop").onclick=()=>stopPipeline=true;
+document.getElementById("btnStart").onclick=startAnimation;
+updatePills();
+</script>
+</body>
+</html>
