@@ -18,7 +18,7 @@
   :root{ --bg:#000; --fg:#fff; --muted:#cfcfcf; --panel:#0e0e0e; --border:#2a2a2a; --accent:#ff2d2d; --accent-hover:#ff4747; }
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
-  .wrap{max-width:900px;margin:4rem auto 6.5rem;padding:0 1rem}
+  .wrap{max-width:900px;margin:4rem auto 7.8rem;padding:0 1rem}
   h1{margin:0 0 1rem;text-align:center;font-size:2rem;font-weight:800}
   label{display:block;margin:.5rem 0;font-weight:600;color:var(--muted)}
   textarea{width:100%;min-height:300px;padding:1rem;border-radius:10px;background:#0b0b0b;color:var(--fg);border:1px solid var(--border);font-size:1rem;line-height:1.5;resize:none;outline:none}
@@ -26,6 +26,7 @@
   /* Buttons */
   .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:.7rem 1rem;cursor:pointer;font-weight:800}
   .btn:hover{background:var(--accent-hover)}
+  .btn[disabled]{opacity:.6;cursor:not-allowed}
   .btn-outline{background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;padding:.6rem 1rem;cursor:pointer;font-weight:800}
   .btn-outline:hover{background:rgba(255,45,45,.15)}
   .btn-danger{background:#b31313}
@@ -35,8 +36,8 @@
   .input,.select,.area{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}
   .area{min-height:90px}
   .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:320px;overflow:auto}
-  .thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:#111}
-  /* Hamburgers & menus */
+  .thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:#111}
+  /* Hamburger menus */
   .hambtn{position:fixed;top:.75rem;z-index:1000;width:46px;height:46px;display:grid;place-items:center;background:var(--panel);color:var(--fg);border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.45)}
   .hambtn.left{left:.75rem} .hambtn.right{right:.75rem}
   .menu{position:fixed;top:3.9rem;z-index:999;min-width:280px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55)}
@@ -58,6 +59,11 @@
   .progress-row{display:flex;gap:12px;align-items:center;max-width:900px;margin:0 auto;color:var(--muted)}
   .bar{flex:1;height:10px;background:#1a1a1a;border-radius:6px;overflow:hidden;border:1px solid #222}
   .fill{height:100%;background:var(--accent);width:0%}
+  /* Live thumbs strip */
+  #thumbStrip{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .thumbCard{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:6px 8px;background:#0d0d0d}
+  .thumbIdx{font-weight:800;color:#ffb3b3}
+  .thumb.waiting{opacity:.6;filter:grayscale(1)}
 </style>
 </head>
 <body>
@@ -102,6 +108,10 @@
       </div>
     </div>
 
+    <!-- LIVE THUMBNAILS STRIP -->
+    <div id="thumbStrip" aria-live="polite"></div>
+
+    <!-- Optional: quick textual scene preview -->
     <div id="scenePreview" class="list" style="margin-top:12px;display:none"></div>
   </div>
 
@@ -129,7 +139,7 @@ function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 const OPENAI_VOICES = ["Maple","Juniper","Spruce","Breeze","Vale","Shimmer","Cove","Sol","Ember","Nova","Alloy","Verse","Hikari","Ari","Mori","Sage","Amber","Copper","Pearl","Onyx"];
 const ANIM_STYLES = ["Cartoon","Flipbook","Comic","Slideshow","Anime","Dark Fantasy","Lifelike","Stop-Motion","Motion-Comics","Pixar-Like","Minimalist Line-Art","Water-Ink","Claymation","Paper-Cut","Retro 8-bit","3D Toon"];
 const ART_STYLES  = ["Fantasy","Anime","Noir","Watercolor","3D","Sketch","Oil Paint","Ink & Wash","Pixel Art","Low-Poly","Photoreal","Cel-shade","Vaporwave","Cyberpunk","Steampunk","Storybook"];
-const ILLUST_MODES = ["OpenAI Images","Local Stub (no API)"]; // <— real mode is default now
+const ILLUST_MODES = ["OpenAI Images","Local Stub (no API)"]; // live + fallback
 
 const DEFAULT_SETTINGS={animationStyle:"Cartoon", artStyle:"Fantasy", aspect:"16:9", fps:24, audience:"Adults", illustrationMode:"OpenAI Images"};
 let settings = load(KEY_CFG, DEFAULT_SETTINGS);
@@ -162,7 +172,6 @@ const ta = document.getElementById("bookText");
 if(localStorage.getItem(KEY_TEXT)) ta.value = localStorage.getItem(KEY_TEXT);
 
 /* ===== UI helpers ===== */
-function val(id){ return document.getElementById(id).value }
 function esc(s){return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 const mask=document.getElementById("mask"), modal=document.getElementById("modal");
 function openModal(html){ modal.innerHTML=html; mask.classList.add("show"); }
@@ -199,7 +208,7 @@ menuLeft.onclick = (e)=>{
   if(a==="assets") showAssets();
   if(a==="secrets") showSecrets();
   if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Settings/Characters\n3) (Optional) Import PDF images\n4) START\n5) Export ZIP.");
-  if(a==="about") alert("Book Animator — single-file app with OpenAI Images integration and Start button.");
+  if(a==="about") alert("Book Animator — single-file app with OpenAI Images integration and live thumbnails.");
 };
 
 /* ===== Settings (includes Illustration Mode) ===== */
@@ -224,9 +233,11 @@ function showSettings(){
     <div class="row" style="justify-content:flex-end;margin-top:12px">
       <button class="btn-outline" onclick="closeModal()">Cancel</button>
       <button class="btn" onclick="(function(){
-        settings.animationStyle=val('stAnim'); settings.artStyle=val('stArt');
-        settings.illustrationMode=val('stIll'); settings.aspect=val('stAspect');
-        settings.fps=parseInt(val('stFps'))||24; save(KEY_CFG,settings);
+        settings.animationStyle=document.getElementById('stAnim').value;
+        settings.artStyle=document.getElementById('stArt').value;
+        settings.illustrationMode=document.getElementById('stIll').value;
+        settings.aspect=document.getElementById('stAspect').value;
+        settings.fps=parseInt(document.getElementById('stFps').value)||24; save(KEY_CFG,settings);
         closeModal(); alert('Settings saved.');
       })()">Save</button>
     </div>
@@ -248,9 +259,7 @@ function showSecrets(){
     </div>
   `);
 }
-function getOpenAIKey(){
-  const s = load(KEY_OPENAI, {apiKey:""}); return (s && s.apiKey) ? s.apiKey.trim() : "";
-}
+function getOpenAIKey(){ const s = load(KEY_OPENAI, {apiKey:""}); return (s && s.apiKey) ? s.apiKey.trim() : ""; }
 
 /* ===== Characters (edit & image upload) ===== */
 function showCharacters(){
@@ -398,18 +407,36 @@ function pickCharacterAndAssign(dataURL, suggestedName){
   `);
 }
 
-/* ===== Scenes & Start Animation ===== */
-function splitIntoScenes(text){
-  return text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean).map((t,i)=>({index:i, text:t}));
+/* ===== Scene splitting (SMART) & Start Animation ===== */
+function splitIntoScenesSmart(text){
+  // 1) Try blank-line paragraphs
+  let chunks = text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean);
+  if(chunks.length >= 2) return chunks.map((t,i)=>({index:i, text:t}));
+
+  // 2) Fallback: sentence-based grouping (~2–3 sentences or ~350 chars)
+  const sents = text.replace(/\n+/g,' ').match(/[^.!?]+[.!?]+|\S+$/g) || [];
+  const out = []; let buf = "";
+  for(const s of sents){
+    if((buf + " " + s).length > 350 || (buf.match(/[.!?]/g)||[]).length >= 2){
+      if(buf.trim()) out.push(buf.trim());
+      buf = s.trim();
+    }else{
+      buf = (buf?buf+" ":"") + s.trim();
+    }
+  }
+  if(buf.trim()) out.push(buf.trim());
+  return out.map((t,i)=>({index:i, text:t}));
 }
 function previewScenes(){
-  const scenes = splitIntoScenes(ta.value||"");
+  const scenes = splitIntoScenesSmart(ta.value||"");
   const box = document.getElementById("scenePreview");
-  if(!scenes.length){ box.style.display="none"; alert("No scenes found. Add blank lines between paragraphs to create scenes."); return; }
+  if(!scenes.length){ box.style.display="none"; alert("No scenes found."); return; }
   box.style.display="block";
-  box.innerHTML = scenes.map(s=>`<div style="padding:.5rem;border-bottom:1px solid var(--border)"><b>Scene ${s.index+1}</b><div class="small" style="color:var(--muted)">${esc((s.text.slice(0,200)+'…').replace(/\n/g,' '))}</div></div>`).join("");
+  box.innerHTML = `<div style="padding:.4rem 0;color:var(--muted)"><b>${scenes.length}</b> scenes detected</div>` + 
+    scenes.map(s=>`<div style="padding:.5rem;border-bottom:1px solid var(--border)"><b>Scene ${s.index+1}</b><div class="small" style="color:var(--muted)">${esc((s.text.slice(0,200)+'…').replace(/\n/g,' '))}</div></div>`).join("");
 }
 
+/* Progress UI */
 const progWrap  = document.getElementById("progressWrap");
 const progFill  = document.getElementById("progressFill");
 const progLabel = document.getElementById("progressLabel");
@@ -420,18 +447,43 @@ function resetProgress(){ progWrap.hidden=false; progFill.style.width="0%"; prog
 function setProgress(p,label){ progFill.style.width = Math.max(0,Math.min(100,p))+"%"; progLabel.textContent = label; }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
+/* Live thumbnails strip */
+const thumbStrip = document.getElementById("thumbStrip");
+function addThumbPlaceholder(idx){
+  const card = document.createElement("div");
+  card.className = "thumbCard";
+  card.id = `thumb-${idx}`;
+  card.innerHTML = `<div class="thumbIdx">#${idx+1}</div><img class="thumb waiting" alt="pending" src="" /><div style="color:var(--muted)">Rendering…</div>`;
+  thumbStrip.appendChild(card);
+}
+function setThumbImage(idx, dataURL){
+  const card = document.getElementById(`thumb-${idx}`); if(!card) return;
+  const img = card.querySelector("img.thumb");
+  img.src = dataURL; img.classList.remove("waiting");
+  const text = card.querySelector("div[style]"); if(text) text.textContent = "Done";
+}
+
 document.getElementById("btnStart").onclick = startAnimation;
 
 async function startAnimation(){
-  const scenes = splitIntoScenes(ta.value||"");
-  if(!scenes.length){ alert("No scenes found. Add blank lines between paragraphs, then press Start."); return; }
-  stopPipeline=false; resetProgress(); frames = [];
+  const btnStart = document.getElementById("btnStart");
+  btnStart.disabled = true;
+
+  const scenes = splitIntoScenesSmart(ta.value||"");
+  if(!scenes.length){ alert("No scenes found."); btnStart.disabled = false; return; }
+
+  // Reset UI
+  stopPipeline=false; resetProgress(); frames = []; thumbStrip.innerHTML = "";
+
+  // Placeholders so you see activity immediately
+  scenes.forEach(sc => addThumbPlaceholder(sc.index));
+
   const mode = settings.illustrationMode || "OpenAI Images";
 
   for(let i=0;i<scenes.length;i++){
-    if(stopPipeline){ setProgress(0,"Stopped"); return; }
+    if(stopPipeline){ setProgress(0,"Stopped"); break; }
     const sc = scenes[i];
-    setProgress(Math.round((i/scenes.length)*80)+10, `Illustrating scene ${i+1}/${scenes.length}…`);
+    setProgress(Math.round(((i)/scenes.length)*90)+5, `Illustrating scene ${i+1} of ${scenes.length}…`);
     let dataURL = "";
     try{
       if(mode==="OpenAI Images"){
@@ -444,15 +496,20 @@ async function startAnimation(){
       dataURL = await illustrateSceneStub(sc, settings.animationStyle, settings.artStyle);
     }
     frames.push({ index: sc.index, dataURL });
-    await sleep(150);
+    setThumbImage(sc.index, dataURL);       // <-- update live thumbnail
+    await sleep(75);
   }
 
   setProgress(100,"Done. Export ZIP to save frames.");
   save(KEY_FRAMES, frames);
 
+  // Quick list view too (optional)
   const box = document.getElementById("scenePreview");
   box.style.display="block";
-  box.innerHTML = frames.map(f=>`<div class="row" style="gap:8px;border-bottom:1px solid var(--border);padding:.4rem 0"><img src="${f.dataURL}" class="thumb"/><div>Scene ${f.index+1}</div></div>`).join("");
+  box.innerHTML = `<div style="padding:.4rem 0;color:var(--muted)"><b>${frames.length}</b> frames generated</div>` + 
+    frames.map(f=>`<div class="row" style="gap:8px;border-bottom:1px solid var(--border);padding:.4rem 0"><img src="${f.dataURL}" class="thumb"/><div>Scene ${f.index+1}</div></div>`).join("");
+
+  btnStart.disabled = false;
 }
 
 /* ===== Local stub (fallback) ===== */
@@ -482,12 +539,10 @@ async function illustrateWithOpenAI(scene, settings){
   const apiKey = getOpenAIKey();
   if(!apiKey){ throw new Error("Missing OpenAI API key. Add it in Secrets (API Keys)."); }
 
-  // Build a prompt that respects style & art choices
   const style = settings.animationStyle || "Cartoon";
   const art   = settings.artStyle || "Fantasy";
   const prompt = `Illustrate this scene in a ${style} animation look with ${art} art direction. Clear focal subject, cinematic composition, storybook clarity, vibrant but not noisy. Scene text: """${scene.text.slice(0,800)}"""`;
 
-  // Prefer gpt-image-1 (b64) but also accept URL responses
   const resp = await fetch("https://api.openai.com/v1/images/generations", {
     method:"POST",
     headers:{
@@ -509,11 +564,9 @@ async function illustrateWithOpenAI(scene, settings){
   }
 
   const data = await resp.json();
-  // If API returns b64_json:
   if(data?.data?.[0]?.b64_json){
     return "data:image/jpeg;base64,"+data.data[0].b64_json;
   }
-  // If API returns URL:
   if(data?.data?.[0]?.url){
     const imgUrl = data.data[0].url;
     const imgBlob = await (await fetch(imgUrl)).blob();
