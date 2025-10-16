@@ -1,0 +1,197 @@
+[
+  {
+    "name": "Zen Zena – Guardian of Balance",
+    "voice": "Shimmer",
+    "age": 32,
+    "style": "Semi-realistic fantasy, tranquil and ethereal",
+    "image": "./Zen_Zena.png",
+    "gallery": [],
+    "appearance": [
+      "Long, flowing silver-white hair and calm glowing eyes (blind but perceptive)",
+      "Wears layered blue and silver robes, representing harmony and wisdom",
+      "Carries a specially crafted blind cane made of white ash wood with glowing runes",
+      "Often surrounded by drifting leaves and soft beams of light"
+    ],
+    "personality": [
+      "Wise, gentle, and grounded — the moral center of the group",
+      "Speaks in calm, thoughtful tones, guiding others to balance",
+      "Sees through emotion rather than sight, finding peace in chaos"
+    ],
+    "abilities": [
+      "Echo Sense: Detects movement and energy through sound and air vibrations",
+      "Nature’s Harmony: Calms corrupted or chaotic environments",
+      "Spirit Communion: Communicates with natural spirits for protection or insight"
+    ],
+    "background": "Born into the Order of the Whispering Grove, Zena lost her vision at birth but gained spiritual perception. Her empathy made her the chosen protector of balance across realms."
+  },
+  {
+    "name": "Darling Danielle – The Compassionate Knight",
+    "voice": "Juniper",
+    "age": 28,
+    "style": "Noble fantasy realism, radiant and warm",
+    "image": "./Darling_Danielle.png",
+    "gallery": [],
+    "appearance": [
+      "Wavy blonde-brown hair and gentle blue eyes behind round glasses",
+      "Wears silver armor over a flowing lavender gown",
+      "Visibly pregnant, resting a hand proudly on her belly",
+      "Radiates calm strength and maternal warmth"
+    ],
+    "personality": [
+      "Nurturing, patient, and endlessly brave",
+      "Protects not just with her sword but with her heart",
+      "Acts as the moral and emotional leader of the group"
+    ],
+    "abilities": [
+      "Aura of Courage: Inspires allies with unshakable resolve",
+      "Guardian’s Blessing: Shields others with divine energy",
+      "Light of Life: Her child represents prophecy and renewal"
+    ],
+    "background": "A knight of the Silver Banner Order, Danielle left battle to seek peace. Her pregnancy marks the dawn of a new age she vows to protect."
+  },
+  {
+    "name": "Creative Callie – The Painter of Worlds",
+    "voice": "Vale",
+    "age": 25,
+    "style": "Dreamlike fantasy, artistic and luminous",
+    "image": "./Creative_Callie.png",
+    "gallery": [],
+    "appearance": [
+      "Very long light brown hair, expressive eyes, and paint-stained fingers",
+      "Wears robes in teal, gold, and cream with swirling magical patterns",
+      "Carries a glowing paintbrush that leaves trails of light in the air"
+    ],
+    "personality": [
+      "Imaginative, passionate, and a bit scatterbrained",
+      "Sees potential and beauty in everything",
+      "Loves to create, even when chaos follows"
+    ],
+    "abilities": [
+      "Reality Brush: Paints objects or landscapes into existence",
+      "Chromatic Ward: Creates barriers of color and emotion",
+      "Artisan’s Vision: Sees the story behind every object or being"
+    ],
+    "background": "A student of the Grand Academy of Artistry and Magic, Callie opened a portal to her own imagination — and now wields its creative power."
+  },
+  {
+    "name": "Skater Skip – The Sky Racer",
+    "voice": "Breeze",
+    "age": 22,
+    "style": "Modern fantasy, energetic and confident",
+    "image": "./Skater_Skip.png",
+    "gallery": ["./Skater_Skip_ManBun.png"],
+    "appearance": [
+      "Tan, athletic build with long blonde hair tied in a man bun",
+      "Wears rune-powered rollerblades and a sleek racing vest",
+      "Bright blue eyes and a perpetual grin"
+    ],
+    "personality": [
+      "Fearless, funny, and endlessly polite",
+      "Loves competition but values fairness",
+      "A thrill-seeker with a golden heart"
+    ],
+    "abilities": [
+      "Rift Glide: Skates across dimensional rifts and energy waves",
+      "Runic Boost: Enhances speed and reflexes with magic sigils",
+      "Time Skip: Briefly slows time to outmaneuver enemies"
+    ],
+    "background": "A champion racer from the Neon Spires who competes in magical tournaments across realms, always chasing adventure and helping those left behind."
+  },
+  {
+    "name": "Dark Dan – The Cursed Bard",
+    "voice": "Spruce",
+    "age": 30,
+    "style": "Gothic fantasy, brooding but magnetic",
+    "image": "./Dark_Dan.png",
+    "gallery": ["./Dark_Dan_Bright.png"],
+    "appearance": [
+      "Dark brown hair, shaved sides, long in front over one eye",
+      "Gauged ears, nose ring, lip piercing, and sharp blue eyes",
+      "Wears dark leather armor with glowing blue runes",
+      "Carries his enchanted guitar that channels spectral fire"
+    ],
+    "personality": [
+      "Sarcastic but loyal, carrying deep emotional scars",
+      "Expresses truth through music more than words",
+      "Protective of his team, especially the broken-hearted"
+    ],
+    "abilities": [
+      "Song of Shadows: Summons spectral flames with melody",
+      "Harmony of the Dead: Calms or binds restless spirits",
+      "Crescendo: Unleashes devastating power through sound"
+    ],
+    "background": "Once a famed musician of the Midnight Kingdom, Dan’s music awakened forbidden magic. Now cursed, he roams seeking redemption."
+  },
+  {
+    "name": "Ambush Annie – The Street Rogue",
+    "voice": "Sol",
+    "age": 23,
+    "style": "Urban fantasy, bold and quick-witted",
+    "image": "./Ambush_Annie.png",
+    "gallery": [],
+    "appearance": [
+      "Short curly red hair, round face, and sharp blue eyes",
+      "Curvy, athletic build; wears light leather gear and daggers",
+      "Always ready with a smirk or sly grin"
+    ],
+    "personality": [
+      "Cunning, witty, and fearless",
+      "Hides compassion behind sarcasm",
+      "Always up for a challenge"
+    ],
+    "abilities": [
+      "Shadow Step: Teleports short distances between shadows",
+      "Quick Trick: Disarms or confuses enemies instantly",
+      "Echo Blades: Daggers return when thrown, striking twice"
+    ],
+    "background": "A bounty hunter from Sunreach Outskirts who learned survival the hard way, now fights for honor and loyalty over gold."
+  },
+  {
+    "name": "Sidetrack Sally – The Curious Explorer",
+    "voice": "Maple",
+    "age": 24,
+    "style": "Bright fantasy, lighthearted and hopeful",
+    "image": "./Sidetrack_Sally.png",
+    "gallery": [],
+    "appearance": [
+      "Long blonde hair, bright blue eyes, soft pink outfit",
+      "Carries a glowing lantern and travel pack",
+      "Cheerful and radiant, always looking for hidden paths"
+    ],
+    "personality": [
+      "Curious and kind-hearted",
+      "Easily distracted but always finds something valuable",
+      "Believes every detour leads to destiny"
+    ],
+    "abilities": [
+      "Lantern of Whispers: Reveals hidden paths or secrets",
+      "Echo Memory: Hears lingering voices of history",
+      "Serendipity: Luck subtly alters fate in her favor"
+    ],
+    "background": "From the quiet village of Fernhollow, Sally discovered the secret tunnels of the Order of the Echoes, setting her on a lifelong adventure."
+  },
+  {
+    "name": "Grumpy Gus – The Iron Veteran",
+    "voice": "Cove",
+    "age": 48,
+    "style": "Classic dark fantasy, grim yet noble",
+    "image": "./Grumpy_Gus.png",
+    "gallery": [],
+    "appearance": [
+      "Light brown cropped hair, long gray goatee, rugged build",
+      "Wears dented steel armor and carries a massive sword",
+      "Blue-gray eyes and a weathered, stern face"
+    ],
+    "personality": [
+      "Gruff but loyal",
+      "Short-tempered, secretly caring",
+      "Believes in discipline, not speeches"
+    ],
+    "abilities": [
+      "Iron Will: Immune to fear and mental magic",
+      "Shieldbreaker: Destroys enemy defenses",
+      "Veteran’s Instinct: Predicts attacks through experience"
+    ],
+    "background": "A retired commander of Ironhold Fortress, Gus returned to battle when his homeland was threatened again, grumbling all the way."
+  }
+]
