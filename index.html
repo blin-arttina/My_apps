@@ -1,1 +1,565 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Book Animator</title><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><style>:root{--bg:#000;--fg:#fff;--muted:#cfcfcf;--panel:#0f0f0f;--border:#2a2a2a;--accent:#ff2d2d;--accent-hover:#ff4747}html,body{height:100%}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}.wrap{max-width:900px;margin:4rem auto 8.5rem;padding:0 1rem}h1{margin:0 0 1rem;text-align:center;font-size:2rem;font-weight:800}label{display:block;margin:.5rem 0;font-weight:600;color:var(--muted)}textarea{width:100%;min-height:300px;padding:1rem;border-radius:10px;background:#0b0b0b;color:var(--fg);border:1px solid var(--border);font-size:1rem;line-height:1.5;resize:none;outline:none}textarea:focus{box-shadow:0 0 0 2px rgba(255,45,45,.35);border-color:var(--accent)}.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:.7rem 1rem;cursor:pointer;font-weight:800}.btn:hover{background:var(--accent-hover)} .btn[disabled]{opacity:.6;cursor:not-allowed}.btn-outline{background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;padding:.6rem 1rem;cursor:pointer;font-weight:800}.btn-outline:hover{background:rgba(255,45,45,.15)} .btn-danger{background:#b31313}.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:12px}.row{display:flex;gap:12px;align-items:center}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pill{border:1px solid var(--border);padding:.2rem .5rem;border-radius:999px;color:var(--muted);font-size:.85rem}.list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:360px;overflow:auto}.input,.select,.area{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}.area{min-height:90px}.thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:#111}.hambtn{position:fixed;top:.75rem;z-index:1000;width:46px;height:46px;display:grid;place-items:center;background:var(--panel);color:var(--fg);border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.45)}.hambtn.left{left:.75rem} .hambtn.right{right:.75rem}.menu{position:fixed;top:3.9rem;z-index:999;min-width:300px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55)}.menu.left{left:.75rem} .menu.right{right:.75rem}.item{padding:.75rem .95rem;cursor:pointer;border-bottom:1px solid var(--border)}.item:last-child{border-bottom:none}.item:hover{background:#111}.mask{position:fixed;inset:0;display:none;place-items:center;z-index:1100;background:rgba(0,0,0,.6)}.mask.show{display:grid}.modal{width:min(96vw,980px);background:#0d0d0d;color:var(--fg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.7);padding:1rem 1.25rem}</style></head><body><button id="btnLeft"  class="hambtn left"  aria-label="Open left menu">≡</button><button id="btnRight" class="hambtn right" aria-label="Open right menu">≡</button><div id="menuLeft" class="menu left" hidden><div class="item" data-left="characters">Characters</div><div class="item" data-left="voices">Voices</div><div class="item" data-left="settings">Settings</div><div class="item" data-left="secrets">Secrets (API Keys)</div><div class="item" data-left="tutorial">Tutorial</div><div class="item" data-left="about">About</div></div><div id="menuRight" class="menu right" hidden><div class="item" data-right="new">New Project</div><div class="item" data-right="save">Save Project</div><div class="item" data-right="open">Open Project</div><div class="item" data-right="upload">Upload Files</div><div class="item" data-right="exportZip">Export Finished (ZIP)</div></div><div class="wrap"><h1>Book Animator</h1><div class="row" style="justify-content:space-between;margin:.25rem 0 .25rem"><span class="pill" id="modePill">Mode: Simple</span><span class="pill" id="sceneCountPill">Scenes: 0</span></div><label for="bookText">Paste your book text:</label><textarea id="bookText" placeholder="Paste text here…"></textarea><div class="actions"><div class="row" style="gap:8px"><button class="btn" id="btnStart">Start Animation</button><button class="btn-outline" id="btnPreviewScenes">Preview Scenes</button></div><div class="row" style="gap:8px"><button class="btn-outline" id="btnSave">Save</button><button class="btn" id="btnExportZip">Export Finished (ZIP)</button></div></div></div><div id="mask" class="mask" role="dialog" aria-modal="true" aria-hidden="true"><div id="modal" class="modal" role="document"></div></div><script>const KEY_TEXT="bookAnimator:text";const KEY_CFG="bookAnimator:settings";const KEY_CHARS="bookAnimator:characters";const KEY_ASSETS="bookAnimator:assets";const KEY_OPENAI="bookAnimator:openai";function load(k,def){try{return JSON.parse(localStorage.getItem(k))||def}catch{return def}}function save(k,v){localStorage.setItem(k,JSON.stringify(v))}function escapeHtml(s){return String(s).replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}function arrayBufferToBase64(buf){let binary='';const bytes=new Uint8Array(buf);for(let i=0;i<bytes.byteLength;i++)binary+=String.fromCharCode(bytes[i]);return btoa(binary)}const ANIM_STYLES=["Cartoon","Flipbook","Comic","Slideshow","Anime","Dark Fantasy","Lifelike"];const ART_STYLES=["Fantasy","Anime","Noir","Watercolor","3D","Sketch","Oil Paint","Ink & Wash","Cel-shade"];const OPENAI_VOICE_IDS=["alloy","amber","copper","juniper","pearl","sage","ember","maple","spruce","breeze","vale","shimmer","cove","sol"];let settings=load(KEY_CFG,{animationStyle:"Cartoon",artStyle:"Fantasy",aspect:"16:9",fps:24,narratorProvider:"OpenAI",narrator:"ember"});let assets=load(KEY_ASSETS,[]);let characters = [{"id": "narrator", "name": "Narrator", "age": null, "traits": "", "backstory": "", "voiceProvider": "OpenAI", "voice": "ember", "images": [], "files": []}, {"id": "c_zen-zena-guardian-of-balance", "name": "Zen Zena – Guardian of Balance", "age": 32, "traits": "Wise, gentle, and grounded — the moral center of the group, Speaks in calm, thoughtful tones, guiding others to balance, Sees through emotion rather than sight, finding peace in chaos\n\nAppearance: Long, flowing silver-white hair and calm glowing eyes (blind but perceptive), Wears layered blue and silver robes, representing harmony and wisdom, Carries a specially crafted blind cane made of white ash wood with glowing runes, Often surrounded by drifting leaves and soft beams of light", "backstory": "Born into the Order of the Whispering Grove, Zena lost her vision at birth but gained spiritual perception. Her empathy made her the chosen protector of balance across realms.", "voiceProvider": "OpenAI", "voice": "Shimmer", "images": [{"src": "./Zen_Zena.png"}], "files": []}, {"id": "c_darling-danielle-the-compassionate-knight", "name": "Darling Danielle – The Compassionate Knight", "age": 28, "traits": "Nurturing, patient, and endlessly brave, Protects not just with her sword but with her heart, Acts as the moral and emotional leader of the group\n\nAppearance: Wavy blonde-brown hair and gentle blue eyes behind round glasses, Wears silver armor over a flowing lavender gown, Visibly pregnant, resting a hand proudly on her belly, Radiates calm strength and maternal warmth", "backstory": "A knight of the Silver Banner Order, Danielle left battle to seek peace. Her pregnancy marks the dawn of a new age she vows to protect.", "voiceProvider": "OpenAI", "voice": "Juniper", "images": [{"src": "./Darling_Danielle.png"}], "files": []}, {"id": "c_creative-callie-the-painter-of-worlds", "name": "Creative Callie – The Painter of Worlds", "age": 25, "traits": "Imaginative, passionate, and a bit scatterbrained, Sees potential and beauty in everything, Loves to create, even when chaos follows\n\nAppearance: Very long light brown hair, expressive eyes, and paint-stained fingers, Wears robes in teal, gold, and cream with swirling magical patterns, Carries a glowing paintbrush that leaves trails of light in the air", "backstory": "A student of the Grand Academy of Artistry and Magic, Callie opened a portal to her own imagination — and now wields its creative power.", "voiceProvider": "OpenAI", "voice": "Vale", "images": [{"src": "./Creative_Callie.png"}], "files": []}, {"id": "c_skater-skip-the-sky-racer", "name": "Skater Skip – The Sky Racer", "age": 22, "traits": "Fearless, funny, and endlessly polite, Loves competition but values fairness, A thrill-seeker with a golden heart\n\nAppearance: Tan, athletic build with long blonde hair tied in a man bun, Wears rune-powered rollerblades and a sleek racing vest, Bright blue eyes and a perpetual grin", "backstory": "A champion racer from the Neon Spires who competes in magical tournaments across realms, always chasing adventure and helping those left behind.", "voiceProvider": "OpenAI", "voice": "Breeze", "images": [{"src": "./Skater_Skip.png"}, {"src": "./Skater_Skip_ManBun.png"}], "files": []}, {"id": "c_dark-dan-the-cursed-bard", "name": "Dark Dan – The Cursed Bard", "age": 30, "traits": "Sarcastic but loyal, carrying deep emotional scars, Expresses truth through music more than words, Protective of his team, especially the broken-hearted\n\nAppearance: Dark brown hair, shaved sides, long in front over one eye, Gauged ears, nose ring, lip piercing, and sharp blue eyes, Wears dark leather armor with glowing blue runes, Carries his enchanted guitar that channels spectral fire", "backstory": "Once a famed musician of the Midnight Kingdom, Dan’s music awakened forbidden magic. Now cursed, he roams seeking redemption.", "voiceProvider": "OpenAI", "voice": "Spruce", "images": [{"src": "./Dark_Dan.png"}, {"src": "./Dark_Dan_Bright.png"}], "files": []}, {"id": "c_ambush-annie-the-street-rogue", "name": "Ambush Annie – The Street Rogue", "age": 23, "traits": "Cunning, witty, and fearless, Hides compassion behind sarcasm, Always up for a challenge\n\nAppearance: Short curly red hair, round face, and sharp blue eyes, Curvy, athletic build; wears light leather gear and daggers, Always ready with a smirk or sly grin", "backstory": "A bounty hunter from Sunreach Outskirts who learned survival the hard way, now fights for honor and loyalty over gold.", "voiceProvider": "OpenAI", "voice": "Sol", "images": [{"src": "./Ambush_Annie.png"}], "files": []}, {"id": "c_sidetrack-sally-the-curious-explorer", "name": "Sidetrack Sally – The Curious Explorer", "age": 24, "traits": "Curious and kind-hearted, Easily distracted but always finds something valuable, Believes every detour leads to destiny\n\nAppearance: Long blonde hair, bright blue eyes, soft pink outfit, Carries a glowing lantern and travel pack, Cheerful and radiant, always looking for hidden paths", "backstory": "From the quiet village of Fernhollow, Sally discovered the secret tunnels of the Order of the Echoes, setting her on a lifelong adventure.", "voiceProvider": "OpenAI", "voice": "Maple", "images": [{"src": "./Sidetrack_Sally.png"}], "files": []}, {"id": "c_grumpy-gus-the-iron-veteran", "name": "Grumpy Gus – The Iron Veteran", "age": 48, "traits": "Gruff but loyal, Short-tempered, secretly caring, Believes in discipline, not speeches\n\nAppearance: Light brown cropped hair, long gray goatee, rugged build, Wears dented steel armor and carries a massive sword, Blue-gray eyes and a weathered, stern face", "backstory": "A retired commander of Ironhold Fortress, Gus returned to battle when his homeland was threatened again, grumbling all the way.", "voiceProvider": "OpenAI", "voice": "Cove", "images": [{"src": "./Grumpy_Gus.png"}], "files": []}];const ta=document.getElementById("bookText"); if(localStorage.getItem(KEY_TEXT)) ta.value=localStorage.getItem(KEY_TEXT);const btnLeft=document.getElementById("btnLeft"),btnRight=document.getElementById("btnRight");const menuLeft=document.getElementById("menuLeft"),menuRight=document.getElementById("menuRight");const mask=document.getElementById("mask"), modal=document.getElementById("modal");btnLeft.onclick=()=>{menuLeft.hidden=!menuLeft.hidden;menuRight.hidden=true};btnRight.onclick=()=>{menuRight.hidden=!menuRight.hidden;menuLeft.hidden=true};document.addEventListener("click",(e)=>{if(!e.target.closest(".menu")&&!e.target.closest(".hambtn")){menuLeft.hidden=true;menuRight.hidden=true}});mask.onclick=e=>{if(e.target===mask) closeModal()};function openModal(html){modal.innerHTML=html;mask.classList.add("show")}function closeModal(){mask.classList.remove("show");modal.innerHTML=""}menuLeft.onclick=(e)=>{const a=e.target?.dataset?.left; if(!a) return; menuLeft.hidden=true; if(a==="characters") showCharacters(); if(a==="voices") showVoices(); if(a==="settings") showSettings(); if(a==="secrets") showSecrets(); if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Characters/Voices/Settings\n3) Start\n4) Export ZIP."); if(a==="about") alert("Book Animator — Created by Blind Art.");};menuRight.onclick=(e)=>{const a=e.target?.dataset?.right; if(!a) return; menuRight.hidden=true; if(a==="new"){ if(confirm("Clear text?")) ta.value="" } if(a==="save"){ localStorage.setItem(KEY_TEXT,ta.value||""); alert("Saved.") } if(a==="open") openProject(); if(a==="upload") uploadFiles(); if(a==="exportZip") exportZip();};function pickThumb(c){const im=(c.images||[])[0]; if(!im) return null; return im.dataURL || im.src || null;}function showCharacters(){const rows = characters.map(c=>{const t=pickThumb(c); const thumb = t ? `<img class="thumb" src="${t}" alt="${escapeHtml(c.name)}"/>` : `<div class="thumb" style="display:grid;place-items:center;color:#666">—</div>`; return `<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding:.5rem 0"><div class="row" style="gap:10px">${thumb}<div><b>${escapeHtml(c.name)}</b>${c.age?` <span style="color:#aaa">(${escapeHtml(c.age)})</span>`:""}<div style="color:#cfcfcf;font-size:.9rem">Voice: ${escapeHtml(c.voiceProvider||"-")} · ${escapeHtml(c.voice||"-")}</div>${c.traits?`<div style="color:#aaa;font-size:.9rem;white-space:pre-wrap">${escapeHtml(c.traits)}</div>`:""}</div></div><button class="btn-outline" onclick="editCharacter('${c.id}')">Edit</button></div>`;}).join(""); openModal(`<h2>Characters</h2><div class="list">${rows||"No characters"}</div><div style="display:flex;justify-content:flex-end;margin-top:.75rem"><button class="btn-outline" onclick="closeModal()">Close</button></div>`);}function providerOptions(sel){return ["OpenAI","Browser (Device)"].map(p=>`<option ${p===sel?"selected":""}>${p}</option>`).join("")}function openaiOptions(sel){return OPENAI_VOICE_IDS.map(v=>`<option ${v===sel?"selected":""} value="${v}">${v}</option>`).join("")}let deviceVoices=[];function loadDeviceVoices(){ if(!('speechSynthesis' in window)) return; deviceVoices = speechSynthesis.getVoices().map(v=>({id:v.voiceURI,name:v.name,lang:v.lang}));}if('speechSynthesis' in window){ loadDeviceVoices(); window.speechSynthesis.onvoiceschanged=loadDeviceVoices; }function deviceOptions(sel){ return (deviceVoices.length?deviceVoices:[{id:"",name:"(No device voices)",lang:""}]).map(v=>`<option ${v.id===sel?"selected":""} value="${v.id}">${escapeHtml(v.name)}${v.lang?(" ("+escapeHtml(v.lang)+")"):""}</option>`).join("") }function editCharacter(id){const c=characters.find(x=>x.id===id); if(!c) return; const t=pickThumb(c); const portrait = t ? `<img class="thumb" src="${t}" alt="${escapeHtml(c.name)}"/>` : `<div class="thumb" style="display:grid;place-items:center;color:#666">—</div>`; const filesList=(c.files||[]).map((f,i)=>`<div class="row" style="justify-content:space-between;border-bottom:1px dashed #222;padding:.3rem 0"><div class="small">${escapeHtml(f.name)} <span style="color:#777">(${Math.round(f.size/1024)} KB)</span></div><button class="btn-outline" onclick="removeCharacterFile('${id}',${i})">Remove</button></div>`).join("") || "<div class='small' style='color:#cfcfcf'>No attachments yet.</div>"; openModal(`<h2>Edit Character</h2><div class="grid"><div><label>Name</label><input id="ch_name" class="input" value="${escapeHtml(c.name)}"/></div><div><label>Age</label><input id="ch_age" class="input" value="${escapeHtml(c.age??"")}"/></div><div class="field" style="grid-column:1/-1"><label>Traits</label><input id="ch_traits" class="input" value="${escapeHtml(c.traits||"")}"/></div><div class="field" style="grid-column:1/-1"><label>Backstory</label><textarea id="ch_back" class="area">${escapeHtml(c.backstory||"")}</textarea></div><div><label>Voice Provider</label><select id="ch_prov" class="select">${providerOptions(c.voiceProvider||"OpenAI")}</select></div><div><label>Voice</label><select id="ch_voice" class="select">${(c.voiceProvider==="Browser (Device)"?deviceOptions(c.voice):openaiOptions(c.voice||"ember"))}</select></div></div><h3 style="margin:.8rem 0 .4rem">Portrait</h3><div class="row" style="gap:8px;flex-wrap:wrap">${portrait}<input type="file" id="ch_img" accept=".jpg,.jpeg,.png" class="input"/><button class="btn" onclick="uploadCharacterImage('${id}')">Upload Portrait</button></div><h3 style="margin:.8rem 0 .4rem">Attachments (text / docs / PDFs / images)</h3><div class="row" style="gap:8px;flex-wrap:wrap"><input type="file" id="ch_files" multiple accept=".txt,.md,.pdf,.doc,.docx,.json,.jpg,.jpeg,.png" class="input"/><button class="btn" onclick="uploadCharacterFiles('${id}')">Upload Files</button></div><div class="list" id="fileList">${filesList}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn-outline" onclick="closeModal()">Close</button><button class="btn" onclick="saveCharacter('${id}')">Save</button></div>`); document.getElementById("ch_prov").addEventListener("change",(e)=>{const prov=e.target.value; const voiceSel=document.getElementById("ch_voice"); voiceSel.innerHTML = prov==="Browser (Device)" ? deviceOptions(c.voice) : openaiOptions(c.voice||"ember"); });}async function uploadCharacterImage(id){const f=document.getElementById("ch_img").files?.[0]; if(!f) return alert("Pick an image."); const c=characters.find(x=>x.id===id); if(!c) return; const buf=await f.arrayBuffer(); const b64=arrayBufferToBase64(buf); const dataURL=`data:${f.type||"image/png"};base64,${b64}`; if(!c.images) c.images=[]; if(c.images.length) c.images[0]={...(c.images[0]||{}), dataURL}; else c.images.push({dataURL}); save(KEY_CHARS,characters); editCharacter(id);}async function uploadCharacterFiles(id){const files=[...(document.getElementById("ch_files").files||[])]; if(!files.length) return alert("Pick files."); const c=characters.find(x=>x.id===id); if(!c) return; for(const f of files){const buf=await f.arrayBuffer(); const b64=arrayBufferToBase64(buf); const dataURL=`data:${f.type||"application/octet-stream"};base64,${b64}`; (c.files ||= []).push({name:f.name,type:f.type,size:f.size,dataURL}); } save(KEY_CHARS,characters); editCharacter(id);}function removeCharacterFile(id,idx){const c=characters.find(x=>x.id===id); if(!c) return; (c.files||[]).splice(idx,1); save(KEY_CHARS,characters); editCharacter(id);}function saveCharacter(id){const c=characters.find(x=>x.id===id); if(!c) return; c.name=document.getElementById("ch_name").value.trim()||c.name; c.age=document.getElementById("ch_age").value.trim()||null; c.traits=document.getElementById("ch_traits").value; c.backstory=document.getElementById("ch_back").value; c.voiceProvider=document.getElementById("ch_prov").value; c.voice=document.getElementById("ch_voice").value; save(KEY_CHARS,characters); showCharacters();}function showVoices(){const narProv = settings.narratorProvider||"OpenAI"; const narVoice = settings.narrator||"ember"; const rows = characters.filter(c=>c.id!=="narrator").map(c=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:.45rem 0"><div><b>${escapeHtml(c.name)}</b></div><div class="row" style="gap:8px;min-width:320px"><select class="select voice-prov" data-char="${c.id}">${providerOptions(c.voiceProvider||"OpenAI")}</select><select class="select voice-id" data-char="${c.id}" data-prov="${c.voiceProvider||"OpenAI"}">${(c.voiceProvider==="Browser (Device)"?deviceOptions(c.voice):openaiOptions(c.voice||"ember"))}</select></div></div>`).join(""); openModal(`<h2>Voices</h2><div class="grid"><div class="field"><label>Narrator Provider</label><select id="narProv" class="select">${providerOptions(narProv)}</select></div><div class="field"><label>Narrator Voice</label><select id="narVoice" class="select">${narProv==="Browser (Device)"?deviceOptions(narVoice):openaiOptions(narVoice)}</select></div></div><h3 style="margin:1rem 0 .4rem">Characters → Voice Assignments</h3><div class="list" id="voiceList">${rows}</div><div class="row" style="justify-content:flex-end;margin-top:12px;gap:8px"><button class="btn-outline" onclick="closeModal()">Close</button><button class="btn" onclick="saveVoices()">Save Voices</button></div>`); document.getElementById('narProv').addEventListener('change',(e)=>{const prov=e.target.value; const sel=document.getElementById('narVoice'); sel.innerHTML = (prov==="Browser (Device)"?deviceOptions(settings.narrator):openaiOptions(settings.narrator||"ember"));}); document.querySelectorAll('.voice-prov').forEach(el=>{el.addEventListener('change',(e)=>{const prov=e.target.value; const id=e.target.getAttribute('data-char'); const voiceSel=document.querySelector(`.voice-id[data-char="${id}"]`); voiceSel.innerHTML = (prov==="Browser (Device)"?deviceOptions(""):openaiOptions("")); voiceSel.setAttribute('data-prov',prov);});});}function saveVoices(){const narProv=document.getElementById('narProv').value; const narVoice=document.getElementById('narVoice').value; settings.narratorProvider=narProv; settings.narrator=narVoice; save(KEY_CFG,settings); document.querySelectorAll('.voice-prov').forEach(el=>{const id=el.getAttribute('data-char'); const prov=el.value; const voiceSel=document.querySelector(`.voice-id[data-char="${id}"]`); const voiceId=voiceSel?.value||""; const c=characters.find(x=>x.id===id); if(c){ c.voiceProvider=prov; c.voice=voiceId; }}); save(KEY_CHARS,characters); alert("Voices saved.");}function showSettings(){const opt=(arr,sel)=>arr.map(o=>`<option ${o===sel?"selected":""}>${o}</option>`).join(""); openModal(`<h2>Settings</h2><div class="grid"><div class="field"><label>Animation style</label><select id="stAnim" class="select">${opt(ANIM_STYLES,settings.animationStyle)}</select></div><div class="field"><label>Art style</label><select id="stArt" class="select">${opt(ART_STYLES,settings.artStyle)}</select></div><div class="field"><label>Aspect</label><select id="stAspect" class="select">${opt(["16:9","9:16","1:1"],settings.aspect)}</select></div><div class="field"><label>FPS</label><input id="stFps" class="input" type="number" min="12" max="60" value="${settings.fps}"/></div></div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn-outline" onclick="closeModal()">Cancel</button><button class="btn" onclick="(function(){settings.animationStyle=document.getElementById('stAnim').value;settings.artStyle=document.getElementById('stArt').value;settings.aspect=document.getElementById('stAspect').value;settings.fps=parseInt(document.getElementById('stFps').value)||24;save(KEY_CFG,settings); closeModal(); alert('Settings saved.');})()">Save</button></div>`);}function showSecrets(){const o=load(KEY_OPENAI,{apiKey:""}); openModal(`<h2>Secrets (API Keys)</h2><label>OpenAI API Key</label><input id="openaiKey" class="input" placeholder="sk-..." value="${escapeHtml(o.apiKey||"")}"/><div class="row" style="justify-content:flex-end;margin-top:.75rem;gap:8px"><button class="btn-outline" onclick="closeModal()">Close</button><button class="btn" onclick="(function(){const ok=document.getElementById('openaiKey').value.trim();save(KEY_OPENAI,{apiKey:ok}); alert('Saved.');})()">Save</button></div>`);}document.getElementById("btnPreviewScenes").onclick=()=>{const scenes = splitIntoScenes(document.getElementById("bookText").value||""); document.getElementById("sceneCountPill").textContent="Scenes: "+scenes.length; alert(scenes.length?`${scenes.length} scene(s) detected.`:"No scenes found.");};document.getElementById("btnSave").onclick=()=>{ localStorage.setItem(KEY_TEXT,ta.value||""); alert("Saved."); };document.getElementById("btnStart").onclick=()=>{ alert("Start pressed (pipeline not running in this file)."); };function splitIntoScenes(text){let chunks=text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean); if(chunks.length>=2) return chunks; const sents=text.replace(/\n+/g,' ').match(/[^.!?]+[.!?]+|\S+$/g)||[]; const out=[]; let buf=""; for(const s of sents){ if((buf+" "+s).length>350||(buf.match(/[.!?]/g)||[]).length>=2){ if(buf.trim()) out.push(buf.trim()); buf=s.trim(); } else { buf=(buf?buf+" ":"")+s.trim(); } } if(buf.trim()) out.push(buf.trim()); return out;}function openProject(){const input=document.createElement("input"); input.type="file"; input.accept=".bookanim.json,application/json"; input.onchange=async(e)=>{const f=e.target.files?.[0]; if(!f)return; try{const txt=await f.text(), p=JSON.parse(txt); if(p.text!=null) document.getElementById("bookText").value=p.text; if(Array.isArray(p.characters)) { characters=p.characters; save(KEY_CHARS,characters); } if(p.settings){ settings=p.settings; save(KEY_CFG,settings); } if(Array.isArray(p.assets)) { assets=p.assets; save(KEY_ASSETS,assets); } alert("Project loaded."); }catch{ alert("Invalid project file.") }}; input.click();}function uploadFiles(){const input=document.createElement("input"); input.type="file"; input.multiple=true; input.accept=".txt,.md,.pdf,.doc,.docx,.json,.jpg,.jpeg,.png,.mp3,.wav,.mp4,.webm"; input.onchange=async(e)=>{const files=[...(e.target.files||[])]; if(!files.length) return; for(const f of files){const buf=await f.arrayBuffer(); const b64=arrayBufferToBase64(buf); const dataURL=`data:${f.type||"application/octet-stream"};base64,${b64}`; assets.push({name:f.name,type:f.type,size:f.size,dataURL}); } save(KEY_ASSETS,assets); alert(files.length+" file(s) added to Assets."); }; input.click();}async function exportZip(){const JSZipRef = window.JSZip; if(!JSZipRef){ alert("ZIP library missing"); return; } const zip=new JSZipRef(); const text=document.getElementById("bookText").value||""; const project={"version":2,"text":text,"settings":settings,"characters":characters,"assets":assets}; zip.file("book-animator.bookanim.json",JSON.stringify(project,null,2)); zip.file("book-text.txt",text); if(assets?.length){const af=zip.folder("assets"); for(const a of assets){const base64=(a.dataURL?.match(/^data:.+;base64,(.*)$/)||[])[1]||""; if(base64) af.file(a.name||"file.bin",base64,{base64:true}); }} if(characters?.length){for(const c of characters){const base="characters/"+(c.name||"unnamed").toLowerCase().replace(/[^a-z0-9]+/g,'-'); const cf=zip.folder(base); if(c.images?.[0]){const im=c.images[0]; if(im.dataURL){const base64=(im.dataURL.match(/^data:.+;base64,(.*)$/)||[])[1]||""; if(base64) cf.file(`portrait.jpg`,base64,{base64:true}); }} cf.file("meta.json",JSON.stringify({"name":c.name,"age":c.age,"traits":c.traits,"backstory":c.backstory,"voiceProvider":c.voiceProvider,"voice":c.voice},null,2)); }} const blob=await zip.generateAsync({type:"blob"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="BookAnimator_Finished.zip"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);}</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Book Animator</title>
+<style>
+  :root{
+    --bg:#0b0b0c; --fg:#f2f2f2; --muted:#c9c9c9;
+    --red:#c7322b; --red-2:#8f1e19; --card:#141416; --border:#2a2a2e; --chip:#1b1b1f;
+    --thumb:#101114; --accent:#fff; /* white progress */
+  }
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial}
+  h1{font-size:2.2rem;text-align:center;margin:2.5rem 0 1rem}
+  .wrap{max-width:980px;margin:0 auto;padding:0 1rem 6rem}
+  label{display:block;font-weight:700;margin:.75rem 0 .35rem}
+  textarea{width:100%;min-height:240px;padding:1rem;border-radius:10px;border:1px solid var(--border);background:#121214;color:#ddd;font-size:1.05rem}
+  .row{display:flex;gap:.75rem;flex-wrap:wrap;margin:1rem 0}
+  .btn{background:var(--red);border:1px solid var(--red-2);color:#fff;padding:.75rem 1rem;border-radius:12px;cursor:pointer}
+  .btn.secondary{background:transparent;color:#fff}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:#111;border-top:1px solid var(--border);padding:.4rem .75rem;z-index:6}
+  .bar-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:.75rem}
+  .pill{padding:.25rem .6rem;background:var(--chip);border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:.85rem}
+  .progress{flex:1;height:10px;background:#222;border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+  .progress>span{display:block;height:100%;width:0;background:var(--accent)}
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:.75rem;margin:1rem 0}
+  .thumb{background:var(--thumb);border:1px solid var(--border);border-radius:12px;padding:.5rem}
+  .thumb canvas{width:100%;aspect-ratio:1/1;border-radius:10px;background:#0f0f11;display:block}
+  .thumb .cap{font-size:.8rem;color:var(--muted);margin-top:.4rem}
+  /* Menus */
+  .hambox{position:fixed;top:18px;left:18px;z-index:20}
+  .hamR{left:auto;right:18px}
+  .ham{width:48px;height:48px;border-radius:14px;border:1px solid var(--border);background:#121214;display:grid;place-items:center;cursor:pointer}
+  .ham i{width:22px;height:2px;background:#ddd;position:relative;display:block}
+  .ham i:before,.ham i:after{content:"";position:absolute;left:0;right:0;height:2px;background:#ddd}
+  .ham i:before{top:-7px}.ham i:after{top:7px}
+  .dropdown{position:fixed;top:78px;left:18px;min-width:300px;max-width:92vw;background:var(--card);border:1px solid var(--border);
+    border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:1rem;z-index:25}
+  .dropdown.right{left:auto;right:18px}
+  .item{padding:.65rem .75rem;border-radius:10px;cursor:pointer}
+  .item:hover{background:#191a1d}
+  .list{margin:.5rem 0;max-height:60vh;overflow:auto;border-top:1px solid var(--border)}
+  .rowi{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding:.75rem .25rem}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:30}
+  .card{width:min(720px,92vw);max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1rem 1.25rem}
+  .g{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+  input[type=text],select,.input{width:100%;background:#121214;border:1px solid var(--border);border-radius:10px;color:#ddd;padding:.6rem .7rem}
+  .help{color:#9aa0a6;font-size:.9rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.4rem}
+  .chip{background:#18191c;border:1px solid var(--border);padding:.25rem .6rem;border-radius:999px}
+  a.link{color:#fff;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<!-- Left / Right menus -->
+<div class="hambox"><button class="ham" id="btnLeft" aria-label="Open left menu"><i></i></button></div>
+<div class="hambox hamR"><button class="ham" id="btnRight" aria-label="Open right menu"><i></i></button></div>
+
+<h1>Book Animator</h1>
+<div class="wrap">
+  <div class="row">
+    <span class="pill" id="modePill">Mode: Simple</span>
+    <span class="pill" id="scenePill">Scenes: 0</span>
+  </div>
+
+  <label for="bookText">Paste your book text:</label>
+  <textarea id="bookText" placeholder="Paste text here…"></textarea>
+
+  <div class="row">
+    <button class="btn" id="btnStart">Start Animation</button>
+    <button class="btn secondary" id="btnPreview">Preview Scenes</button>
+  </div>
+
+  <div id="thumbs" class="thumbs" aria-live="polite"></div>
+</div>
+
+<!-- Bottom bar -->
+<div class="bar">
+  <div class="bar-in">
+    <button class="btn secondary" id="btnSave">Save</button>
+    <button class="btn secondary" id="btnExport">Export Finished (ZIP)</button>
+    <div class="progress" title="Progress"><span id="progSpan"></span></div>
+    <span class="pill" id="pct">0%</span>
+  </div>
+</div>
+
+<!-- Left dropdown -->
+<div class="dropdown" id="leftDrop" style="display:none">
+  <div class="item" data-open="characters">Characters</div>
+  <div class="item" data-open="voices">Voices</div>
+  <div class="item" data-open="settings">Settings</div>
+  <div class="item" data-open="secrets">Secrets (API keys)</div>
+  <div class="item" data-open="help">Help</div>
+  <div class="list" id="charQuick"></div>
+</div>
+
+<!-- Right dropdown -->
+<div class="dropdown right" id="rightDrop" style="display:none">
+  <div class="item" id="newProject">New Project</div>
+  <div class="item" id="openProject">Open Project…</div>
+  <div class="item" id="saveProject">Save Project</div>
+  <div class="item" id="uploadAssets">Upload Files…</div>
+  <div class="item" id="exportZip">Export Finished (ZIP)</div>
+</div>
+
+<!-- Modals -->
+<div class="modal" id="modal">
+  <div class="card" id="modalCard"></div>
+</div>
+
+<input type="file" id="hiddenFile" style="display:none" multiple/>
+
+<script>
+/* ========= STATE ========= */
+const S = {
+  version: 3,
+  settings: {
+    animationType: "Cartoon",
+    artStyle: "Bold Lines",
+    audience: "All Ages",
+    aspect: "16:9",
+    fps: 24,
+    lineWeight: 2,
+    texture: "Clean",
+    palette: "Warm",
+  },
+  voices: { /* characterName -> voiceId */ },
+  apiKeys: [], /* {provider, key} */
+  characters: [], /* {id,name,age,traits,backstory,voice,thumb,files:[{name,href,type}]} */
+  project: { title: "Untitled", scenes: [], thumbs: [] }
+};
+
+const STORAGE_KEY = "bookanim_v3";
+
+/* ========= UTIL ========= */
+const $ = sel => document.querySelector(sel);
+function saveLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); }
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) Object.assign(S, JSON.parse(raw));
+  } catch(e){}
+}
+function modal(html){ $("#modalCard").innerHTML = html; $("#modal").style.display="flex"; }
+function closeModal(){ $("#modal").style.display="none"; }
+function pill(id, txt){ $(id).textContent = txt; }
+function bytesToDataURL(file){
+  return new Promise(res=>{
+    const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file);
+  });
+}
+function download(name, blob){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
+
+/* ========= INITIAL DATA (fallbacks) ========= */
+const FALLBACK_CHARACTERS = [
+  {id:"narrator", name:"Narrator", age:"—", traits:"Neutral guide", backstory:"", voice:"ember", thumb:"", files:[]},
+  {id:"sidetrack_sally", name:"Sidetracked Sally", age:"10", traits:"Curious • easily distracted • kind", backstory:"Learns focus via adventures.", voice:"nova", thumb:"", files:[]},
+  {id:"darling_danielle", name:"Darling Danielle", age:"12", traits:"Brave • noble", backstory:"Sworn to protect friends.", voice:"coral", thumb:"", files:[]},
+  {id:"dark_dan", name:"Dark Dan", age:"13", traits:"Brooding • loyal", backstory:"Fights inner shadows.", voice:"canyon", thumb:"", files:[]},
+  {id:"skater_skip", name:"Skater Skip", age:"11", traits:"Fast • witty", backstory:"Dimension-skating prodigy.", voice:"alloy", thumb:"", files:[]},
+  {id:"creative_callie", name:"Creative Callie", age:"11", traits:"Inventive • artistic", backstory:"Paints portals.", voice:"shimmer", thumb:"", files:[]},
+  {id:"zen_zena", name:"Zen Zena", age:"12", traits:"Calm • wise", backstory:"Guardian of whispering grove.", voice:"verse", thumb:"", files:[]}
+];
+
+const OPENAI_VOICES = ["alloy","ember","nova","shimmer","coral","verse","canyon","flux","mono"];
+
+/* ========= BOOT ========= */
+loadLocal();
+if (!S.characters?.length) S.characters = FALLBACK_CHARACTERS;
+S.characters.forEach(c=>{ if (c.voice && !S.voices[c.name]) S.voices[c.name]=c.voice; });
+renderQuickList();
+
+/* ========= MENU WIRES ========= */
+$("#btnLeft").onclick = ()=> toggleDrop("#leftDrop");
+$("#btnRight").onclick = ()=> toggleDrop("#rightDrop");
+function toggleDrop(id){
+  const el=$(id);
+  el.style.display = (el.style.display==="none"||!el.style.display) ? "block" : "none";
+}
+
+/* Left dropdown actions */
+$("#leftDrop").addEventListener("click", e=>{
+  const t = e.target.closest(".item");
+  if(!t) return;
+  const which = t.dataset.open;
+  if(which==="characters") openCharacters();
+  if(which==="voices") openVoices();
+  if(which==="settings") openSettings();
+  if(which==="secrets") openSecrets();
+  if(which==="help") openHelp();
+});
+
+/* Right dropdown actions */
+$("#newProject").onclick = ()=>{ S.project={title:"Untitled",scenes:[],thumbs:[]}; $("#thumbs").innerHTML=""; saveLocal(); alert("New project started."); };
+$("#openProject").onclick = ()=>{
+  const f = $("#hiddenFile"); f.accept=".json"; f.onchange=async ()=>{
+    const file=f.files[0]; if(!file) return;
+    const txt = await file.text(); const data = JSON.parse(txt);
+    if(data.characters) S.characters = data.characters;
+    if(data.settings) S.settings = data.settings;
+    if(data.project) S.project = data.project;
+    if(data.voices) S.voices = data.voices;
+    renderQuickList(); saveLocal(); alert("Project loaded.");
+  }; f.click();
+};
+$("#saveProject").onclick = ()=> doSave();
+$("#uploadAssets").onclick = ()=>{ const f=$("#hiddenFile"); f.accept="*/*"; f.onchange=()=>{ [...f.files].forEach(async file=>{
+    const href = URL.createObjectURL(file);
+    (S.project.assets ||= []).push({name:file.name,type:file.type,href});
+  }); saveLocal(); alert("Files attached to project (local only)."); }; f.click(); };
+$("#exportZip").onclick = ()=> exportZip();
+
+/* ========= CORE UI ========= */
+$("#btnPreview").onclick = ()=> splitScenes();
+$("#btnStart").onclick = async ()=>{
+  splitScenes();
+  await illustrateAll();
+};
+
+/* Save bottom buttons */
+$("#btnSave").onclick = ()=> doSave();
+$("#btnExport").onclick = ()=> exportZip();
+
+/* ========= Characters ========= */
+function renderQuickList(){
+  const box = $("#charQuick"); box.innerHTML="";
+  const head = document.createElement("div"); head.className="rowi"; head.innerHTML="<b>Characters</b>";
+  box.appendChild(head);
+  S.characters.forEach(c=>{
+    const r=document.createElement("div"); r.className="rowi";
+    r.innerHTML=`<span>${c.name}</span> <button class="btn secondary" data-eid="${c.id}">Edit</button>`;
+    r.querySelector("button").onclick = ()=> editCharacter(c.id);
+    box.appendChild(r);
+  });
+}
+
+/* Character modal list + editor */
+function openCharacters(){
+  const rows = S.characters.map(c=>`
+    <div class="rowi">
+      <span>${c.name}</span>
+      <button class="btn secondary" onclick="editCharacter('${c.id}')">Edit</button>
+    </div>`).join("");
+  modal(`
+    <h2 style="margin:0 0 .5rem">Characters</h2>
+    <div class="list">${rows}</div>
+    <div class="row" style="justify-content:flex-end;margin-top:.75rem">
+      <button class="btn secondary" onclick="closeModal()">Close</button>
+    </div>
+  `);
+}
+
+window.editCharacter = function(id){
+  const c = S.characters.find(x=>x.id===id) || {id, name:"", age:"", traits:"", backstory:"", thumb:"", files:[]};
+  const voiceOptions = OPENAI_VOICES.map(v=>`<option value="${v}" ${ (S.voices[c.name]||c.voice)===v?"selected":""}>${v}</option>`).join("");
+  const files = (c.files||[]).map(f=>`<li><a class="link" href="${f.href}" target="_blank">${f.name}</a></li>`).join("") || "<span class='help'>No attachments yet.</span>";
+  modal(`
+    <h2 style="margin:0 0 .75rem">Edit Character</h2>
+    <div class="g">
+      <div>
+        <label>Name</label>
+        <input id="ec_name" type="text" value="${c.name||""}">
+      </div>
+      <div>
+        <label>Age</label>
+        <input id="ec_age" type="text" value="${c.age||""}">
+      </div>
+      <div>
+        <label>Voice</label>
+        <select id="ec_voice">${voiceOptions}</select>
+      </div>
+      <div>
+        <label>Thumbnail</label>
+        <div class="row">
+          <button class="btn secondary" onclick="pickThumb('${id}')">Upload Image…</button>
+          ${c.thumb?`<a class="btn secondary" href="${c.thumb}" download="${c.name||"character"}.png">Download</a>`:""}
+        </div>
+      </div>
+    </div>
+
+    <label>Traits</label>
+    <textarea id="ec_traits" style="min-height:80px">${c.traits||""}</textarea>
+    <label>Backstory</label>
+    <textarea id="ec_back" style="min-height:120px">${c.backstory||""}</textarea>
+
+    <label>Attachments</label>
+    <ul id="ec_files" class="help" style="margin:.25rem 0 1rem">${files}</ul>
+    <button class="btn secondary" onclick="attachFiles('${id}')">Attach Files…</button>
+
+    <div class="row" style="justify-content:flex-end;margin-top:1rem">
+      <button class="btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveCharacter('${id}')">Save</button>
+    </div>
+  `);
+}
+
+window.pickThumb = function(id){
+  const f=$("#hiddenFile"); f.accept="image/*"; f.onchange=async ()=>{
+    const file=f.files[0]; if(!file) return;
+    const url=await bytesToDataURL(file);
+    const c = S.characters.find(x=>x.id===id);
+    if(c){ c.thumb=url; saveLocal(); editCharacter(id); }
+  }; f.click();
+};
+
+window.attachFiles = function(id){
+  const f=$("#hiddenFile"); f.accept="*/*"; f.onchange=async ()=>{
+    const c=S.characters.find(x=>x.id===id); if(!c) return;
+    c.files ||= [];
+    for(const file of f.files){
+      let href = URL.createObjectURL(file);
+      /* also cache images as dataURL for long-term local */
+      if(file.type.startsWith("image/")) href = await bytesToDataURL(file);
+      c.files.push({name:file.name, href, type:file.type});
+    }
+    saveLocal(); editCharacter(id);
+  }; f.click();
+};
+
+window.saveCharacter = function(id){
+  const c = S.characters.find(x=>x.id===id) || {id};
+  c.name = $("#ec_name").value.trim();
+  c.age = $("#ec_age").value.trim();
+  c.traits = $("#ec_traits").value.trim();
+  c.backstory = $("#ec_back").value.trim();
+  c.voice = $("#ec_voice").value;
+  S.voices[c.name] = c.voice;
+  if(!S.characters.find(x=>x.id===id)) S.characters.push(c);
+  saveLocal(); renderQuickList(); closeModal();
+};
+
+/* ========= Voices ========= */
+function openVoices(){
+  const rows = S.characters.map(c=>{
+    const cur = S.voices[c.name] || c.voice || "";
+    const opts = OPENAI_VOICES.map(v=>`<option ${v===cur?"selected":""}>${v}</option>`).join("");
+    return `<div class="rowi">
+      <span>${c.name}</span>
+      <select onchange="setVoice('${c.name}', this.value)">${opts}</select>
+    </div>`;
+  }).join("");
+  modal(`
+    <h2 style="margin:0 0 .5rem">Voices</h2>
+    <div class="list">${rows}</div>
+    <p class="help">These are local voice IDs for synthesis mapping. (OpenAI voice inference requires a backend.)</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn" onclick="closeModal()">Close</button></div>
+  `);
+}
+window.setVoice = (name,val)=>{ S.voices[name]=val; const c=S.characters.find(x=>x.name===name); if(c) c.voice=val; saveLocal(); };
+
+/* ========= Settings ========= */
+function openSettings(){
+  const s=S.settings;
+  const anims = ["Cartoon","Anime","Dark Fantasy","Flip-book","Comic","Watercolor","Low-poly","3D Cel"];
+  const arts = ["Bold Lines","Ink & Wash","Soft Pastel","Retro Comic","Noir","Vaporwave","Painterly"];
+  modal(`
+    <h2 style="margin:0 0 .75rem">Settings</h2>
+    <div class="g">
+      <div>
+        <label>Animation type</label>
+        <select id="st_anim">${anims.map(a=>`<option ${s.animationType===a?"selected":""}>${a}</option>`).join("")}</select>
+      </div>
+      <div>
+        <label>Art style</label>
+        <select id="st_art">${arts.map(a=>`<option ${s.artStyle===a?"selected":""}>${a}</option>`).join("")}</select>
+      </div>
+      <div>
+        <label>Audience / Age</label>
+        <input id="st_aud" type="text" value="${s.audience}">
+      </div>
+      <div>
+        <label>Aspect</label>
+        <select id="st_aspect">${["16:9","9:16","1:1"].map(a=>`<option ${s.aspect===a?"selected":""}>${a}</option>`).join("")}</select>
+      </div>
+      <div>
+        <label>FPS</label>
+        <select id="st_fps">${[12,24,30].map(n=>`<option ${s.fps==n?"selected":""}>${n}</option>`).join("")}</select>
+      </div>
+      <div>
+        <label>Palette</label>
+        <select id="st_pal">${["Warm","Cool","Mono","Neon"].map(p=>`<option ${s.palette===p?"selected":""}>${p}</option>`).join("")}</select>
+      </div>
+    </div>
+    <div class="g">
+      <div><label>Line weight</label><input id="st_line" type="text" value="${s.lineWeight}"></div>
+      <div><label>Texture</label><input id="st_tex" type="text" value="${s.texture}"></div>
+    </div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveSettings()">Save</button>
+    </div>
+  `);
+}
+window.saveSettings = ()=>{
+  const s=S.settings;
+  s.animationType=$("#st_anim").value;
+  s.artStyle=$("#st_art").value;
+  s.audience=$("#st_aud").value;
+  s.aspect=$("#st_aspect").value;
+  s.fps=+$("#st_fps").value;
+  s.palette=$("#st_pal").value;
+  s.lineWeight=$("#st_line").value;
+  s.texture=$("#st_tex").value;
+  saveLocal(); closeModal();
+};
+
+/* ========= Secrets (API Keys) ========= */
+function openSecrets(){
+  const rows = (S.apiKeys||[]).map((k,i)=>`
+    <div class="rowi"><span>${k.provider}</span>
+      <button class="btn secondary" onclick="delKey(${i})">Remove</button></div>`).join("") || "<p class='help'>No keys added.</p>";
+  modal(`
+    <h2 style="margin:0 0 .75rem">Secrets (API keys)</h2>
+    <div class="help" style="margin-bottom:.5rem">Static pages store keys in your browser only. For production, use a server-side vault.</div>
+    ${rows}
+    <div class="g" style="margin-top:.75rem">
+      <input id="secProv" type="text" placeholder="Provider (e.g., ElevenLabs)"/>
+      <input id="secKey"  type="text" placeholder="API Key"/>
+    </div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn secondary" onclick="closeModal()">Close</button>
+      <button class="btn" onclick="addKey()">Add</button>
+    </div>
+  `);
+}
+window.addKey=()=>{ const p=$("#secProv").value.trim(), k=$("#secKey").value.trim(); if(!p||!k) return; (S.apiKeys ||= []).push({provider:p,key:k}); saveLocal(); openSecrets(); };
+window.delKey=i=>{ S.apiKeys.splice(i,1); saveLocal(); openSecrets(); };
+
+/* ========= Help ========= */
+function openHelp(){
+  modal(`
+    <h2 style="margin:0 0 .5rem">Help</h2>
+    <p>1) Paste text → Preview Scenes → Start Animation.<br>
+       2) Use <b>Characters</b> to set traits, backstories, thumbnails & voices.<br>
+       3) <b>Settings</b> chooses animation/art style and render options.<br>
+       4) Use right ≡ to <b>Open/Save</b>, <b>Upload files</b>, or <b>Export ZIP</b>.</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn" onclick="closeModal()">Close</button></div>
+  `);
+}
+
+/* ========= Scene split & illustration ========= */
+function splitScenes(){
+  const t=$("#bookText").value.trim();
+  const chunks = t.split(/\n{2,}|(?<=[.!?])\s*\n/).map(s=>s.trim()).filter(Boolean);
+  S.project.scenes = chunks.map((text, i)=>({i, text}));
+  pill("#scenePill", `Scenes: ${chunks.length}`);
+  saveLocal();
+}
+
+/* Simple offline “illustrator” → draws an abstract image from keywords */
+function drawThumb(canvas, text){
+  const ctx=canvas.getContext("2d");
+  const {palette, artStyle} = S.settings;
+  // Background gradient from palette
+  const g=ctx.createLinearGradient(0,0,0,canvas.height);
+  const pal = palette==="Warm" ? ["#3b1d1a","#6d2b22","#a63a2e"]
+           : palette==="Cool" ? ["#152436","#1b3a5b","#2b5f7d"]
+           : palette==="Neon" ? ["#1a1030","#2a0a5e","#5e0aa6"]
+           : ["#111","#1a1a1a","#222"];
+  pal.forEach((c,i)=>g.addColorStop(i/(pal.length-1), c));
+  ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Extract nouns-ish keywords
+  const words = (text.toLowerCase().match(/[a-z]{4,}/g)||[])
+    .filter((w,i,a)=>a.indexOf(w)===i).slice(0,7);
+
+  // Style overlays
+  if(artStyle.includes("Lines")){
+    ctx.globalAlpha=.2; ctx.strokeStyle="#fff"; ctx.lineWidth=1.5;
+    for(let y=10;y<canvas.height;y+=14){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y-8); ctx.stroke(); }
+    ctx.globalAlpha=1;
+  } else if(artStyle.includes("Ink")){
+    ctx.globalAlpha=.15; ctx.fillStyle="#000";
+    for(let i=0;i<200;i++){ const x=Math.random()*canvas.width,y=Math.random()*canvas.height,r=Math.random()*3; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
+    ctx.globalAlpha=1;
+  }
+
+  // Place glyphs for words
+  ctx.fillStyle="#fff";
+  ctx.font="bold 22px system-ui,Segoe UI";
+  words.forEach((w,idx)=>{
+    const x=20+ (idx%3)* (canvas.width/3) + (Math.random()*20-10);
+    const y=40+ Math.floor(idx/3)*90 + (Math.random()*10-5);
+    ctx.globalAlpha=.18; ctx.fillText("★", x-6, y-10);
+    ctx.globalAlpha=.95; ctx.fillText(w, x, y);
+  });
+
+  // Frame
+  ctx.globalAlpha=1; ctx.strokeStyle="rgba(255,255,255,.35)"; ctx.lineWidth=3; ctx.strokeRect(6,6,canvas.width-12,canvas.height-12);
+}
+
+async function illustrateAll(){
+  const scenes=S.project.scenes; if(!scenes.length){ alert("No scenes yet. Paste text and Preview first."); return; }
+  const thumbsDiv=$("#thumbs"); thumbsDiv.innerHTML="";
+  const bar=$("#progSpan"), pct=$("#pct");
+  for(let i=0;i<scenes.length;i++){
+    const c=document.createElement("canvas"); c.width=512; c.height=512;
+    drawThumb(c, scenes[i].text);
+    const cell=document.createElement("div"); cell.className="thumb";
+    cell.appendChild(c);
+    const cap=document.createElement("div"); cap.className="cap"; cap.textContent=`Scene ${i+1}`;
+    cell.appendChild(cap);
+    thumbsDiv.appendChild(cell);
+    // store dataURL
+    S.project.thumbs[i]=c.toDataURL("image/png");
+    const progress=Math.round(((i+1)/scenes.length)*100);
+    bar.style.width=progress+"%"; pct.textContent=progress+"%";
+    await new Promise(r=>setTimeout(r, 120)); // small yield for UI
+  }
+  saveLocal();
+}
+
+/* ========= Save / Export ========= */
+function doSave(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  download("book-animator-project.json", blob);
+}
+
+async function exportZip(){
+  // minimal in-browser zip (no deps): assemble as “store” using DataURL → this keeps it simple
+  const files = [
+    {name:"project.json", data: JSON.stringify(S,null,2)},
+  ];
+  (S.project.thumbs||[]).forEach((dataURL,i)=>files.push({name:`thumb_${i+1}.png`, data:dataURL}));
+
+  // Build a RFC 2397 “bundle” HTML if true ZIP isn’t available without a lib.
+  const html = `<!doctype html><meta charset="utf-8"><title>BookAnimator Export</title>
+  <h1>BookAnimator Export</h1>
+  <p>This page contains your files as downloadable links.</p>
+  <ul>
+    ${files.map(f=>{
+      if(f.name.endsWith(".png")){
+        return `<li><a download="${f.name}" href="${f.data}">${f.name}</a></li>`;
+      }else{
+        return `<li><a download="${f.name}" href="data:application/json;base64,${btoa(unescape(encodeURIComponent(f.data)))}">${f.name}</a></li>`;
+      }
+    }).join("")}
+  </ul>`;
+  const blob=new Blob([html],{type:"text/html"}); download("BookAnimator_Finished.html", blob);
+}
+
+/* ========= Load voices.txt if hosted nearby ========= */
+fetch("Voices.txt").then(r=> r.ok? r.text():Promise.reject())
+.then(txt=>{
+  // expecting lines "Character = voiceId"
+  txt.split(/\r?\n/).forEach(line=>{
+    const m=line.match(/^\s*([^=]+?)\s*=\s*([a-z0-9_-]+)\s*$/i);
+    if(m){ const name=m[1].trim(); const vid=m[2].trim(); S.voices[name]=vid;
+      const c=S.characters.find(x=>x.name===name); if(c) c.voice=vid;
+    }
+  });
+  saveLocal();
+}).catch(()=>{/* ignore if missing */});
+
+/* ========= Keyboard nicety ========= */
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape") closeModal();
+});
+</script>
+</body>
+</html>
