@@ -1,207 +1,272 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Book Animator - Character Library</title>
-  <style>
-    /* --- Base Theme --- */
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #000;
-      color: #fff;
-      line-height: 1.5;
-    }
-    header {
-      text-align: center;
-      padding: 40px 10px;
-      background: linear-gradient(to bottom, #111, #000);
-      border-bottom: 1px solid #333;
-    }
-    header h1 {
-      font-size: 40px;
-      color: #ff4444;
-      margin-bottom: 10px;
-    }
-    header p {
-      color: #bbb;
-      font-size: 18px;
-    }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Book Animator</title>
 
-    /* --- Character Grid --- */
-    #character-library {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-      padding: 40px;
-    }
+<!-- ZIP export -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
-    .character-card {
-      background: #0b0b0b;
-      color: #e7e7e7;
-      border: 1px solid #2a2a2a;
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 0 12px rgba(255, 0, 0, 0.15);
-    }
+<style>
+  :root{--bg:#000;--fg:#fff;--muted:#cfcfcf;--panel:#0e0e0e;--border:#2a2a2a;--accent:#ff2d2d;--accent-hover:#ff4747}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
+  .wrap{max-width:900px;margin:4rem auto 8.5rem;padding:0 1rem}
+  h1{margin:0 0 1rem;text-align:center;font-size:2rem;font-weight:800}
+  label{display:block;margin:.5rem 0;font-weight:600;color:var(--muted)}
+  textarea{width:100%;min-height:300px;padding:1rem;border-radius:10px;background:#0b0b0b;color:var(--fg);border:1px solid var(--border);font-size:1rem;line-height:1.5;resize:none;outline:none}
+  textarea:focus{box-shadow:0 0 0 2px rgba(255,45,45,.35);border-color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:.7rem 1rem;cursor:pointer;font-weight:800}
+  .btn:hover{background:var(--accent-hover)} .btn[disabled]{opacity:.6;cursor:not-allowed}
+  .btn-outline{background:transparent;color:#fff;border:2px solid var(--accent);border-radius:10px;padding:.6rem 1rem;cursor:pointer;font-weight:800}
+  .btn-outline:hover{background:rgba(255,45,45,.15)} .btn-danger{background:#b31313}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:12px}
+  .row{display:flex;gap:12px;align-items:center}
+  .pill{border:1px solid var(--border);padding:.2rem .5rem;border-radius:999px;color:var(--muted);font-size:.85rem}
+  .list{border:1px solid var(--border);border-radius:10px;padding:.5rem;max-height:360px;overflow:auto}
+  .input,.select,.area{background:#0f0f0f;color:#fff;border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem}
+  .area{min-height:90px}
 
-    .character-card h2 {
-      font-size: 22px;
-      margin: 8px 0;
-      color: #ff4545;
-    }
+  /* Hamburgers & menus */
+  .hambtn{position:fixed;top:.75rem;z-index:1000;width:46px;height:46px;display:grid;place-items:center;background:var(--panel);color:var(--fg);border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-size:1.35rem;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  .hambtn.left{left:.75rem} .hambtn.right{right:.75rem}
+  .menu{position:fixed;top:3.9rem;z-index:999;min-width:300px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.55)}
+  .menu.left{left:.75rem} .menu.right{right:.75rem}
+  .item{padding:.75rem .95rem;cursor:pointer;border-bottom:1px solid var(--border)}
+  .item:last-child{border-bottom:none}
+  .item:hover{background:#111}
 
-    .character-card img {
-      width: 100%;
-      height: 240px;
-      object-fit: cover;
-      border-radius: 10px;
-      border: 1px solid #2a2a2a;
-      margin-bottom: 12px;
-      background: #111;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 3px 8px;
-      border: 1px solid #444;
-      border-radius: 999px;
-      font-size: 12px;
-      color: #bbb;
-      margin-right: 6px;
-      margin-bottom: 6px;
-    }
-
-    details {
-      margin-top: 10px;
-    }
-
-    details summary {
-      cursor: pointer;
-      color: #ddd;
-      font-weight: 600;
-    }
-
-    ul {
-      margin: 6px 0 0 18px;
-    }
-
-    footer {
-      text-align: center;
-      padding: 40px;
-      color: #777;
-      font-size: 14px;
-      border-top: 1px solid #222;
-    }
-
-    @media (max-width: 600px) {
-      header h1 {
-        font-size: 30px;
-      }
-      #character-library {
-        padding: 20px;
-      }
-    }
-  </style>
+  /* Modal */
+  .mask{position:fixed;inset:0;display:none;place-items:center;z-index:1100;background:rgba(0,0,0,.6)}
+  .mask.show{display:grid}
+  .modal{width:min(96vw,880px);background:#0d0d0d;color:var(--fg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.7);padding:1rem 1.25rem}
+</style>
 </head>
-
 <body>
-  <header>
-    <h1>Book Animator Character Library</h1>
-    <p>Explore all your animated heroes — with full bios, powers, and voices.</p>
-  </header>
+  <!-- Hamburgers -->
+  <button id="btnLeft"  class="hambtn left"  aria-label="Open left menu">≡</button>
+  <button id="btnRight" class="hambtn right" aria-label="Open right menu">≡</button>
 
-  <main>
-    <section id="character-settings">
-      <div id="character-library">
-        <p style="text-align:center;color:#999;">Loading characters...</p>
+  <!-- Left menu (Character info is here) -->
+  <div id="menuLeft" class="menu left" hidden>
+    <div class="item" data-left="characters">Characters</div>
+    <div class="item" data-left="voices">Voices</div>
+    <div class="item" data-left="settings">Settings</div>
+    <div class="item" data-left="secrets">Secrets (API Keys)</div>
+    <div class="item" data-left="tutorial">Tutorial</div>
+    <div class="item" data-left="about">About</div>
+  </div>
+
+  <!-- Right menu -->
+  <div id="menuRight" class="menu right" hidden>
+    <div class="item" data-right="new">New Project</div>
+    <div class="item" data-right="save">Save Project</div>
+    <div class="item" data-right="open">Open Project</div>
+    <div class="item" data-right="exportZip">Export Finished (ZIP)</div>
+  </div>
+
+  <!-- Main -->
+  <div class="wrap">
+    <h1>Book Animator</h1>
+    <div class="row" style="justify-content:space-between;margin:.25rem 0 .25rem">
+      <span class="pill" id="modePill">Mode: Simple</span>
+      <span class="pill" id="sceneCountPill">Scenes: 0</span>
+    </div>
+
+    <label for="bookText">Paste your book text:</label>
+    <textarea id="bookText" placeholder="Paste text here…"></textarea>
+
+    <div class="actions">
+      <div class="row" style="gap:8px">
+        <button class="btn" id="btnStart">Start Animation</button>
+        <button class="btn-outline" id="btnPreviewScenes">Preview Scenes</button>
       </div>
-    </section>
-  </main>
+      <div class="row" style="gap:8px">
+        <button class="btn-outline" id="btnSave">Save</button>
+        <button class="btn" id="btnExportZip">Export Finished (ZIP)</button>
+      </div>
+    </div>
+  </div>
 
-  <footer>
-    <p>© 2025 Book Animator Universe. Created with ❤️ and imagination.</p>
-  </footer>
+  <!-- Modal -->
+  <div id="mask" class="mask" role="dialog" aria-modal="true" aria-hidden="true">
+    <div id="modal" class="modal" role="document"></div>
+  </div>
 
-  <script>
-    async function loadCharacterLibrary() {
-      try {
-        const res = await fetch('./characters.json', { cache: 'no-cache' });
-        const characters = await res.json();
-        const root = document.getElementById('character-library');
-        if (!root) return;
+<script>
+/* ===== Minimal state ===== */
+const KEY_TEXT="bookAnimator:text";
+const KEY_CHARS="bookAnimator:characters";
+const KEY_OPENAI="bookAnimator:openai";
 
-        root.innerHTML = characters
-          .map(
-            (c) => `
-          <div class="character-card">
-            ${c.image ? `<img src="${c.image}" alt="${c.name}" />` : ""}
-            <h2>${c.name}</h2>
+function load(k,def){try{return JSON.parse(localStorage.getItem(k))||def}catch{return def}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 
-            <div>
-              <span class="pill"><strong>Voice:</strong> ${c.voice}</span>
-              <span class="pill"><strong>Age:</strong> ${c.age}</span>
-              <span class="pill"><strong>Style:</strong> ${c.style}</span>
-            </div>
+/* Seed characters (names only — you can edit details in the Characters modal) */
+function seedCharacters(){
+  return [
+    {id:"narrator",name:"Narrator",traits:"",voice:"ember",images:[],files:[]},
+    {id:"c_sally", name:"Sidetracked Sally", traits:"", voice:"juniper", images:[], files:[]},
+    {id:"c_dani",  name:"Darling Danielle",  traits:"", voice:"amber",  images:[], files:[]},
+    {id:"c_dan",   name:"Dark Dan",          traits:"", voice:"copper", images:[], files:[]},
+    {id:"c_skip",  name:"Skater Skip",       traits:"", voice:"alloy",  images:[], files:[]},
+    {id:"c_callie",name:"Creative Callie",   traits:"", voice:"pearl",  images:[], files:[]},
+    {id:"c_zena",  name:"Zen Zena",          traits:"", voice:"sage",   images:[], files:[]},
+    {id:"c_gus",   name:"Grumpy Gus",        traits:"", voice:"copper", images:[], files:[]},
+    {id:"c_annie", name:"Ambush Annie",      traits:"", voice:"amber",  images:[], files:[]},
+    {id:"c_journey",name:"Journey",          traits:"", voice:"juniper",images:[], files:[]},
+    {id:"c_sophie", name:"Sophie",           traits:"", voice:"amber",  images:[], files:[]},
+    {id:"c_abby",   name:"Abby",             traits:"", voice:"pearl",  images:[], files:[]},
+    {id:"c_mark",   name:"Mark",             traits:"", voice:"alloy",  images:[], files:[]},
+    {id:"c_bear",   name:"Bear",             traits:"", voice:"copper", images:[], files:[]},
+    {id:"c_dominic",name:"Dominic (The Dominator)", traits:"", voice:"alloy", images:[], files:[]},
+    {id:"c_naomi",  name:"Naomi",            traits:"", voice:"pearl",  images:[], files:[]},
+    {id:"c_oliver", name:"Oliver",           traits:"", voice:"amber",  images:[], files:[]},
+    {id:"c_teddy",  name:"Teddy",            traits:"", voice:"juniper",images:[], files:[]},
+    {id:"c_slot19", name:"Character Slot 19",traits:"", voice:"amber",  images:[], files:[]},
+    {id:"c_slot20", name:"Character Slot 20",traits:"", voice:"amber",  images:[], files:[]}
+  ];
+}
 
-            ${
-              Array.isArray(c.gallery) && c.gallery.length
-                ? `
-              <details>
-                <summary>Alternate Images (${c.gallery.length})</summary>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px;">
-                  ${c.gallery
-                    .map(
-                      (img) =>
-                        `<img src="${img}" alt="${c.name} alt" style="height:120px;border-radius:8px;object-fit:cover;" />`
-                    )
-                    .join("")}
-                </div>
-              </details>
-            `
-                : ""
-            }
+let characters=load(KEY_CHARS,null) || seedCharacters();
+const ta=document.getElementById("bookText"); if(localStorage.getItem(KEY_TEXT)) ta.value=localStorage.getItem(KEY_TEXT);
 
-            <details open>
-              <summary>Appearance</summary>
-              <ul>${(c.appearance || [])
-                .map((li) => `<li>${li}</li>`)
-                .join("")}</ul>
-            </details>
+/* ===== Menus & modal ===== */
+const btnLeft=document.getElementById("btnLeft"),btnRight=document.getElementById("btnRight");
+const menuLeft=document.getElementById("menuLeft"),menuRight=document.getElementById("menuRight");
+const mask=document.getElementById("mask"), modal=document.getElementById("modal");
+btnLeft.onclick=()=>{menuLeft.hidden=!menuLeft.hidden;menuRight.hidden=true};
+btnRight.onclick=()=>{menuRight.hidden=!menuRight.hidden;menuLeft.hidden=true};
+document.addEventListener("click",(e)=>{if(!e.target.closest(".menu")&&!e.target.closest(".hambtn")){menuLeft.hidden=true;menuRight.hidden=true}});
+mask.onclick=e=>{if(e.target===mask) closeModal()};
+function openModal(html){modal.innerHTML=html;mask.classList.add("show")}
+function closeModal(){mask.classList.remove("show");modal.innerHTML=""}
 
-            <details>
-              <summary>Personality</summary>
-              <ul>${(c.personality || [])
-                .map((li) => `<li>${li}</li>`)
-                .join("")}</ul>
-            </details>
+/* Left menu actions */
+menuLeft.onclick=(e)=>{
+  const a=e.target?.dataset?.left; if(!a) return; menuLeft.hidden=true;
+  if(a==="characters") showCharacters();
+  if(a==="voices") showVoices();
+  if(a==="settings") showSettings();
+  if(a==="secrets") showSecrets();
+  if(a==="tutorial") alert("Tutorial:\n1) Paste text\n2) Characters/Voices/Settings\n3) Start\n4) Export ZIP.");
+  if(a==="about") alert("Book Animator — Created by Blind Art.");
+};
 
-            <details>
-              <summary>Abilities</summary>
-              <ul>${(c.abilities || [])
-                .map((li) => `<li>${li}</li>`)
-                .join("")}</ul>
-            </details>
+/* Right menu actions */
+menuRight.onclick=(e)=>{
+  const a=e.target?.dataset?.right; if(!a) return; menuRight.hidden=true;
+  if(a==="new"){ if(confirm("Clear text?")) ta.value="" }
+  if(a==="save"){ localStorage.setItem(KEY_TEXT,ta.value||""); alert("Saved.") }
+  if(a==="open") openProject();
+  if(a==="exportZip") exportZip();
+};
 
-            <details>
-              <summary>Background</summary>
-              <p style="margin-top:6px;">${c.background || ""}</p>
-            </details>
-          </div>
-        `
-          )
-          .join('');
-      } catch (err) {
-        console.error('Error loading character data:', err);
-        const root = document.getElementById('character-library');
-        if (root)
-          root.innerHTML =
-            '<div style="color:#f66;text-align:center;">⚠️ Could not load characters.json from the root directory.</div>';
-      }
-    }
+/* ===== Characters (minimal) ===== */
+function showCharacters(){
+  const rows = characters.map(c=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding:.5rem 0">
+      <div><b>${escapeHtml(c.name)}</b>${c.traits?`<div style="color:#cfcfcf;font-size:.9rem">${escapeHtml(c.traits)}</div>`:""}</div>
+      <button class="btn-outline" onclick="editCharacter('${c.id}')">Edit</button>
+    </div>
+  `).join("");
+  openModal(`<h2>Characters</h2>
+    <div class="list">${rows||"No characters"}</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:.75rem">
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+    </div>`);
+}
+function editCharacter(id){
+  const c=characters.find(x=>x.id===id); if(!c) return;
+  openModal(`<h2>Edit Character</h2>
+    <label>Name</label><input id="ch_name" class="input" value="${escapeHtml(c.name)}"/>
+    <label style="margin-top:.5rem">Traits / Notes</label><textarea id="ch_traits" class="area">${escapeHtml(c.traits||"")}</textarea>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:.75rem">
+      <button class="btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="(function(){
+        const n=document.getElementById('ch_name').value.trim();
+        const t=document.getElementById('ch_traits').value;
+        c.name=n||c.name; c.traits=t;
+        localStorage.setItem(KEY_CHARS,JSON.stringify(characters));
+        showCharacters();
+      })()">Save</button>
+    </div>`);
+}
 
-    loadCharacterLibrary();
-  </script>
+/* ===== Simple Settings / Secrets / Voices ===== */
+function showSettings(){
+  openModal(`<h2>Settings</h2>
+    <p style="color:#cfcfcf">Minimal settings view. (Theme fixed: black / white / red)</p>
+    <div style="display:flex;justify-content:flex-end;margin-top:.75rem">
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+    </div>`);
+}
+function showSecrets(){
+  const o=load(KEY_OPENAI,{apiKey:""});
+  openModal(`<h2>Secrets</h2>
+    <label>OpenAI API Key</label>
+    <input id="openaiKey" class="input" placeholder="sk-..." value="${escapeHtml(o.apiKey||"")}"/>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:.75rem">
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn" onclick="(function(){ 
+        const ok=document.getElementById('openaiKey').value.trim();
+        localStorage.setItem(KEY_OPENAI,JSON.stringify({apiKey:ok}));
+        alert('Saved.');
+      })()">Save</button>
+    </div>`);
+}
+function showVoices(){
+  openModal(`<h2>Voices</h2>
+    <p style="color:#cfcfcf">Voice selection preserved from earlier version (OpenAI basic IDs).</p>
+    <div style="display:flex;justify-content:flex-end;margin-top:.75rem">
+      <button class="btn-outline" onclick="closeModal()">Close</button>
+    </div>`);
+}
+
+/* ===== Start / Preview / Export ===== */
+document.getElementById("btnPreviewScenes").onclick=()=>{
+  const scenes = splitIntoScenes(document.getElementById("bookText").value||"");
+  document.getElementById("sceneCountPill").textContent="Scenes: "+scenes.length;
+  alert(scenes.length?`${scenes.length} scene(s) detected.`:"No scenes found.");
+};
+document.getElementById("btnSave").onclick=()=>{ localStorage.setItem(KEY_TEXT,ta.value||""); alert("Saved."); };
+document.getElementById("btnStart").onclick=()=>{ alert("Start pressed. (Animation pipeline disabled in this minimal restore.))"); };
+
+function splitIntoScenes(text){
+  let chunks=text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean);
+  if(chunks.length>=2) return chunks;
+  const sents=text.replace(/\n+/g,' ').match(/[^.!?]+[.!?]+|\S+$/g)||[]; const out=[]; let buf="";
+  for(const s of sents){ if((buf+" "+s).length>350||(buf.match(/[.!?]/g)||[]).length>=2){ if(buf.trim()) out.push(buf.trim()); buf=s.trim(); } else { buf=(buf?buf+" ":"")+s.trim(); } }
+  if(buf.trim()) out.push(buf.trim()); return out;
+}
+
+function openProject(){
+  const input=document.createElement("input"); input.type="file"; input.accept=".bookanim.json,application/json";
+  input.onchange=async(e)=>{const f=e.target.files?.[0]; if(!f)return; try{
+      const txt=await f.text(), p=JSON.parse(txt);
+      if(p.text!=null) document.getElementById("bookText").value=p.text;
+      if(Array.isArray(p.characters)) { characters=p.characters; localStorage.setItem(KEY_CHARS,JSON.stringify(characters)); }
+      alert("Project loaded.");
+    }catch{ alert("Invalid project file.") }
+  };
+  input.click();
+}
+
+async function exportZip(){
+  const JSZipRef = window.JSZip; if(!JSZipRef){ alert("ZIP library missing"); return; }
+  const zip=new JSZipRef();
+  const text=document.getElementById("bookText").value||"";
+  const project={version:1,text,characters};
+  zip.file("book-animator.bookanim.json",JSON.stringify(project,null,2));
+  zip.file("book-text.txt",text);
+  const blob=await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="BookAnimator_Finished.zip";
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+}
+
+/* helpers */
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+</script>
 </body>
 </html>
