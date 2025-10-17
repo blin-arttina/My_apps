@@ -1,535 +1,606 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Book Animator</title>
-
-<!-- JSZip for client-side export -->
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-
 <style>
-  :root{
-    --bg:#0b0b0b; --text:#f0f0f0; --muted:#bdbdbd;
-    --accent:#d13131; --accent-ghost:#311212; --card:#111; --border:#2a2a2a;
-  }
-  *{ box-sizing:border-box }
-  body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; }
-
-  /* Top title area */
-  header{ padding:70px 16px 12px; text-align:center; }
-  h1{ margin:0; font-size:42px; letter-spacing:.5px; }
-
-  /* Stat chips */
-  .chips{ display:flex; gap:.6rem; justify-content:center; margin:.75rem 0 1.25rem; }
-  .chip{ color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:.35rem .7rem; background:#161616; }
-
-  /* Main editor */
-  main{ width:min(980px, 92vw); margin:0 auto 90px; }
-  label{ font-weight:700; display:block; margin:.25rem 0 .4rem; }
-  textarea{
-    width:100%; min-height:360px; background:#121212; color:#ddd; border:1px solid var(--border);
-    border-radius:12px; padding:1rem; resize:vertical;
-  }
-  .btnbar{ display:flex; gap:.8rem; margin:16px 0 8px; flex-wrap:wrap; }
-  .btn{
-    background:var(--accent); color:white; border:none; border-radius:12px; padding:.7rem 1rem; font-weight:800; cursor:pointer;
-    box-shadow:0 6px 16px rgba(0,0,0,.35);
-  }
-  .btn.ghost{ background:transparent; border:1px solid var(--accent); color:var(--text); }
-  .btn:disabled{ opacity:.5; cursor:not-allowed }
-
-  /* Bottom bar */
-  .bottombar{
-    position:fixed; left:0; right:0; bottom:0; background:#0f0f0f; border-top:1px solid var(--border);
-    display:flex; align-items:center; gap:12px; padding:12px 14px; z-index:20;
-  }
-  .progressWrap{ flex:1; display:flex; align-items:center; gap:10px; }
-  .progress{ height:10px; width:100%; background:#1a1a1a; border:1px solid var(--border); border-radius:999px; overflow:hidden; }
-  .bar{ height:100%; width:0%; background:#fff; transition:width .25s ease; } /* white progress as requested */
-  .pct{ width:52px; text-align:right; color:var(--muted); }
-
-  /* Hamburgers */
-  .hambox{
-    position:fixed; top:14px; width:44px; height:44px; border-radius:12px;
-    display:grid; place-items:center; background:#161616; border:1px solid var(--border);
-    box-shadow:0 6px 18px rgba(0,0,0,.35); z-index:10000; cursor:pointer;
-  }
-  #btnLeft{ left:14px; }
-  #btnRight{ right:14px; }
-  .ham{ font-size:20px; line-height:1; color:var(--text); }
-
-  /* Dropdown menus */
-  .menu-panel{
-    position:fixed; top:70px; left:14px; width:min(360px, 92vw);
-    background:var(--card); border:1px solid var(--border); border-radius:16px;
-    box-shadow:0 18px 50px rgba(0,0,0,.5); padding:.75rem; display:none; z-index:10001;
-  }
-  .menu-panel.right{ left:auto; right:14px; }
-  .menu-title{ font-weight:800; font-size:1.1rem; margin:.4rem .5rem .6rem; }
-  .menu-sec{ padding:.35rem .5rem .25rem; color:var(--muted); font-size:.85rem; }
-  .item{
-    border-radius:10px; padding:.7rem .8rem; margin:.25rem 0; cursor:pointer;
-    border:1px solid var(--border); background:#151515;
-  }
-  .item:hover{ border-color:#3a3a3a; background:#1b1b1b; }
-  .danger{ border-color:#5a1b1b; background:#161111; color:#ffb7b7; }
-
-  /* Overlay + Modal panels */
-  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; z-index:10002; }
-  .panel{
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:min(880px, 95vw); max-height:86vh; overflow:auto; background:var(--card);
-    border:1px solid var(--border); border-radius:16px; padding:1rem; display:none; z-index:10003;
-  }
-  .panel h2{ margin:.25rem 0 1rem; }
-  .row{ display:flex; gap:.75rem; align-items:center; margin:.5rem 0; }
-  .row > label{ width:170px; color:var(--muted); }
-  select, input[type="text"], input[type="file"], textarea.modalText{
-    width:100%; background:#121212; border:1px solid var(--border);
-    color:var(--text); border-radius:10px; padding:.6rem .7rem;
-  }
-  .list{ border:1px solid var(--border); border-radius:12px; background:#131313; }
-  .listRow{ display:flex; align-items:center; justify-content:space-between; padding:.8rem .9rem; border-top:1px solid var(--border); }
-  .listRow:first-child{ border-top:none; }
-  .chipsRow{ display:flex; gap:.5rem; flex-wrap:wrap; }
-  .chip{ padding:.35rem .6rem; border:1px solid var(--border); border-radius:999px; background:#171717; }
-  .thumbs{ display:grid; grid-template-columns:repeat(auto-fill, minmax(90px,1fr)); gap:.6rem; }
-  .thumbs img{ width:100%; border-radius:8px; border:1px solid var(--border); background:#0e0e0e; }
+  :root{ --bg:#0c0c0c; --panel:#141414; --card:#1a1a1a; --text:#ffffff; --muted:#b9b9b9; --accent:#cc2222; --accent-2:#e24444; }
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
+  *{box-sizing:border-box}
+  h1{font-weight:800;letter-spacing:.5px;margin:1.5rem 0;text-align:center}
+  .wrap{max-width:980px;margin:0 auto;padding:0 1rem 6rem}
+  .btn{background:#1b1b1b;color:#fff;border:2px solid var(--accent);border-radius:.8rem;padding:.8rem 1.1rem;cursor:pointer}
+  .btn.secondary{border-color:#5a5a5a;color:#ddd}
+  .btn:hover{background:var(--accent);border-color:var(--accent-2)}
+  .btn.ghost{border-color:#5a5a5a;background:transparent}
+  .row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+  textarea{width:100%;min-height:300px;background:#0f0f0f;color:#ddd;border:1px solid #333;border-radius:.8rem;padding:1rem;font-size:1rem}
+  label{display:block;margin:.75rem 0 .35rem;color:#ddd}
+  .topbar{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,rgba(0,0,0,.65),transparent);backdrop-filter:saturate(1.2) blur(6px);padding:.5rem .75rem}
+  .badges{display:flex;gap:.75rem;justify-content:center;margin:.25rem 0 1rem}
+  .badge{padding:.25rem .7rem;border:1px solid #333;border-radius:999px;color:#bbb;font-size:.9rem}
+  .hambox{position:fixed;top:.75rem;width:64px;height:64px;border-radius:14px;background:var(--panel);border:1px solid #2a2a2a;display:grid;place-items:center;cursor:pointer;z-index:50}
+  .hambox.left{left:.75rem}
+  .hambox.right{right:.75rem}
+  .ham{width:30px;height:22px;position:relative}
+  .ham span{position:absolute;left:0;right:0;height:3px;background:#eee;border-radius:3px;transition:.25s}
+  .ham span:nth-child(1){top:0}
+  .ham span:nth-child(2){top:9px}
+  .ham span:nth-child(3){bottom:0}
+  .drawer{position:fixed;inset:0;z-index:60;display:none}
+  .drawer.open{display:block}
+  .scrim{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+  .sheet{position:absolute;top:0;bottom:0;width:min(92vw,440px);background:var(--panel);border-right:1px solid #2a2a2a;overflow:auto}
+  .sheet.right{right:0;border-left:1px solid #2a2a2a;border-right:none}
+  .sheet h2{margin:1rem 1rem .5rem}
+  .list{padding:.25rem 1rem 2rem}
+  .item{display:flex;align-items:center;justify-content:space-between;padding:1rem;background:var(--card);border:1px solid #2a2a2a;border-radius:.8rem;margin:.5rem 0}
+  .item .title{font-weight:600}
+  .small{font-size:.9rem;color:#b9b9b9}
+  .subtle{color:#aaa}
+  .modal{position:fixed;inset:0;display:none;z-index:80}
+  .modal.open{display:grid;place-items:center}
+  .modal .bg{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+  .modal .box{position:relative;width:min(92vw,900px);max-height:86vh;overflow:auto;background:var(--panel);border:1px solid #303030;border-radius:1rem;padding:1rem}
+  .box h3{margin:.25rem 0 1rem}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  .footer{position:fixed;left:0;right:0;bottom:0;padding:.6rem .75rem;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent 70%);display:flex;gap:.75rem;align-items:center;z-index:40}
+  .meter{flex:1;height:12px;background:#191919;border:1px solid #2f2f2f;border-radius:999px;position:relative;overflow:hidden}
+  .meter > i{position:absolute;left:0;top:0;bottom:0;width:0%;background:#fff;transition:width .25s ease}
+  .pct{min-width:3ch;text-align:right;color:#999;font-variant-numeric:tabular-nums}
+  .thumbs{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem}
+  .thumb{width:96px;height:64px;background:#111;border:1px solid #333;border-radius:.5rem;display:grid;place-items:center;color:#777;font-size:.8rem}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem}
+  .card{background:#121212;border:1px solid #2a2a2a;border-radius:.8rem;overflow:hidden}
+  .card .pic{aspect-ratio:1/1;display:grid;place-items:center;background:#0e0e0e;color:#666;font-size:.9rem}
+  .card .body{padding:.6rem .75rem}
+  .chip{display:inline-block;padding:.2rem .5rem;border:1px solid #333;border-radius:999px;font-size:.78rem;color:#bbb}
+  input,select,textarea{width:100%;padding:.75rem;border:1px solid #333;border-radius:.6rem;background:#0f0f0f;color:#fff}
 </style>
 </head>
 <body>
 
-<!-- Left & Right hamburgers -->
-<button id="btnLeft" class="hambox" aria-label="Open left menu" aria-expanded="false"><span class="ham">≡</span></button>
-<button id="btnRight" class="hambox" aria-label="Open right menu" aria-expanded="false"><span class="ham">≡</span></button>
+<!-- Embedded characters JSON for offline use -->
+<script id="embedded-characters" type="application/json">[{"name":"Zen Zena \u2013 Guardian of Balance","voice":"Shimmer","age":32,"style":"Semi-realistic fantasy, tranquil and ethereal","image":"./Zen_Zena.png","gallery":[],"appearance":["Long, flowing silver-white hair and calm glowing eyes (blind but perceptive)","Wears layered blue and silver robes, representing harmony and wisdom","Carries a specially crafted blind cane made of white ash wood with glowing runes","Often surrounded by drifting leaves and soft beams of light"],"personality":["Wise, gentle, and grounded \u2014 the moral center of the group","Speaks in calm, thoughtful tones, guiding others to balance","Sees through emotion rather than sight, finding peace in chaos"],"abilities":["Echo Sense: Detects movement and energy through sound and air vibrations","Nature\u2019s Harmony: Calms corrupted or chaotic environments","Spirit Communion: Communicates with natural spirits for protection or insight"],"background":"Born into the Order of the Whispering Grove, Zena lost her vision at birth but gained spiritual perception. Her empathy made her the chosen protector of balance across realms."},{"name":"Darling Danielle \u2013 The Compassionate Knight","voice":"Juniper","age":28,"style":"Noble fantasy realism, radiant and warm","image":"./Darling_Danielle.png","gallery":[],"appearance":["Wavy blonde-brown hair and gentle blue eyes behind round glasses","Wears silver armor over a flowing lavender gown","Visibly pregnant, resting a hand proudly on her belly","Radiates calm strength and maternal warmth"],"personality":["Nurturing, patient, and endlessly brave","Protects not just with her sword but with her heart","Acts as the moral and emotional leader of the group"],"abilities":["Aura of Courage: Inspires allies with unshakable resolve","Guardian\u2019s Blessing: Shields others with divine energy","Light of Life: Her child represents prophecy and renewal"],"background":"A knight of the Silver Banner Order, Danielle left battle to seek peace. Her pregnancy marks the dawn of a new age she vows to protect."},{"name":"Creative Callie \u2013 The Painter of Worlds","voice":"Vale","age":25,"style":"Dreamlike fantasy, artistic and luminous","image":"./Creative_Callie.png","gallery":[],"appearance":["Very long light brown hair, expressive eyes, and paint-stained fingers","Wears robes in teal, gold, and cream with swirling magical patterns","Carries a glowing paintbrush that leaves trails of light in the air"],"personality":["Imaginative, passionate, and a bit scatterbrained","Sees potential and beauty in everything","Loves to create, even when chaos follows"],"abilities":["Reality Brush: Paints objects or landscapes into existence","Chromatic Ward: Creates barriers of color and emotion","Artisan\u2019s Vision: Sees the story behind every object or being"],"background":"A student of the Grand Academy of Artistry and Magic, Callie opened a portal to her own imagination \u2014 and now wields its creative power."},{"name":"Skater Skip \u2013 The Sky Racer","voice":"Breeze","age":22,"style":"Modern fantasy, energetic and confident","image":"./Skater_Skip.png","gallery":["./Skater_Skip_ManBun.png"],"appearance":["Tan, athletic build with long blonde hair tied in a man bun","Wears rune-powered rollerblades and a sleek racing vest","Bright blue eyes and a perpetual grin"],"personality":["Fearless, funny, and endlessly polite","Loves competition but values fairness","A thrill-seeker with a golden heart"],"abilities":["Rift Glide: Skates across dimensional rifts and energy waves","Runic Boost: Enhances speed and reflexes with magic sigils","Time Skip: Briefly slows time to outmaneuver enemies"],"background":"A champion racer from the Neon Spires who competes in magical tournaments across realms, always chasing adventure and helping those left behind."},{"name":"Dark Dan \u2013 The Cursed Bard","voice":"Spruce","age":30,"style":"Gothic fantasy, brooding but magnetic","image":"./Dark_Dan.png","gallery":["./Dark_Dan_Bright.png"],"appearance":["Dark brown hair, shaved sides, long in front over one eye","Gauged ears, nose ring, lip piercing, and sharp blue eyes","Wears dark leather armor with glowing blue runes","Carries his enchanted guitar that channels spectral fire"],"personality":["Sarcastic but loyal, carrying deep emotional scars","Expresses truth through music more than words","Protective of his team, especially the broken-hearted"],"abilities":["Song of Shadows: Summons spectral flames with melody","Harmony of the Dead: Calms or binds restless spirits","Crescendo: Unleashes devastating power through sound"],"background":"Once a famed musician of the Midnight Kingdom, Dan\u2019s music awakened forbidden magic. Now cursed, he roams seeking redemption."},{"name":"Ambush Annie \u2013 The Street Rogue","voice":"Sol","age":23,"style":"Urban fantasy, bold and quick-witted","image":"./Ambush_Annie.png","gallery":[],"appearance":["Short curly red hair, round face, and sharp blue eyes","Curvy, athletic build; wears light leather gear and daggers","Always ready with a smirk or sly grin"],"personality":["Cunning, witty, and fearless","Hides compassion behind sarcasm","Always up for a challenge"],"abilities":["Shadow Step: Teleports short distances between shadows","Quick Trick: Disarms or confuses enemies instantly","Echo Blades: Daggers return when thrown, striking twice"],"background":"A bounty hunter from Sunreach Outskirts who learned survival the hard way, now fights for honor and loyalty over gold."},{"name":"Sidetrack Sally \u2013 The Curious Explorer","voice":"Maple","age":24,"style":"Bright fantasy, lighthearted and hopeful","image":"./Sidetrack_Sally.png","gallery":[],"appearance":["Long blonde hair, bright blue eyes, soft pink outfit","Carries a glowing lantern and travel pack","Cheerful and radiant, always looking for hidden paths"],"personality":["Curious and kind-hearted","Easily distracted but always finds something valuable","Believes every detour leads to destiny"],"abilities":["Lantern of Whispers: Reveals hidden paths or secrets","Echo Memory: Hears lingering voices of history","Serendipity: Luck subtly alters fate in her favor"],"background":"From the quiet village of Fernhollow, Sally discovered the secret tunnels of the Order of the Echoes, setting her on a lifelong adventure."},{"name":"Grumpy Gus \u2013 The Iron Veteran","voice":"Cove","age":48,"style":"Classic dark fantasy, grim yet noble","image":"./Grumpy_Gus.png","gallery":[],"appearance":["Light brown cropped hair, long gray goatee, rugged build","Wears dented steel armor and carries a massive sword","Blue-gray eyes and a weathered, stern face"],"personality":["Gruff but loyal","Short-tempered, secretly caring","Believes in discipline, not speeches"],"abilities":["Iron Will: Immune to fear and mental magic","Shieldbreaker: Destroys enemy defenses","Veteran\u2019s Instinct: Predicts attacks through experience"],"background":"A retired commander of Ironhold Fortress, Gus returned to battle when his homeland was threatened again, grumbling all the way."}]</script>
 
-<!-- Left dropdown -->
-<div id="leftMenu" class="menu-panel" role="menu" aria-hidden="true">
-  <div class="menu-title">Menu</div>
-  <div class="menu-sec">Library</div>
-  <div class="item" data-open="characters">Characters</div>
-  <div class="item" data-open="voices">Voices</div>
-  <div class="menu-sec">Configuration</div>
-  <div class="item" data-open="settings">Settings</div>
-  <div class="item" data-open="secrets">Secrets (API Keys)</div>
-  <div class="menu-sec">Help</div>
-  <div class="item" data-open="help">Tutorial / About</div>
+<div class="hambox left" id="openLeft" aria-label="Open left menu">
+  <div class="ham" aria-hidden="true"><span></span><span></span><span></span></div>
+</div>
+<div class="hambox right" id="openRight" aria-label="Open right menu">
+  <div class="ham" aria-hidden="true"><span></span><span></span><span></span></div>
 </div>
 
-<!-- Right dropdown -->
-<div id="rightMenu" class="menu-panel right" role="menu" aria-hidden="true">
-  <div class="menu-title">Project</div>
-  <div class="item" id="actNew">New Project</div>
-  <div class="item" id="actOpen">Open Project…</div>
-  <div class="item" id="actSave">Save Project</div>
-  <div class="item" id="actUpload">Upload Files…</div>
-  <div class="item" id="actExport">Export Finished (ZIP)</div>
-  <div class="item danger" id="actExit">Exit</div>
-</div>
-
-<!-- Overlay + Panels -->
-<div id="overlay" class="overlay" aria-hidden="true"></div>
-
-<!-- Characters Panel -->
-<div id="panelCharacters" class="panel" role="dialog" aria-modal="true" aria-labelledby="hdrChars">
-  <h2 id="hdrChars">Characters</h2>
-  <div class="list" id="charList"></div>
-  <div class="row" style="justify-content:flex-end;margin-top:1rem;">
-    <button class="btn" id="addChar">Add Character</button>
-    <button class="btn ghost" data-close>Close</button>
-  </div>
-</div>
-
-<!-- Voices Panel -->
-<div id="panelVoices" class="panel" role="dialog" aria-modal="true" aria-labelledby="hdrVoices">
-  <h2 id="hdrVoices">Voices</h2>
-  <p class="row" style="margin-top:.2rem;">Assign OpenAI TTS voices to each character (saved locally).</p>
-  <div id="voiceMap"></div>
-  <div class="row" style="justify-content:flex-end;margin-top:1rem;">
-    <button id="saveVoices" class="btn">Save Voices</button>
-  </div>
-</div>
-
-<!-- Settings Panel -->
-<div id="panelSettings" class="panel" role="dialog" aria-modal="true" aria-labelledby="hdrSettings">
-  <h2 id="hdrSettings">Settings</h2>
-  <div class="row"><label>Animation Type</label><select id="setAnimType"></select></div>
-  <div class="row"><label>Art Style</label><select id="setArtStyle"></select></div>
-  <div class="row"><label>Target Audience</label>
-    <select id="setAudience">
-      <option>All ages</option><option>Kids (3–7)</option><option>Middle grade (8–12)</option>
-      <option>YA (13–17)</option><option>Adult</option>
-    </select>
-  </div>
-  <div class="row"><label>Aspect / FPS</label>
-    <select id="setAspect"><option>16:9</option><option>9:16</option><option>1:1</option></select>
-    <select id="setFps"><option>12</option><option>24</option><option>30</option></select>
-  </div>
-  <div class="row" style="justify-content:flex-end;margin-top:1rem;">
-    <button id="saveSettings" class="btn">Save Settings</button>
-  </div>
-</div>
-
-<!-- Secrets Panel -->
-<div id="panelSecrets" class="panel" role="dialog" aria-modal="true" aria-labelledby="hdrSecrets">
-  <h2 id="hdrSecrets">Secrets (API Keys)</h2>
-  <div class="row"><label>OpenAI API Key</label><input id="keyOpenAI" type="text" placeholder="sk-..." /></div>
-  <div class="row"><label>Freesound API Key</label><input id="keySfx" type="text" placeholder="..." /></div>
-  <div class="row"><label>Other Provider</label><input id="keyOther" type="text" placeholder="name:key" /></div>
-  <div class="row" style="justify-content:flex-end;margin-top:1rem;">
-    <button id="saveSecrets" class="btn">Save Keys</button>
-  </div>
-</div>
-
-<!-- Help Panel -->
-<div id="panelHelp" class="panel" role="dialog" aria-modal="true" aria-labelledby="hdrHelp">
-  <h2 id="hdrHelp">Tutorial / About</h2>
-  <ol style="margin:.5rem 1.2rem;">
-    <li>Paste your story text.</li>
-    <li>Open <b>Settings</b> to pick animation & art style.</li>
-    <li>Open <b>Characters</b> to edit/add characters and attach images/notes.</li>
-    <li>Open <b>Voices</b> to assign OpenAI voice names.</li>
-    <li>Click <b>Start Animation</b>. Thumbnails will appear as scenes process.</li>
-  </ol>
-  <div class="row" style="justify-content:flex-end;margin-top:1rem;">
-    <button class="btn ghost" data-close>Close</button>
-  </div>
-</div>
-
-<!-- Hidden file picker (Open/Upload) -->
-<input id="filePicker" type="file" accept=".txt,.md,.doc,.docx,.pdf,.png,.jpg,.jpeg,.webp" multiple hidden />
-
-<header>
+<div class="topbar">
   <h1>Book Animator</h1>
-  <div class="chips">
-    <div class="chip" id="modeChip">Mode: Simple</div>
-    <div class="chip" id="sceneChip">Scenes: <span id="sceneCount">0</span></div>
+  <div class="badges">
+    <div class="badge" id="modeBadge">Mode: Simple</div>
+    <div class="badge" id="scenesBadge">Scenes: 0</div>
   </div>
-</header>
+</div>
 
-<main>
+<div class="wrap">
   <label for="bookText">Paste your book text:</label>
   <textarea id="bookText" placeholder="Paste text here…"></textarea>
 
-  <div class="btnbar">
-    <button id="btnStart" class="btn">Start Animation</button>
-    <button id="btnPreview" class="btn ghost">Preview Scenes</button>
+  <div class="row" style="margin-top:1rem">
+    <button class="btn" id="startBtn">Start Animation</button>
+    <button class="btn ghost" id="previewBtn">Preview Scenes</button>
   </div>
 
-  <!-- Thumbnails appear here as the mock “animation” runs -->
-  <div id="thumbs" class="thumbs" aria-live="polite" style="margin-top:12px;"></div>
-</main>
+  <div id="thumbStrip" class="thumbs" aria-live="polite"></div>
+</div>
 
-<!-- Bottom toolbar -->
-<div class="bottombar">
-  <button id="btnSave" class="btn ghost">Save</button>
-  <button id="btnExportZip" class="btn">Export Finished (ZIP)</button>
-  <div class="progressWrap">
-    <div class="progress"><div id="bar" class="bar"></div></div>
-    <div id="pct" class="pct">0%</div>
+<div class="footer">
+  <button class="btn secondary" id="saveBtn">Save</button>
+  <button class="btn" id="exportBtn">Export Finished (ZIP)</button>
+  <div class="meter"><i id="meterFill"></i></div>
+  <div class="pct" id="pct">0%</div>
+</div>
+
+<div class="drawer" id="leftDrawer" aria-modal="true">
+  <div class="scrim" data-close="left"></div>
+  <aside class="sheet">
+    <h2>Menu</h2>
+    <div class="list">
+      <div class="item"><div><div class="title">Characters</div><div class="small">Create & edit profiles</div></div><button class="btn ghost" data-open="characters">Open</button></div>
+      <div class="item"><div><div class="title">Voices</div><div class="small">Select TTS / map to characters</div></div><button class="btn ghost" data-open="voices">Open</button></div>
+      <div class="item"><div><div class="title">Settings</div><div class="small">Animation type, art style, audience</div></div><button class="btn ghost" data-open="settings">Open</button></div>
+      <div class="item"><div><div class="title">Secrets (API Keys)</div><div class="small">Store provider keys locally</div></div><button class="btn ghost" data-open="secrets">Open</button></div>
+      <div class="item"><div><div class="title">Help</div><div class="small">Short guide</div></div><button class="btn ghost" data-open="help">Open</button></div>
+    </div>
+  </aside>
+</div>
+
+<div class="drawer" id="rightDrawer" aria-modal="true">
+  <div class="scrim" data-close="right"></div>
+  <aside class="sheet right">
+    <h2>Project</h2>
+    <div class="list">
+      <div class="item"><div class="title">New Project</div><button class="btn ghost" id="newBtn">New</button></div>
+      <div class="item"><div class="title">Open Project (JSON)</div><button class="btn ghost" id="openBtn">Open</button></div>
+      <div class="item"><div class="title">Save</div><button class="btn ghost" id="saveBtn2">Save</button></div>
+      <div class="item"><div class="title">Upload Files (txt/doc/pdf/img)</div><button class="btn ghost" id="uploadBtn">Upload</button></div>
+      <div class="item"><div class="title">Export Finished (ZIP)</div><button class="btn ghost" id="exportBtn2">Export</button></div>
+      <div class="item"><div class="title subtle">Exit</div><button class="btn ghost" id="exitBtn">Close</button></div>
+    </div>
+  </aside>
+</div>
+
+<div class="modal" id="charactersModal">
+  <div class="bg" data-close="characters"></div>
+  <div class="box">
+    <h3>Characters</h3>
+    <div class="row" style="justify-content:space-between;margin-bottom:.5rem">
+      <div class="small">Click a card image to open the character’s bio.</div>
+      <div>
+        <button class="btn ghost" id="importCharJsonBtn">Import Characters JSON</button>
+        <input id="charJsonFile" type="file" accept="application/json" hidden>
+      </div>
+    </div>
+    <div id="charGallery" class="cards" style="margin-bottom:1rem;"></div>
+    <div id="charList"></div>
+    <hr style="border-color:#2b2b2b;margin:1rem 0">
+    <button class="btn" id="addChar">Add Character</button>
   </div>
 </div>
 
+<div class="modal" id="bioModal">
+  <div class="bg" data-close="bio"></div>
+  <div class="box" id="bioBox"></div>
+</div>
+
+<div class="modal" id="editCharModal">
+  <div class="bg" data-close="editChar"></div>
+  <div class="box">
+    <h3 id="editCharTitle">Edit Character</h3>
+    <div class="grid">
+      <div>
+        <label>Name</label>
+        <input id="charName" type="text">
+        <label style="margin-top:.6rem">Voice (OpenAI id)</label>
+        <input id="charVoice" type="text" placeholder="e.g., ember, nova, shimmer">
+        <label style="margin-top:.6rem">Age</label>
+        <input id="charAge" type="number" min="0">
+        <label style="margin-top:.6rem">Thumbnail</label>
+        <input id="charImg" type="file" accept="image/*,application/pdf" />
+        <div id="charImgPreview" class="thumb" style="margin-top:.5rem">thumbnail</div>
+      </div>
+      <div>
+        <label>Traits / Backstory</label>
+        <textarea id="charNotes" style="min-height:260px"></textarea>
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:1rem">
+      <button class="btn secondary" data-close="editChar">Cancel</button>
+      <button class="btn" id="saveChar">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="voicesModal">
+  <div class="bg" data-close="voices"></div>
+  <div class="box">
+    <h3>Voices</h3>
+    <p class="small">Assign OpenAI-style voice ids to characters. (Stored locally.)</p>
+    <div id="voiceList"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:1rem">
+      <button class="btn" data-close="voices">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="bg" data-close="settings"></div>
+  <div class="box">
+    <h3>Settings</h3>
+    <div class="grid">
+      <div>
+        <label>Animation Type</label>
+        <select id="optAnim">
+          <option>Cartoon (Ken Burns)</option>
+          <option>Flip-Book (Low FPS)</option>
+          <option>Comic Panels</option>
+          <option>Anime Portraits</option>
+          <option>Dark Fantasy</option>
+          <option>Cinematic Photoreal</option>
+          <option>Sketch / Pencil</option>
+          <option>Watercolor</option>
+          <option>Pixel Art</option>
+        </select>
+        <label style="margin-top:.6rem">Art Style</label>
+        <select id="optArt">
+          <option>Clean Lines</option>
+          <option>Ink & Wash</option>
+          <option>Painterly Brush</option>
+          <option>Cel Shaded</option>
+          <option>Grainy Film</option>
+          <option>Comic Halftone</option>
+          <option>Crayon / Children’s Book</option>
+        </select>
+        <label style="margin-top:.6rem">Target Audience (Age)</label>
+        <select id="optAge">
+          <option>4–7</option><option>8–12</option><option>13–17</option><option>18+</option>
+        </select>
+      </div>
+      <div>
+        <label>Aspect Ratio</label>
+        <select id="optAspect"><option>16:9</option><option>9:16</option><option>1:1</option></select>
+        <label style="margin-top:.6rem">FPS</label>
+        <select id="optFps"><option>12</option><option>24</option><option>30</option></select>
+        <label style="margin-top:.6rem">Accent Color</label>
+        <input id="optColor" type="color" value="#cc2222" style="height:44px">
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:1rem">
+      <button class="btn secondary" data-close="settings">Close</button>
+      <button class="btn" id="saveSettings">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="secretsModal">
+  <div class="bg" data-close="secrets"></div>
+  <div class="box">
+    <h3>Secrets (API Keys)</h3>
+    <div class="grid">
+      <div>
+        <label>OpenAI (TTS / images)</label>
+        <input id="kOpenAI" placeholder="sk-...">
+        <label style="margin-top:.6rem">ElevenLabs (optional)</label>
+        <input id="k11" placeholder="elevenlabs_...">
+        <label style="margin-top:.6rem">Other API (name=value lines)</label>
+        <textarea id="kOther" style="min-height:120px"></textarea>
+      </div>
+      <div>
+        <p class="small">Keys are saved locally in your browser (localStorage). Do not share this device if you need confidentiality.</p>
+        <button class="btn" id="saveKeys">Save Keys</button>
+        <button class="btn secondary" id="clearKeys" style="margin-left:.5rem">Clear</button>
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:1rem">
+      <button class="btn secondary" data-close="secrets">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="helpModal">
+  <div class="bg" data-close="help"></div>
+  <div class="box">
+    <h3>Help</h3>
+    <ol class="small">
+      <li>Paste your book text.</li>
+      <li>Open <b>Characters</b> → add/edit characters, set voice, age, traits, thumbnail. Clicking a character card opens their bio.</li>
+      <li>Open <b>Settings</b> → choose Animation Type, Art Style, Audience, Aspect, FPS.</li>
+      <li>Click <b>Start Animation</b>. You’ll see scene thumbnails and a white progress bar with %.</li>
+      <li>Use <b>Export ZIP</b> to download project data.</li>
+    </ol>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" data-close="help">Close</button>
+    </div>
+  </div>
+</div>
+
+<input id="fileOpen" type="file" accept="application/json" hidden>
+<input id="fileUpload" type="file" accept=".txt,.doc,.docx,.pdf,.png,.jpg,.jpeg,.webp" multiple hidden>
+<input id="charJsonLocal" type="file" accept="application/json" hidden>
+
 <script>
-  // ---------- Helpers ----------
-  const $ = s => document.querySelector(s);
-  const leftBtn  = $('#btnLeft'),  rightBtn = $('#btnRight');
-  const leftMenu = $('#leftMenu'), rightMenu = $('#rightMenu');
-  const overlay  = $('#overlay');
-  const panels = {
-    characters: $('#panelCharacters'),
-    voices:     $('#panelVoices'),
-    settings:   $('#panelSettings'),
-    secrets:    $('#panelSecrets'),
-    help:       $('#panelHelp'),
-  };
-  const app = window.appState = window.appState || {};
+(() => {
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => document.querySelectorAll(sel);
+  const LS = { load:(k,d)=>{ try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d} }, save:(k,v)=>localStorage.setItem(k, JSON.stringify(v)) };
 
-  // ---------- Menus show/hide ----------
-  function showMenu(box, btn){
-    hideAll();
-    box.style.display='block';
-    btn.setAttribute('aria-expanded','true');
-    box.setAttribute('aria-hidden','false');
-  }
-  function hideAll(){
-    [leftMenu,rightMenu].forEach(m=>{ m.style.display='none'; m.setAttribute('aria-hidden','true'); });
-    [leftBtn,rightBtn].forEach(b=>b.setAttribute('aria-expanded','false'));
-    closePanels();
-  }
-  leftBtn.addEventListener('click', e=>{ e.stopPropagation(); (leftMenu.style.display==='block')?hideAll():showMenu(leftMenu,leftBtn); });
-  rightBtn.addEventListener('click',e=>{ e.stopPropagation(); (rightMenu.style.display==='block')?hideAll():showMenu(rightMenu,rightBtn); });
-  document.addEventListener('click', e=>{
-    const inMenus = leftMenu.contains(e.target) || rightMenu.contains(e.target);
-    const inBtns  = e.target===leftBtn || e.target===rightBtn || leftBtn.contains(e.target) || rightBtn.contains(e.target);
-    if(!inMenus && !inBtns) hideAll();
+  // ---------- State ----------
+  let state = LS.load('ba_state', {
+    text:"",
+    scenes:[],
+    settings:{ anim:'Cartoon (Ken Burns)', art:'Clean Lines', age:'8–12', aspect:'16:9', fps:24, color:'#cc2222' },
+    voices:[{id:'ember', name:'Ember'},{id:'nova', name:'Nova'},{id:'shimmer',name:'Shimmer'},{id:'coral',name:'Coral'},{id:'verse',name:'Verse'},{id:'canyon',name:'Canyon'},{id:'flux',name:'Flux'},{id:'mono',name:'Mono'},{id:'alloy',name:'Alloy'},{id:'maple',name:'Maple'},{id:'juniper',name:'Juniper'},{id:'spruce',name:'Spruce'},{id:'vale',name:'Vale'},{id:'cove',name:'Cove'},{id:'sol',name:'Sol'},{id:'breeze',name:'Breeze'}],
+    characters:[],
+    secrets: LS.load('ba_secrets',{openai:'', eleven:'', other:''})
   });
 
-  // ---------- Panels ----------
-  function openPanel(name){
-    overlay.style.display='block'; overlay.setAttribute('aria-hidden','false');
-    panels[name].style.display='block';
-    hideAll(); // close dropdowns
-  }
-  function closePanels(){
-    overlay.style.display='none'; overlay.setAttribute('aria-hidden','true');
-    Object.values(panels).forEach(p=>p.style.display='none');
-  }
-  overlay.addEventListener('click', closePanels);
-  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closePanels));
+  const elText = $('#bookText'); const meter = $('#meterFill'); const pct = $('#pct'); const strip = $('#thumbStrip');
+  elText.value = state.text || '';
+  applyThemeColor(state.settings.color || '#cc2222');
+  updateBadges();
 
-  leftMenu.addEventListener('click', (e)=>{
-    const t = e.target.closest('.item'); if(!t) return;
-    const which = t.getAttribute('data-open'); if(which) openPanel(which);
-  });
-
-  // ---------- Right menu actions ----------
-  $('#actNew').onclick   = ()=>{ if(confirm('Start a new project? Unsaved changes will be lost.')) { localStorage.clear(); location.reload(); } };
-  $('#actOpen').onclick  = ()=>$('#filePicker').click();
-  $('#actSave').onclick  = ()=>$('#btnSave').click();
-  $('#actUpload').onclick= ()=>$('#filePicker').click();
-  $('#actExport').onclick= ()=>$('#btnExportZip').click();
-  $('#actExit').onclick  = ()=>window.scrollTo({top:0,behavior:'smooth'});
-
-  // ---------- Settings options ----------
-  const animTypes = [
-    'Comic','Cartoon','Anime','Dark Fantasy','Flip-Book','3D Toon','Watercolor',
-    'Papercut / Stop-Motion','Pixel Art','Low-Poly','Noir','Storybook Pastel'
-  ];
-  const artStyles = [
-    'Bold Lines','Soft Pastel','Ink & Wash','Cel-Shaded','Painterly','Graphite Sketch',
-    'High Contrast','Halftone Dots','Grainy Film','Vibrant Pop','Muted Vintage'
-  ];
-  const setAnimType = $('#setAnimType'), setArtStyle = $('#setArtStyle');
-  animTypes.forEach(v=> setAnimType.append(new Option(v,v)));
-  artStyles.forEach(v=> setArtStyle.append(new Option(v,v)));
-
-  // ---------- Characters (20 slots default) ----------
-  const defaultCharacters = [
-    {name:'Narrator', age:'—'},
-    {name:'Sidetracked Sally', age:'10'},
-    {name:'Skater Skip', age:'15'},
-    {name:'Dark Dan', age:'16'},
-    {name:'Creative Callie', age:'14'},
-    {name:'Darling Danielle', age:'17'},
-    {name:'Grumpy Gus', age:'45'},
-    {name:'Zen Zena', age:'18'},
-    {name:'Journey Mark', age:'12'},
-    {name:'Abby', age:'11'},
-    {name:'Bear', age:'—'},
-    {name:'Dominator A', age:'—'},
-    {name:'Dominator B', age:'—'},
-    {name:'Dominator C', age:'—'},
-    {name:'Hero One', age:'—'},
-    {name:'Hero Two', age:'—'},
-    {name:'Villain One', age:'—'},
-    {name:'Villain Two', age:'—'},
-    {name:'Mentor', age:'—'},
-    {name:'Guide', age:'—'}
-  ];
-  app.characters = JSON.parse(localStorage.getItem('bookanim.characters')||'null') || defaultCharacters;
-
-  function persist(){
-    localStorage.setItem('bookanim.characters', JSON.stringify(app.characters));
-    localStorage.setItem('bookanim.settings', JSON.stringify({
-      anim: $('#setAnimType').value, art: $('#setArtStyle').value,
-      audience: $('#setAudience').value, aspect: $('#setAspect').value, fps: $('#setFps').value
-    }));
-    // keys (only if panel is present)
-    if($('#keyOpenAI')){
-      localStorage.setItem('bookanim.key.openai', $('#keyOpenAI').value || '');
-      localStorage.setItem('bookanim.key.sfx',    $('#keySfx').value || '');
-      localStorage.setItem('bookanim.key.other',  $('#keyOther').value || '');
-    }
-  }
-
-  // Build character list (with edit)
-  const charList = $('#charList');
-  function renderChars(){
-    charList.innerHTML = '';
-    app.characters.forEach((c,i)=>{
-      const row = document.createElement('div');
-      row.className='listRow';
-      row.innerHTML = `
-        <div>
-          <div style="font-weight:700">${c.name}</div>
-          <div class="chipsRow" style="margin-top:.3rem;">
-            ${c.age?`<span class="chip">Age: ${c.age}</span>`:''}
-            ${c.voice?`<span class="chip">Voice: ${c.voice}</span>`:''}
-          </div>
-        </div>
-        <div>
-          <button class="btn ghost" data-edit="${i}">Edit</button>
-        </div>`;
-      charList.append(row);
-    });
-    // edit handlers
-    charList.querySelectorAll('[data-edit]').forEach(b=>{
-      b.onclick=()=>{
-        const idx = +b.dataset.edit; const c = app.characters[idx];
-        // quick inline editor modal (reuse characters panel body)
-        const editor = document.createElement('div');
-        editor.innerHTML = `
-          <div class="row"><label>Name</label><input id="ceName" type="text" value="${c.name||''}"/></div>
-          <div class="row"><label>Age</label><input id="ceAge" type="text" value="${c.age||''}"/></div>
-          <div class="row"><label>Traits / Notes</label><textarea class="modalText" id="ceNotes" rows="5">${c.notes||''}</textarea></div>
-          <div class="row"><label>Thumbnail</label><input id="ceImg" type="file" accept="image/*"/></div>
-          <div class="row"><label>Voice</label><input id="ceVoice" type="text" placeholder="OpenAI voice id (e.g., ember)" value="${c.voice||''}"/></div>
-          <div class="row" style="justify-content:flex-end"><button id="ceSave" class="btn">Save</button></div>
-        `;
-        panels.characters.querySelector('h2').innerText = `Edit: ${c.name}`;
-        const original = charList.parentNode.replaceChild(editor, charList);
-        $('#ceSave').onclick=()=>{
-          c.name  = $('#ceName').value.trim()||c.name;
-          c.age   = $('#ceAge').value.trim();
-          c.notes = $('#ceNotes').value.trim();
-          c.voice = $('#ceVoice').value.trim();
-          const f = $('#ceImg').files?.[0];
-          if(f){ const r=new FileReader(); r.onload=()=>{ c.image=r.result; done(); }; r.readAsDataURL(f); } else { done(); }
-          function done(){
-            app.characters[idx]=c; persist();
-            panels.characters.querySelector('h2').innerText = 'Characters';
-            editor.parentNode.replaceChild(original, editor);
-            renderChars();
-          }
-        };
-      };
-    });
-  }
-  renderChars();
-
-  $('#addChar').onclick = ()=>{
-    app.characters.push({name:'New Character', age:'', notes:''});
-    renderChars(); persist();
-  };
-
-  // ---------- Voices mapping ----------
-  const openaiVoices = ['alloy','verse','vibrant','amber','sage','ember','nova','shimmer'];
-  function renderVoices(){
-    const wrap = $('#voiceMap'); wrap.innerHTML='';
-    app.characters.forEach((c,i)=>{
-      const row = document.createElement('div'); row.className='row';
-      const sel = document.createElement('select');
-      openaiVoices.forEach(v=> sel.append(new Option(v.toUpperCase(), v)));
-      sel.value = c.voice || openaiVoices[0];
-      sel.onchange = ()=>{ app.characters[i].voice = sel.value; persist(); };
-      const label = document.createElement('label'); label.textContent = c.name;
-      row.append(label, sel); wrap.append(row);
-    });
-  }
-  renderVoices();
-  $('#saveVoices').onclick = ()=>{ persist(); closePanels(); };
-
-  // ---------- Load settings/keys on boot ----------
-  (function bootstrap(){
-    try{
-      const st = JSON.parse(localStorage.getItem('bookanim.settings')||'{}');
-      if(st.anim) $('#setAnimType').value = st.anim; else $('#setAnimType').value = 'Comic';
-      if(st.art)  $('#setArtStyle').value = st.art;  else $('#setArtStyle').value = 'Bold Lines';
-      $('#setAudience').value = st.audience || 'All ages';
-      $('#setAspect').value   = st.aspect   || '16:9';
-      $('#setFps').value      = st.fps      || '24';
-      // keys
-      if($('#keyOpenAI')){
-        $('#keyOpenAI').value = localStorage.getItem('bookanim.key.openai') || '';
-        $('#keySfx').value    = localStorage.getItem('bookanim.key.sfx')    || '';
-        $('#keyOther').value  = localStorage.getItem('bookanim.key.other')  || '';
+  // Load embedded characters JSON (offline) first, then try network Character.json (optional override)
+  try {
+    const embedded = document.getElementById('embedded-characters')?.textContent || '[]';
+    const raw = JSON.parse(embedded);
+    const chars = transformCharacterJSON(raw);
+    if(chars.length && (!state.characters || !state.characters.length)){
+      state.characters = chars; saveState();
+    } else if(chars.length){
+      // Merge on name if new
+      const byName = new Map(state.characters.map(c=>[c.name.toLowerCase(), c]));
+      for(const c of chars){
+        const key=(c.name||'').toLowerCase();
+        if(key && !byName.has(key)) state.characters.push(c);
       }
-    }catch(e){}
+      saveState();
+    }
+  } catch(e){ /* ignore */ }
+
+  // Try to auto-load Character.json from network (if provided)
+  (async function tryAutoLoad(){
+    try{
+      const res = await fetch('Character.json', { cache:'no-store' });
+      if(res.ok){
+        const data = await res.json();
+        const chars = transformCharacterJSON(data);
+        if(chars.length){ state.characters = chars; saveState(); }
+      }
+    }catch(e){ /* ignore */ }
   })();
 
-  $('#saveSettings').onclick = ()=>{ persist(); closePanels(); };
-  $('#saveSecrets').onclick  = ()=>{ persist(); closePanels(); };
-
-  // ---------- File open/upload ----------
-  $('#filePicker').addEventListener('change', (e)=>{
-    const files = [...e.target.files];
-    if(!files.length) return;
-    alert(`${files.length} file(s) selected.`);
-    // (Optional) You can parse .txt into the editor here:
-    const txt = files.find(f=>/\.txt$/i.test(f.name));
-    if(txt){
-      const r = new FileReader();
-      r.onload = ()=>{ $('#bookText').value = r.result; };
-      r.readAsText(txt);
-    }
+  // ---------- Drawers ----------
+  $('#openLeft').onclick = ()=> openDrawer('left');
+  $('#openRight').onclick = ()=> openDrawer('right');
+  $$('#leftDrawer .scrim, #rightDrawer .scrim').forEach(s => s.onclick = e => closeDrawer(e.target.dataset.close));
+  $('#leftDrawer').addEventListener('click', e=>{
+    const btn = e.target.closest('[data-open]'); if(!btn) return;
+    const name = btn.dataset.open; closeDrawer('left'); openModal('#'+name+'Modal');
+    if(name==='characters'){ renderCharacterGallery(); renderCharacters(); }
+    if(name==='voices'){ renderVoices(); }
+    if(name==='settings'){ loadSettingsIntoUI(); }
+    if(name==='secrets'){ loadSecretsIntoUI(); }
   });
 
-  // ---------- Start / Preview (mock scene split + thumbnails) ----------
-  const thumbs = $('#thumbs'), bar = $('#bar'), pct = $('#pct'), sceneCount = $('#sceneCount');
-  function splitScenes(text){
-    // simple split by blank line or sentence count
-    const raw = text.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean);
-    if(raw.length) return raw;
-    return text.match(/[^.!?]+[.!?]/g) || [];
+  // Right drawer actions
+  $('#newBtn').onclick = ()=>{ if(confirm('Clear current project?')){ state.scenes=[]; state.text=''; elText.value=''; strip.innerHTML=''; updateBadges(); saveState(); } };
+  $('#openBtn').onclick = ()=> $('#fileOpen').click();
+  $('#saveBtn2').onclick = ()=> $('#saveBtn').click();
+  $('#uploadBtn').onclick = ()=> $('#fileUpload').click();
+  $('#exportBtn2').onclick = ()=> $('#exportBtn').click();
+  $('#exitBtn').onclick = ()=> closeDrawer('right');
+  $('#fileOpen').onchange = e => { const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ try{ state=JSON.parse(t); LS.save('ba_state',state); location.reload(); }catch{ alert('Invalid project JSON') } }); };
+  $('#fileUpload').onchange = e => { if(!e.target.files.length) return; alert(`${e.target.files.length} file(s) selected.`); };
+
+  function openDrawer(side){ (side==='left'?$('#leftDrawer'):$('#rightDrawer')).classList.add('open') }
+  function closeDrawer(side){ (side==='left'?$('#leftDrawer'):$('#rightDrawer')).classList.remove('open') }
+
+  // ---------- Modals helpers ----------
+  function openModal(id){ $(id).classList.add('open') }
+  function closeModal(id){ $(id).classList.remove('open') }
+  document.body.addEventListener('click', e=>{
+    const id = e.target.dataset.close;
+    if(!id) return;
+    if(id==='left'||id==='right'){ closeDrawer(id); return; }
+    closeModal('#'+id+'Modal');
+  });
+
+  // ---------- Characters ----------
+  function renderCharacterGallery(){
+    const g = $('#charGallery'); g.innerHTML='';
+    (state.characters||[]).forEach((c,i)=>{
+      const card = document.createElement('div'); card.className='card';
+      const pic = document.createElement('div'); pic.className='pic'; pic.textContent='image';
+      if(c.img){ pic.style.backgroundImage=`url(${c.img})`; pic.style.backgroundSize='cover'; pic.textContent=''; }
+      pic.style.cursor='pointer'; pic.title='Open Bio'; pic.onclick=()=> openBio(i);
+      const body = document.createElement('div'); body.className='body';
+      body.innerHTML = `<div style="font-weight:700">${escapeHTML(c.name)}</div>
+                        <div style="margin:.35rem 0" class="chip">${escapeHTML(c.voice||'?')}</div>
+                        <div class="small">Age ${c.age??'?'}</div>`;
+      card.append(pic, body); g.append(card);
+    });
   }
-
-  function makeThumb(i, label){
-    const card = document.createElement('div');
-    card.innerHTML = `<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
-      <div style="aspect-ratio:16/9;background:#0f0f0f;display:grid;place-items:center;color:#aaa;">Scene ${i+1}</div>
-      <div style="padding:.45rem .55rem;color:#ccc;font-size:.9rem;border-top:1px solid var(--border);">${label}</div>
-    </div>`;
-    thumbs.append(card);
+  function openBio(i){
+    const c = state.characters[i]; if(!c) return;
+    const gallery = (c.gallery && Array.isArray(c.gallery)) ? c.gallery : [];
+    const galleryHTML = gallery.map((u,ix)=>`<div class="thumb" style="width:120px;height:80px;background:url('${u}') center/cover no-repeat" title="Image ${ix+1}"></div>`).join('');
+    const box = $('#bioBox'); box.innerHTML = `
+      <h3>${escapeHTML(c.name)}</h3>
+      <div class="grid">
+        <div>
+          <div class="thumb" style="width:100%;height:220px;${c.img?`background:url(${c.img}) center/cover no-repeat;`:'display:grid;place-items:center' }">${c.img?'':'no image'}</div>
+          <p style="margin-top:.5rem"><span class="chip">Voice: ${escapeHTML(c.voice||'?')}</span> &nbsp; <span class="chip">Age: ${c.age??'?'}</span></p>
+          ${galleryHTML?`<div class="row" style="margin-top:.5rem;flex-wrap:wrap">${galleryHTML}</div>`:''}
+        </div>
+        <div>
+          <label>Style</label>
+          <div style="white-space:pre-wrap;background:#0f0f0f;border:1px solid #333;border-radius:.6rem;padding:.7rem">${escapeHTML(c.style||'—')}</div>
+          <label style="margin-top:.6rem">Appearance</label>
+          <div style="white-space:pre-wrap;background:#0f0f0f;border:1px solid #333;border-radius:.6rem;padding:.7rem">${escapeHTML((Array.isArray(c.appearance)?c.appearance.join('\n'):(c.appearance||''))||'—')}</div>
+          <label style="margin-top:.6rem">Personality</label>
+          <div style="white-space:pre-wrap;background:#0f0f0f;border:1px solid #333;border-radius:.6rem;padding:.7rem">${escapeHTML((Array.isArray(c.personality)?c.personality.join('\n'):(c.personality||''))||'—')}</div>
+          <label style="margin-top:.6rem">Abilities</label>
+          <div style="white-space:pre-wrap;background:#0f0f0f;border:1px solid #333;border-radius:.6rem;padding:.7rem">${escapeHTML((Array.isArray(c.abilities)?c.abilities.join('\n'):(c.abilities||''))||'—')}</div>
+          <label style="margin-top:.6rem">Background</label>
+          <div style="white-space:pre-wrap;background:#0f0f0f;border:1px solid #333;border-radius:.6rem;padding:.7rem">${escapeHTML((Array.isArray(c.background)?c.background.join('\n'):(c.background||''))||'—')}</div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:1rem">
+        <button class="btn" data-close="bio">Close</button>
+      </div>`;
+    openModal('#bioModal');
   }
-
-  function setProgress(v){
-    bar.style.width = `${v}%`;
-    pct.textContent = `${v|0}%`;
-  }
-
-  $('#btnStart').onclick = async ()=>{
-    const text = $('#bookText').value.trim();
-    if(!text){ alert('Please paste some text first.'); return; }
-    thumbs.innerHTML = '';
-    const scenes = splitScenes(text);
-    sceneCount.textContent = scenes.length;
-    // Fake async processing: create a thumbnail per scene
-    for(let i=0;i<scenes.length;i++){
-      makeThumb(i, scenes[i].slice(0,80));
-      setProgress(((i+1)/scenes.length)*100);
-      await new Promise(r=>setTimeout(r, 350)); // simulate work
-    }
-  };
-  $('#btnPreview').onclick = ()=>{ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); };
-
-  // ---------- Save / Export ----------
-  $('#btnSave').onclick = ()=>{
-    persist();
-    alert('Saved locally.');
-  };
-
-  $('#btnExportZip').onclick = async ()=>{
-    persist();
-    const zip = new JSZip();
-    // project state
-    const state = {
-      characters: app.characters,
-      settings: JSON.parse(localStorage.getItem('bookanim.settings')||'{}'),
-      text: $('#bookText').value
+  function renderCharacters(){
+    const host = $('#charList'); host.innerHTML='';
+    (state.characters||[]).forEach((c,idx)=>{
+      const row = document.createElement('div'); row.className='item';
+      row.innerHTML = `
+        <div>
+          <div class="title">${escapeHTML(c.name)}</div>
+          <div class="small">${c.voice || 'voice ?'} · Age ${c.age??'?'}</div>
+        </div>
+        <div class="row">
+          <button class="btn ghost" data-bio="${idx}">Bio</button>
+          <button class="btn ghost" data-edit="${idx}">Edit</button>
+        </div>`;
+      host.appendChild(row);
+    });
+    host.onclick = e=>{
+      const b = e.target.closest('[data-edit]'); const d=e.target.closest('[data-bio]');
+      if(b) openEditCharacter(+b.dataset.edit);
+      if(d) openBio(+d.dataset.bio);
     };
-    zip.file('project.json', JSON.stringify(state, null, 2));
-    // include any embedded character images
-    app.characters.forEach((c, idx)=>{
-      if(c.image && c.image.startsWith('data:image')){
-        const base64 = c.image.split(',')[1];
-        zip.file(`images/char_${idx+1}.png`, base64, {base64:true});
+    $('#addChar').onclick = ()=>{ state.characters.push({id:crypto.randomUUID(),name:'New Character',voice:'',age:0,notes:'',img:''}); renderCharacterGallery(); renderCharacters(); saveState(); };
+  }
+  function openEditCharacter(i){
+    const c = state.characters[i]; if(!c) return;
+    $('#editCharTitle').textContent = `Edit Character`;
+    $('#charName').value = c.name || '';
+    $('#charAge').value = c.age || 0;
+    $('#charNotes').value = c.notes || '';
+    $('#charVoice').value = c.voice || '';
+    const prev = $('#charImgPreview');
+    prev.textContent='thumbnail'; prev.style.background=''; prev.style.backgroundSize='cover';
+    if(c.img){ prev.style.background=`url(${c.img}) center/cover no-repeat`; prev.textContent=''; }
+    $('#charImg').value='';
+    $('#charImg').onchange = e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader(); r.onload=()=>{ prev.style.background=`url(${r.result}) center/cover no-repeat`; prev.textContent=''; prev.dataset.dataUrl=r.result; };
+      r.readAsDataURL(f);
+    };
+    $('#saveChar').onclick = ()=>{
+      c.name = $('#charName').value.trim() || c.name;
+      c.age = +($('#charAge').value||0);
+      c.notes = $('#charNotes').value;
+      c.voice = $('#charVoice').value.trim();
+      if($('#charImgPreview').dataset.dataUrl){ c.img = $('#charImgPreview').dataset.dataUrl; }
+      saveState(); renderCharacterGallery(); renderCharacters(); closeModal('#editCharModal');
+    };
+    $('[data-close="editChar"]').onclick = ()=> closeModal('#editCharModal');
+    openModal('#editCharModal');
+  }
+
+  // Import Characters JSON (manual)
+  $('#importCharJsonBtn').onclick = ()=> $('#charJsonFile').click();
+  $('#charJsonFile').onchange = e=>{
+    const f = e.target.files[0]; if(!f) return;
+    f.text().then(t=>{
+      try{
+        const data = JSON.parse(t);
+        const chars = transformCharacterJSON(data);
+        if(chars.length){ state.characters = chars; saveState(); renderCharacterGallery(); renderCharacters(); alert('Characters imported.'); }
+        else{ alert('Could not find characters in this JSON.'); }
+      }catch{ alert('Invalid JSON file.'); }
+    });
+  };
+
+  // Voices
+  function renderVoices(){
+    const host = $('#voiceList'); host.innerHTML='';
+    (state.characters||[]).forEach((c,i)=>{
+      const row = document.createElement('div'); row.className='item';
+      const sel = document.createElement('select'); sel.style.padding='.5rem'; sel.style.background='#0f0f0f'; sel.style.color='#fff'; sel.style.border='1px solid #333';
+      state.voices.forEach(v=>{
+        const o=document.createElement('option'); o.value=v.id; o.textContent=`${v.name} (${v.id})`; if((c.voice||'')===v.id) o.selected=true; sel.appendChild(o);
+      });
+      sel.onchange = ()=>{ state.characters[i].voice = sel.value; saveState(); renderCharacters(); renderCharacterGallery(); };
+      row.innerHTML = `<div><div class="title">${escapeHTML(c.name)}</div><div class="small">Current: ${escapeHTML(c.voice||'?')}</div></div>`;
+      row.appendChild(sel); host.appendChild(row);
+    });
+  }
+
+  // Settings & Secrets
+  function loadSettingsIntoUI(){
+    $('#optAnim').value = state.settings.anim;
+    $('#optArt').value = state.settings.art;
+    $('#optAge').value = state.settings.age;
+    $('#optAspect').value = state.settings.aspect;
+    $('#optFps').value = String(state.settings.fps);
+    $('#optColor').value = state.settings.color || '#cc2222';
+  }
+  $('#saveSettings').onclick = ()=>{
+    state.settings.anim = $('#optAnim').value;
+    state.settings.art  = $('#optArt').value;
+    state.settings.age  = $('#optAge').value;
+    state.settings.aspect = $('#optAspect').value;
+    state.settings.fps = +$('#optFps').value;
+    state.settings.color = $('#optColor').value;
+    applyThemeColor(state.settings.color);
+    saveState(); closeModal('#settingsModal');
+  };
+  function loadSecretsIntoUI(){ const s=state.secrets||{}; $('#kOpenAI').value=s.openai||''; $('#k11').value=s.eleven||''; $('#kOther').value=s.other||''; }
+  $('#saveKeys').onclick = ()=>{ state.secrets={openai:$('#kOpenAI').value.trim(), eleven:$('#k11').value.trim(), other:$('#kOther').value}; LS.save('ba_secrets',state.secrets); saveState(); alert('Keys saved locally.'); };
+  $('#clearKeys').onclick = ()=>{ if(confirm('Clear stored keys?')){ state.secrets={openai:'',eleven:'',other:''}; LS.save('ba_secrets',state.secrets); saveState(); loadSecretsIntoUI(); } };
+
+  // Start / Preview
+  $('#startBtn').onclick = ()=>{
+    const text = elText.value.trim(); if(!text){ alert('Paste some text first.'); return; }
+    state.text = text;
+    state.scenes = text.split(/\n\s*\n/).filter(x=>x.trim()).map((t,i)=>({i, text:t.trim()}));
+    updateBadges(); saveState();
+    strip.innerHTML='';
+    let i=0, total=state.scenes.length||1;
+    const tick=()=>{
+      if(i>=total) return;
+      const th=document.createElement('div'); th.className='thumb'; th.textContent='…'; th.title=`Scene ${i+1}`; strip.appendChild(th);
+      setTimeout(()=>{
+        th.textContent='';
+        th.style.background=`#111 url('data:image/svg+xml;utf8,${encodeURIComponent(svgThumb(i+1,state.scenes[i].text))}') center/cover no-repeat`;
+        i++; const p=Math.round(i/total*100); meter.style.width=p+'%'; pct.textContent=p+'%';
+        if(i<total) tick();
+      },350);
+    };
+    meter.style.width='0%'; pct.textContent='0%'; tick();
+  };
+  $('#previewBtn').onclick = ()=> alert(`Scenes detected: ${state.scenes.length}\n(Thumbnails show as scenes are processed.)`);
+
+  // Save / Export
+  function saveState(){ state.text = elText.value; LS.save('ba_state', state); }
+  $('#saveBtn').onclick = ()=>{ saveState(); alert('Saved locally.'); };
+  $('#exportBtn').onclick = async ()=>{
+    saveState();
+    const zip = new JSZip();
+    zip.file('project.json', JSON.stringify(state,null,2));
+    (state.characters||[]).forEach((c,idx)=>{
+      if(c.img && /^data:image\//.test(c.img)){
+        zip.file(`images/char_${idx+1}_${(c.name||'').replace(/\W+/g,'_')}.png`, c.img.split(',')[1], {base64:true});
       }
     });
     const blob = await zip.generateAsync({type:'blob'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'BookAnimator_Project.zip';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='BookAnimator_Project.zip'; a.click(); URL.revokeObjectURL(a.href);
   };
 
-  // ---------- Openers from menus ----------
-  document.getElementById('leftMenu').addEventListener('click', (e)=>{
-    const open = e.target.getAttribute('data-open');
-    if(open) openPanel(open);
-  });
+  // Utils
+  function updateBadges(){ $('#scenesBadge').textContent = `Scenes: ${state.scenes.length||0}`; }
+  function applyThemeColor(hex){ document.documentElement.style.setProperty('--accent', hex||'#cc2222'); }
+  function escapeHTML(s){ return String(s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  function svgThumb(n, text){
+    const words=(text||'').toLowerCase().match(/[a-z]{4,}/g)||[];
+    const key=(words.slice(0,3).join(' ')||'scene').replace(/&/g,'&amp;');
+    return `
+      <svg xmlns='http://www.w3.org/2000/svg' width='240' height='160'>
+        <defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23141414'/><stop offset='1' stop-color='%23101010'/></linearGradient></defs>
+        <rect width='100%' height='100%' fill='url(#g)'/>
+        <rect x='10' y='10' width='220' height='140' rx='10' ry='10' fill='none' stroke='%23ffffff' stroke-opacity='.65'/>
+        <text x='16' y='32' font-family='monospace' font-size='14' fill='%23fff'>Scene ${n}</text>
+        <text x='16' y='56' font-family='monospace' font-size='12' fill='%23bbbbbb'>${key}</text>
+      </svg>`;
+  }
+
+  // Character.json transformer for your schema
+  function transformCharacterJSON(raw){ 
+    let arr = [];
+    if(Array.isArray(raw)) arr = raw;
+    else if(raw && Array.isArray(raw.characters)) arr = raw.characters;
+    else if(raw && Array.isArray(raw.data)) arr = raw.data;
+    else if(raw && typeof raw === 'object') arr = Object.values(raw);
+
+    return arr.map((x,idx)=>({
+      id: x.id || crypto.randomUUID(),
+      name: x.name || x.fullName || x.title || `Character ${idx+1}`,
+      voice: x.voice || x.voiceId || x.voice_id || '',
+      age: x.age ?? x.years ?? '',
+      style: x.style || '',
+      notes: x.notes || x.description || x.bio || x.backstory || '',
+      appearance: x.appearance || [],
+      personality: x.personality || [],
+      abilities: x.abilities || [],
+      background: x.background || [],
+      gallery: x.gallery || [],
+      img: x.image || x.img || x.thumbnail || x.picture || x.path || ''
+    }));
+  }
+
+})();
 </script>
 </body>
 </html>
