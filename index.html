@@ -177,15 +177,34 @@
       <label class="row"><span>Traits / Notes</span><input id="ceNotes" type="text" placeholder="personality, role…"/></label>
       <label class="row"><span>Voice (OpenAI)</span>
         <select id="ceVoice">
-          <option value="alloy">Alloy</option><option value="verse">Verse</option>
-          <option value="aria">Aria</option><option value="sage">Sage</option>
-          <option value="amber">Amber</option><option value="ember">Ember</option>
+          <!-- Your ChatGPT voices -->
+          <option value="Maple">Maple</option>
+          <option value="Juniper">Juniper</option>
+          <option value="Spruce">Spruce</option>
+          <option value="Breeze">Breeze</option>
+          <option value="Vale">Vale</option>
+          <option value="Shimmer">Shimmer</option>
+          <option value="Cove">Cove</option>
+          <option value="Sol">Sol</option>
+          <option value="Ember">Ember</option>
+          <option value="Arbor">Arbor</option>
+          <!-- Fallback legacy voices -->
+          <option value="alloy">alloy</option>
+          <option value="aria">aria</option>
+          <option value="sage">sage</option>
+          <option value="amber">amber</option>
+          <option value="verse">verse</option>
+          <option value="onyx">onyx</option>
+          <option value="nova">nova</option>
+          <option value="echo">echo</option>
+          <option value="shimmer">shimmer</option>
         </select>
       </label>
       <label class="row"><span>Voice (11Labs ID)</span><input id="ce11" type="text" placeholder="optional"/></label>
       <label class="row"><span>Portrait</span><input id="cePortrait" type="file" accept="image/*"/></label>
     </div>
     <div class="bar" style="justify-content:flex-end">
+      <button class="btn" id="cePreview">Preview Voice</button>
       <button class="btn" id="ceCancel">Cancel</button>
       <button class="btn red" id="ceSave">Save</button>
     </div>
@@ -250,6 +269,7 @@ const UI = {
   cePortrait: document.getElementById('cePortrait'),
   ceSave: document.getElementById('ceSave'),
   ceCancel: document.getElementById('ceCancel'),
+  cePreview: document.getElementById('cePreview'),
 };
 
 let SETTINGS = JSON.parse(localStorage.getItem('ba_settings') || '{}');
@@ -264,8 +284,28 @@ const DEFAULT_NAMES = [
  'Guide','Companion'
 ];
 
+/* --- Auto-assign your preferred voices --- */
+const VOICE_PREF = {
+  "Sidetracked Sally": "Maple",
+  "Darling Danielle":  "Juniper",
+  "Dark Dan":          "Spruce",
+  "Skater Skip":       "Breeze",
+  "Creative Callie":   "Vale",
+  "Zen Zena":          "Shimmer",
+  "Grumpy Gus":        "Cove",
+  "Ambush Annie":      "Sol",
+  "Narrator":          "Ember"
+};
+
 if (CHARACTERS.length === 0){
-  CHARACTERS = DEFAULT_NAMES.map(n=>({name:n, notes:'', voice:'alloy', elevenId:'', portrait:''}));
+  CHARACTERS = DEFAULT_NAMES.map(n=>({name:n, notes:'', voice: VOICE_PREF[n] || 'Maple', elevenId:'', portrait:''}));
+  persist('ba_characters', CHARACTERS);
+} else {
+  CHARACTERS = CHARACTERS.map(c => {
+    const v = VOICE_PREF[c.name];
+    if (v && (!c.voice || c.voice === 'alloy')) return {...c, voice: v};
+    return c;
+  });
   persist('ba_characters', CHARACTERS);
 }
 
@@ -336,7 +376,7 @@ function renderCharList(){
   UI.charList.innerHTML = '';
   CHARACTERS.forEach((c,i)=>{
     const li = document.createElement('div'); li.className='item';
-    li.innerHTML = `<div><b>${escapeHtml(c.name)}</b><br><small class="muted">${escapeHtml(c.voice||'alloy')}</small></div>
+    li.innerHTML = `<div><b>${escapeHtml(c.name)}</b><br><small class="muted">${escapeHtml(c.voice||'Maple')}</small></div>
                     <div class="row">
                       ${c.portrait?`<img src="${c.portrait}" style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:1px solid #333;margin-right:.5rem">`:''}
                       <button class="btn small" data-edit="${i}">Edit</button>
@@ -350,7 +390,7 @@ function openCharEdit(i){
   const c = CHARACTERS[i];
   UI.ceName.value = c.name||'';
   UI.ceNotes.value = c.notes||'';
-  UI.ceVoice.value = c.voice||'alloy';
+  UI.ceVoice.value = c.voice||'Maple';
   UI.ce11.value = c.elevenId||'';
   UI.cePortrait.value = '';
   UI.charEdit.style.display='flex';
@@ -366,6 +406,11 @@ UI.ceSave.onclick = async ()=>{
   persist('ba_characters', CHARACTERS); renderCharList();
   UI.charEdit.style.display='none';
 };
+UI.cePreview.onclick = async ()=>{
+  const voiceURL = await ttsForLine("This is a short preview of the selected voice.", { voice: UI.ceVoice.value, elevenId: UI.ce11.value });
+  if (!voiceURL) return alert('Need a valid OpenAI key in Secrets first.');
+  const a = new Audio(voiceURL); a.play();
+};
 
 /* ======= Save / Load ======= */
 UI.btnSave.onclick = ()=>{ persist('ba_text', UI.txt.value||''); alert('Saved'); };
@@ -373,7 +418,9 @@ UI.txt.value = localStorage.getItem('ba_text') || '';
 
 /* ======= Scene Splitting ======= */
 function splitScenes(t){
-  const hard = /\n\s*\n|^#\s*scene:|^###/gmi;
+  const hard = /
+\s*
+|^#\s*scene:|^###/gmi;
   const chunks = t.split(hard).map(s=>s.trim()).filter(Boolean);
   const res=[]; const rx = /[^.!?]+[.!?]+/g;
   for (const ch of chunks){
@@ -452,7 +499,7 @@ async function ttsForLine(text, char){
   }
   if ((SECRETS.openai||{}).apiKey){
     try{
-      const voice = (char && char.voice) || 'alloy';
+      const voice = (char && char.voice) || 'Maple';
       const r = await fetch('https://api.openai.com/v1/audio/speech',{
         method:'POST', headers:{'Authorization':'Bearer '+SECRETS.openai.apiKey,'Content-Type':'application/json'},
         body: JSON.stringify({ model:'gpt-4o-mini-tts', voice, input: text })
@@ -504,7 +551,7 @@ async function renderVideo(scenes){
     }
     const img = await loadImage(url);
     let who=null,line=null; const m=s.match(/^([\w .'-]+)\s*:\s*(.+)$/); if (m){ who=m[1].trim(); line=m[2].trim(); }
-    const char = CHARACTERS.find(c=> new RegExp(`\\b${escapeReg(c.name)}\\b`,'i').test(who||'')) || null;
+    const char = CHARACTERS.find(c=> new RegExp(`\b${escapeReg(c.name)}\b`,'i').test(who||'')) || null;
     const voiceURL = line ? await ttsForLine(line, char) : null;
     if (voiceURL) await playBuffer(ac, dest, voiceURL, tGlobal, false);
     if (sfx[i]) await playBuffer(ac, dest, sfx[i], tGlobal+0.2, false);
@@ -630,7 +677,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight){
   ctx.fillText(line,x,y);
 }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\]/g,'\$&'); }
 
 /* ===== Service worker for offline ===== */
 (function registerSW(){
