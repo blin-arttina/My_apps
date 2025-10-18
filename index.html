@@ -1,10 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Book Animator</title>
-<!-- (styles and scripts included; trimmed for brevity in this message since file is saved) -->
+<style>
+  :root{
+    --bg:#0b0b0b; --panel:#111; --ink:#fff; --muted:#cfcfcf;
+    --line:#2a2a2a; --accent:#ef4444; --ok:#34d399;
+  }
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+  .wrap{max-width:1200px;margin:0 auto;padding:1.2rem}
+  h1{font-size:2.4rem;text-align:center;margin:1rem 0 1.2rem}
+  .badge{display:inline-block;background:#141414;color:var(--muted);
+    border:1px solid var(--line);padding:.25rem .6rem;border-radius:999px;font-size:.95rem;margin-right:.5rem}
+  textarea{width:100%;min-height:280px;background:#0f0f0f;border:1px solid var(--line);
+    border-radius:12px;color:#e7e7e7;font-size:1.05rem;line-height:1.5;padding:1rem;outline:none}
+  .bar{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1rem}
+  .btn{background:#181818;border:2px solid var(--accent);color:#fff;padding:.8rem 1.1rem;border-radius:14px;cursor:pointer}
+  .btn.ghost{border-color:#555;color:#eee}
+  .btn.small{padding:.45rem .7rem;border-radius:10px}
+  .btn:hover{filter:brightness(1.08)}
+  .topbar{display:flex;justify-content:space-between;align-items:center}
+  .hamb{width:56px;height:56px;border:2px solid #fff;border-radius:14px;display:grid;place-items:center;background:#111;cursor:pointer}
+  .hamb .line{width:28px;height:3px;background:#fff;margin:4px 0;border-radius:2px}
+  .menu,.right,.modal{position:fixed;inset:0;background:#000a;display:none;
+    align-items:flex-start;justify-content:center;padding-top:6vh;z-index:100}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem;
+    width:min(940px,92vw);max-height:80vh;overflow:auto;box-shadow:0 10px 40px #0009}
+  .tabs{display:flex;gap:.5rem;margin:.25rem 0 1rem}
+  .tabs .btn{border-color:#555}
+  .section{display:none}
+  .section.active{display:block}
+  .list{display:flex;flex-direction:column;gap:.5rem}
+  .item{display:flex;justify-content:space-between;align-items:center;background:#101010;border:1px solid var(--line);padding:.75rem 1rem;border-radius:12px}
+  .row{display:flex;gap:.7rem;align-items:center}
+  .row>span{width:12rem;color:#eaeaea}
+  select,input[type="text"],input[type="password"],input[type="file"]{
+    flex:1;background:#0f0f0f;border:1px solid var(--line);color:#fff;padding:.6rem .7rem;border-radius:10px}
+  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin:1.2rem 0}
+  .thumb{height:120px;border:2px dashed #666;border-radius:12px;background:#0f0f0f;display:grid;place-items:center;color:#aaa;font-size:.9rem}
+  .thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+  .progress{position:fixed;left:0;right:0;bottom:0;background:#0d0d0d;border-top:1px solid #1a1a1a;padding:.6rem 1rem;display:flex;gap:1rem;align-items:center;z-index:50}
+  .meter{flex:1;height:12px;background:#1a1a1a;border-radius:999px;position:relative;overflow:hidden}
+  .meter::after{content:"";position:absolute;inset:0;transform:scaleX(var(--pct,0));transform-origin:left;background:#fff;border-radius:999px;transition:transform .12s ease}
+  .pct{min-width:52px;text-align:right;color:#ddd}
+  .hint{color:#bbb;font-size:.92rem}
+</style>
 </head>
-<body>Downloadable build written from ChatGPT. Use the link I provide to download.</body>
-</html>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="hamb" id="btnLeft" title="Menu left"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+    <h1>Book Animator</h1>
+    <div class="hamb" id="btnRight" title="Menu right"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+  </div>
+
+  <div style="display:flex;gap:.6rem;justify-content:center;margin:.4rem 0 1rem">
+    <span class="badge">Mode: <b id="modeBadge">Simple</b></span>
+    <span class="badge">Scenes: <b id="scenesBadge">0</b></span>
+  </div>
+
+  <h3>Paste your book text:</h3>
+  <textarea id="bookText" placeholder="Paste text here…"></textarea>
+
+  <div class="bar">
+    <button class="btn" id="btnPreview">Preview Scenes</button>
+    <button class="btn" style="background:var(--accent)" id="btnStart">Start Animation</button>
+  </div>
+
+  <div class="thumbs" id="thumbs"></div>
+</div>
+
+<!-- Footer progress -->
+<div class="progress">
+  <button class="btn small" id="btnSave">Save</button>
+  <button class="btn small" id="btnZip">Export (ZIP)</button>
+  <div class="meter" id="meter"></div>
+  <div class="pct" id="pct">0%</div>
+</div>
+
+<!-- LEFT MENU -->
+<div class="menu" id="leftMenu" aria-modal="true" role="dialog">
+  <div class="card">
+    <div class="tabs">
+      <button class="btn small tab" data-tab="chars">Characters</button>
+      <button class="btn small tab" data-tab="settings">Settings</button>
+      <button class="btn small tab" data-tab="secrets">Secrets (API Keys)</button>
+      <button class="btn small tab" data-tab="help">Help</button>
+      <button class="btn small" id="closeLeft" style="margin-left:auto">Close</button>
+    </div>
+
+    <section id="chars" class="section active">
+      <h2>Characters</h2>
+      <div id="charList" class="list"></div>
+      <p class="hint">Tap <b>Edit</b> to change name, notes, voice, and portrait.</p>
+    </section>
+
+    <section id="settings" class="section">
+      <h2>Settings</h2>
+      <div class="row"><span>Render mode</span>
+        <select id="setMode"><option value="offline">Offline (no AI)</option><option value="online">Online AI (use keys)</option></select>
+      </div>
+      <div class="row"><span>Visual style</span>
+        <select id="setStyle"><option
