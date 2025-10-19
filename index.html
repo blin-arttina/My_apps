@@ -1,107 +1,1255 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Book Animator</title>
+
+<!-- ========== THEME ========== -->
 <style>
-  :root{
-    --bg:#0b0b0b; --panel:#111; --ink:#fff; --muted:#cfcfcf;
-    --line:#2a2a2a; --accent:#ef4444; --ok:#34d399;
-  }
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
-  .wrap{max-width:1200px;margin:0 auto;padding:1.2rem}
-  h1{font-size:2.4rem;text-align:center;margin:1rem 0 1.2rem}
-  .badge{display:inline-block;background:#141414;color:var(--muted);
-    border:1px solid var(--line);padding:.25rem .6rem;border-radius:999px;font-size:.95rem;margin-right:.5rem}
-  textarea{width:100%;min-height:280px;background:#0f0f0f;border:1px solid var(--line);
-    border-radius:12px;color:#e7e7e7;font-size:1.05rem;line-height:1.5;padding:1rem;outline:none}
-  .bar{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1rem}
-  .btn{background:#181818;border:2px solid var(--accent);color:#fff;padding:.8rem 1.1rem;border-radius:14px;cursor:pointer}
-  .btn.ghost{border-color:#555;color:#eee}
-  .btn.small{padding:.45rem .7rem;border-radius:10px}
-  .btn:hover{filter:brightness(1.08)}
-  .topbar{display:flex;justify-content:space-between;align-items:center}
-  .hamb{width:56px;height:56px;border:2px solid #fff;border-radius:14px;display:grid;place-items:center;background:#111;cursor:pointer}
-  .hamb .line{width:28px;height:3px;background:#fff;margin:4px 0;border-radius:2px}
-  .menu,.right,.modal{position:fixed;inset:0;background:#000a;display:none;
-    align-items:flex-start;justify-content:center;padding-top:6vh;z-index:100}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem;
-    width:min(940px,92vw);max-height:80vh;overflow:auto;box-shadow:0 10px 40px #0009}
-  .tabs{display:flex;gap:.5rem;margin:.25rem 0 1rem}
-  .tabs .btn{border-color:#555}
-  .section{display:none}
-  .section.active{display:block}
-  .list{display:flex;flex-direction:column;gap:.5rem}
-  .item{display:flex;justify-content:space-between;align-items:center;background:#101010;border:1px solid var(--line);padding:.75rem 1rem;border-radius:12px}
-  .row{display:flex;gap:.7rem;align-items:center}
-  .row>span{width:12rem;color:#eaeaea}
-  select,input[type="text"],input[type="password"],input[type="file"]{
-    flex:1;background:#0f0f0f;border:1px solid var(--line);color:#fff;padding:.6rem .7rem;border-radius:10px}
-  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin:1.2rem 0}
-  .thumb{height:120px;border:2px dashed #666;border-radius:12px;background:#0f0f0f;display:grid;place-items:center;color:#aaa;font-size:.9rem}
-  .thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px}
-  .progress{position:fixed;left:0;right:0;bottom:0;background:#0d0d0d;border-top:1px solid #1a1a1a;padding:.6rem 1rem;display:flex;gap:1rem;align-items:center;z-index:50}
-  .meter{flex:1;height:12px;background:#1a1a1a;border-radius:999px;position:relative;overflow:hidden}
-  .meter::after{content:"";position:absolute;inset:0;transform:scaleX(var(--pct,0));transform-origin:left;background:#fff;border-radius:999px;transition:transform .12s ease}
-  .pct{min-width:52px;text-align:right;color:#ddd}
-  .hint{color:#bbb;font-size:.92rem}
+:root{
+  --bg:#0b0b0b; --panel:#111; --ink:#fff; --muted:#cfcfcf;
+  --line:#323232; --accent:#ef4444; --ok:#34d399; --warn:#f59e0b;
+}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+}
+.wrap{max-width:1200px;margin:0 auto;padding:1.2rem}
+h1{font-size:2.6rem;text-align:center;margin:1rem 0 1.2rem;letter-spacing:.5px}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:.4rem;background:#161616;color:#e7e7e7;
+ border:1px solid var(--line);padding:.35rem .7rem;border-radius:999px;font-size:.98rem;margin-right:.5rem}
+
+/* textarea */
+textarea{width:100%;min-height:300px;background:#0f0f0f;border:1px solid var(--line);border-radius:14px;
+ color:#e7e7e7;font-size:1.05rem;line-height:1.6;padding:1rem;outline:none}
+
+/* buttons */
+.bar{display:flex;gap:.9rem;flex-wrap:wrap;margin-top:1rem}
+.btn{background:#151515;border:2px solid var(--accent);color:var(--ink);padding:.85rem 1.1rem;border-radius:14px;cursor:pointer}
+.btn:hover{box-shadow:0 0 0 3px #ef44441f}
+.btn.ghost{border-color:#5a5a5a}
+.btn.small{padding:.5rem .7rem;border-radius:10px}
+.btn.flat{border-color:#444}
+.btn.green{border-color:var(--ok)}
+.btn.warn{border-color:var(--warn)}
+
+/* top bar + hamburgers */
+.topbar{display:flex;justify-content:space-between;align-items:center}
+.hamb{width:56px;height:56px;border:2px solid #fff;border-radius:14px;display:grid;place-items:center;background:#121212;cursor:pointer}
+.hamb .line{width:26px;height:3px;background:#ffffff;margin:4px 0;border-radius:2px}
+.hamb:hover{box-shadow:0 0 0 3px #ffffff1a}
+
+/* modal shells */
+.sheet{position:fixed;inset:0;background:#0008;display:none;align-items:flex-start;justify-content:center;padding-top:6vh;z-index:60}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem;max-width:960px;width:92vw;max-height:82vh;overflow:auto;box-shadow:0 10px 36px #0008}
+.card h2{margin:.2rem 0 1rem}
+.tabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.list{display:flex;flex-direction:column;gap:.6rem}
+.item{display:flex;justify-content:space-between;align-items:center;background:#101010;border:1px solid var(--line);padding:.8rem 1rem;border-radius:12px}
+
+/* thumbs grid */
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:1.2rem 0}
+@media(max-width:900px){.thumbs{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.thumbs{grid-template-columns:repeat(2,1fr)}}
+.thumb{height:130px;border:2px dashed #444;border-radius:12px;background:#0f0f0f;display:grid;place-items:center;color:#aaa;position:relative;overflow:hidden}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.thumb .tag{position:absolute;left:6px;top:6px;background:#000b;color:#fff;font-size:.8rem;border:1px solid #444;padding:.1rem .35rem;border-radius:8px}
+
+/* progress footer */
+.progress{position:fixed;left:0;right:0;bottom:0;background:#0d0d0d;border-top:1px solid #1b1b1b;
+ padding:.6rem 1rem;display:flex;gap:1rem;align-items:center;z-index:50}
+.meter{flex:1;height:12px;background:#191919;border-radius:999px;position:relative;overflow:hidden}
+.meter::after{content:"";position:absolute;inset:0;transform:scaleX(var(--pct,0));transform-origin:left;background:#ffffff;border-radius:999px;transition:transform .15s ease}
+.pct{min-width:56px;text-align:right;color:#e7e7e7}
+
+/* forms */
+.row{display:flex;gap:.6rem;align-items:center}
+.row>span{width:13.5rem;color:#e7e7e7}
+select,input[type="text"],input[type="password"],input[type="file"]{
+  flex:1;background:#0f0f0f;border:1px solid var(--line);color:#fff;padding:.6rem .7rem;border-radius:10px
+}
+small.muted{color:#c9c9c9}
+.grid{display:grid;gap:.8rem}
+.two{grid-template-columns:1fr 1fr}
+.hint{color:#cfcfcf}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <!-- Top -->
   <div class="topbar">
-    <div class="hamb" id="btnLeft" title="Menu left"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+    <div class="hamb" id="btnLeft" aria-label="Open left menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
     <h1>Book Animator</h1>
-    <div class="hamb" id="btnRight" title="Menu right"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+    <div class="hamb" id="btnRight" aria-label="Open right menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
   </div>
 
-  <div style="display:flex;gap:.6rem;justify-content:center;margin:.4rem 0 1rem">
+  <!-- Badges -->
+  <div style="display:flex;gap:.6rem;justify-content:center;margin:.2rem 0 1.1rem">
     <span class="badge">Mode: <b id="modeBadge">Simple</b></span>
     <span class="badge">Scenes: <b id="scenesBadge">0</b></span>
   </div>
 
-  <h3>Paste your book text:</h3>
+  <!-- Input -->
+  <h3 style="margin:.2rem 0 .5rem">Paste your book text:</h3>
   <textarea id="bookText" placeholder="Paste text here…"></textarea>
 
+  <!-- Actions -->
   <div class="bar">
-    <button class="btn" id="btnPreview">Preview Scenes</button>
+    <button class="btn ghost" id="btnPreview">Preview Scenes</button>
     <button class="btn" style="background:var(--accent)" id="btnStart">Start Animation</button>
   </div>
 
+  <!-- Thumbnails -->
   <div class="thumbs" id="thumbs"></div>
 </div>
 
-<!-- Footer progress -->
+<!-- Progress footer -->
 <div class="progress">
-  <button class="btn small" id="btnSave">Save</button>
-  <button class="btn small" id="btnZip">Export (ZIP)</button>
+  <button class="btn small flat" id="btnSave">Save</button>
+  <button class="btn small flat" id="btnZip">Export (ZIP)</button>
   <div class="meter" id="meter"></div>
   <div class="pct" id="pct">0%</div>
 </div>
 
-<!-- LEFT MENU -->
-<div class="menu" id="leftMenu" aria-modal="true" role="dialog">
+<!-- LEFT MENU (Characters / Settings / Secrets / Help) -->
+<div class="sheet" id="leftSheet">
   <div class="card">
     <div class="tabs">
-      <button class="btn small tab" data-tab="chars">Characters</button>
-      <button class="btn small tab" data-tab="settings">Settings</button>
-      <button class="btn small tab" data-tab="secrets">Secrets (API Keys)</button>
-      <button class="btn small tab" data-tab="help">Help</button>
-      <button class="btn small" id="closeLeft" style="margin-left:auto">Close</button>
+      <button class="btn small flat" data-tab="tabChars">Characters</button>
+      <button class="btn small flat" data-tab="tabSettings">Settings</button>
+      <button class="btn small flat" data-tab="tabSecrets">Secrets (API Keys)</button>
+      <button class="btn small flat" data-tab="tabHelp">Help</button>
+      <button class="btn small" style="margin-left:auto" id="closeLeft">Close</button>
     </div>
 
-    <section id="chars" class="section active">
+    <section id="tabChars">
       <h2>Characters</h2>
       <div id="charList" class="list"></div>
-      <p class="hint">Tap <b>Edit</b> to change name, notes, voice, and portrait.</p>
+      <div class="hint">Tap <b>Edit</b> to set traits, portrait, and voice. You can add more later.</div>
     </section>
 
-    <section id="settings" class="section">
+    <section id="tabSettings" style="display:none">
       <h2>Settings</h2>
-      <div class="row"><span>Render mode</span>
-        <select id="setMode"><option value="offline">Offline (no AI)</option><option value="online">Online AI (use keys)</option></select>
+      <div class="grid">
+        <label class="row"><span>Render Mode</span>
+          <select id="setRenderMode">
+            <option value="offline">Offline preview (placeholders)</option>
+            <option value="online">Online AI images (OpenAI)</option>
+          </select>
+        </label>
+
+        <label class="row"><span>Visual Style</span>
+          <select id="setStylePreset">
+            <option>Comic</option><option>Cartoon</option><option>Anime</option>
+            <option>Dark Fantasy</option><option>Watercolor</option><option>Ink &amp; Wash</option>
+            <option>Flat Toon</option><option>Retro Pixel</option><option>Painterly</option>
+          </select>
+        </label>
+
+        <label class="row"><span>FPS (export hint)</span>
+          <select id="setFPS"><option>12</option><option selected>24</option><option>30</option></select>
+        </label>
+
+        <label class="row"><span>Aspect</span>
+          <select id="setAspect"><option>16:9</option><option>9:16</option><option>1:1</option></select>
+        </label>
       </div>
-      <div class="row"><span>Visual style</span>
-        <select id="setStyle"><option
+      <small class="muted">Theme locked to black / white / red as requested.</small>
+    </section>
+
+    <section id="tabSecrets" style="display:none">
+      <h2>Secrets (API Keys)</h2>
+      <div class="grid">
+        <label class="row"><span>OpenAI API Key</span><input id="keyOpenAI" type="password" placeholder="sk-..." /></label>
+        <label class="row"><span>ElevenLabs API Key</span><input id="keyEleven" type="password" placeholder="eleven-..." /></label>
+        <label class="row"><span>Freesound API Token</span><input id="keyFreesound" type="password" placeholder="paste token..." /></label>
+        <div class="row" style="justify-content:flex-end;gap:.6rem">
+          <button class="btn flat" id="btnTestOpenAI">Test OpenAI</button>
+          <button class="btn" style="background:var(--accent)" id="btnSaveSecrets">Save</button>
+        </div>
+        <small class="muted">Keys are stored locally in your browser (localStorage) and never uploaded by this page.</small>
+      </div>
+    </section>
+
+    <section id="tabHelp" style="display:none">
+      <h2>Help</h2>
+      <ol>
+        <li>Paste your script (each empty line = new scene).</li>
+        <li>Open <b>Characters</b> to add portraits and notes.</li>
+        <li>Add <b>OpenAI</b> key in <b>Secrets</b> for AI images (optional).</li>
+        <li>Click <b>Start Animation</b>. Thumbnails fill as scenes render. Export ZIP when done.</li>
+      </ol>
+    </section>
+  </div>
+</div>
+
+<!-- RIGHT MENU (Uploads / Project) -->
+<div class="sheet" id="rightSheet">
+  <div class="card">
+    <div class="tabs">
+      <button class="btn small flat" data-rtab="tabUploads">Uploads</button>
+      <button class="btn small flat" data-rtab="tabProject">Project</button>
+      <button class="btn small" style="margin-left:auto" id="closeRight">Close</button>
+    </div>
+
+    <section id="tabUploads">
+      <h2>Uploads</h2>
+      <div class="grid two">
+        <label class="row"><span>Music Bed</span><input id="fileMusic" type="file" accept="audio/*" /></label>
+        <label class="row"><span>SFX for Scene #</span><input id="sfxIndex" type="text" placeholder="0" /></label>
+        <label class="row"><span>Upload SFX</span><input id="fileSfx" type="file" accept="audio/*" /></label>
+        <label class="row"><span>Import Characters JSON</span><input id="fileChars" type="file" accept="application/json" /></label>
+      </div>
+      <small class="muted">Music is global. Each SFX file is attached to the scene index above.</small>
+    </section>
+
+    <section id="tabProject" style="display:none">
+      <h2>Project</h2>
+      <div class="grid">
+        <button class="btn flat" id="btnClearThumbs">Clear Thumbnails</button>
+        <button class="btn flat warn" id="btnWipe">Wipe Local Data</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Character Editor -->
+<div class="sheet" id="charEdit">
+  <div class="card" style="max-width:820px">
+    <h2>Edit Character</h2>
+    <div class="grid">
+      <label class="row"><span>Name</span><input id="ceName" type="text" /></label>
+      <label class="row"><span>Traits / Notes</span><input id="ceNotes" type="text" placeholder="personality, role…" /></label>
+      <label class="row"><span>Voice (OpenAI)</span>
+        <select id="ceVoice">
+          <!-- Your chosen OpenAI voices -->
+          <option value="alloy">Alloy</option>
+          <option value="amber">Amber</option>
+          <option value="ember">Ember</option>
+          <option value="aria">Aria</option>
+          <option value="verse">Verse</option>
+          <option value="sage">Sage</option>
+        </select>
+      </label>
+      <label class="row"><span>Voice (11Labs ID)</span><input id="ce11" type="text" placeholder="optional voice id" /></label>
+      <label class="row"><span>Portrait</span><input id="cePortrait" type="file" accept="image/*" /></label>
+    </div>
+    <div class="bar" style="justify-content:flex-end">
+      <button class="btn flat" id="ceCancel">Cancel</button>
+      <button class="btn" style="background:var(--accent)" id="ceSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== JS libs for ZIP download ========== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" crossorigin="anonymous"></script>
+
+<!-- ========== APP LOGIC ========== -->
+<script>
+/* ---------- Elements ---------- */
+const UI = {
+  leftBtn:   document.getElementById('btnLeft'),
+  rightBtn:  document.getElementById('btnRight'),
+  leftSheet: document.getElementById('leftSheet'),
+  rightSheet:document.getElementById('rightSheet'),
+  closeLeft: document.getElementById('closeLeft'),
+  closeRight:document.getElementById('closeRight'),
+
+  txt: document.getElementById('bookText'),
+  preview: document.getElementById('btnPreview'),
+  start: document.getElementById('btnStart'),
+  thumbs: document.getElementById('thumbs'),
+  scenesBadge: document.getElementById('scenesBadge'),
+  meter: document.getElementById('meter'),
+  pct: document.getElementById('pct'),
+
+  btnSave: document.getElementById('btnSave'),
+  btnZip: document.getElementById('btnZip'),
+
+  // tabs
+  ltabBtns: document.querySelectorAll('[data-tab]'),
+  rtabBtns: document.querySelectorAll('[data-rtab]'),
+
+  // settings
+  setRenderMode: document.getElementById('setRenderMode'),
+  setStylePreset: document.getElementById('setStylePreset'),
+  setFPS: document.getElementById('setFPS'),
+  setAspect: document.getElementById('setAspect'),
+
+  // secrets
+  keyOpenAI: document.getElementById('keyOpenAI'),
+  keyEleven: document.getElementById('keyEleven'),
+  keyFreesound: document.getElementById('keyFreesound'),
+  btnSaveSecrets: document.getElementById('btnSaveSecrets'),
+  btnTestOpenAI: document.getElementById('btnTestOpenAI'),
+
+  // uploads
+  fileMusic: document.getElementById('fileMusic'),
+  fileSfx: document.getElementById('fileSfx'),
+  sfxIndex: document.getElementById('sfxIndex'),
+  fileChars: document.getElementById('fileChars'),
+
+  // sections
+  tabChars: document.getElementById('tabChars'),
+  tabSettings: document.getElementById('tabSettings'),
+  tabSecrets: document.getElementById('tabSecrets'),
+  tabHelp: document.getElementById('tabHelp'),
+  tabUploads: document.getElementById('tabUploads'),
+  tabProject: document.getElementById('tabProject'),
+
+  // character list + editor
+  charList: document.getElementById('charList'),
+  charEdit: document.getElementById('charEdit'),
+  ceName: document.getElementById('ceName'),
+  ceNotes: document.getElementById('ceNotes'),
+  ceVoice: document.getElementById('ceVoice'),
+  ce11: document.getElementById('ce11'),
+  cePortrait: document.getElementById('cePortrait'),
+  ceSave: document.getElementById('ceSave'),
+  ceCancel: document.getElementById('ceCancel'),
+};
+
+/* ---------- State ---------- */
+let SETTINGS = JSON.parse(localStorage.getItem('ba_settings')||'{}');
+let SECRETS  = JSON.parse(localStorage.getItem('ba_secrets')||'{}');
+let CHARACTERS = JSON.parse(localStorage.getItem('ba_characters')||'[]');
+let PROJECT = JSON.parse(localStorage.getItem('ba_project')||'{}');
+
+const DEFAULT_NAMES = [
+  'Narrator','Sidetracked Sally','Darling Danielle','Dark Dan','Skater Skip',
+  'Creative Callie','Zen Zena','Grumpy Gus','Journey Mark','Abby','Bear',
+  'Zenzina','Cali','Maple','Minstrel','Wise Elder','Hero','Villain','Guide','Companion'
+];
+if (CHARACTERS.length===0){
+  CHARACTERS = DEFAULT_NAMES.map(n=>({name:n,notes:'',voice:'ember',elevenId:'',portrait:''}));
+  persist('ba_characters', CHARACTERS);
+}
+hydrateSettings();  // set form fields
+renderCharList();
+
+/* ---------- Menus & Tabs ---------- */
+UI.leftBtn.onclick = ()=> UI.leftSheet.style.display='flex';
+UI.rightBtn.onclick = ()=> UI.rightSheet.style.display='flex';
+UI.closeLeft.onclick = ()=> UI.leftSheet.style.display='none';
+UI.closeRight.onclick = ()=> UI.rightSheet.style.display='none';
+
+UI.ltabBtns.forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+UI.rtabBtns.forEach(b=>b.onclick=()=>showRTab(b.dataset.rtab));
+function showTab(id){
+  ['tabChars','tabSettings','tabSecrets','tabHelp'].forEach(k=>{
+    document.getElementById(k).style.display = (k===id?'block':'none');
+  });
+}
+function showRTab(id){
+  ['tabUploads','tabProject'].forEach(k=>{
+    document.getElementById(k).style.display = (k===id?'block':'none');
+  });
+}
+
+/* ---------- Settings / Secrets ---------- */
+function hydrateSettings(){
+  UI.setRenderMode.value = SETTINGS.renderMode || 'offline';
+  UI.setStylePreset.value = SETTINGS.stylePreset || 'Comic';
+  UI.setFPS.value = SETTINGS.fps || '24';
+  UI.setAspect.value = SETTINGS.aspect || '16:9';
+  UI.keyOpenAI.value = (SECRETS.openai||'');
+  UI.keyEleven.value = (SECRETS.eleven||'');
+  UI.keyFreesound.value = (SECRETS.freesound||'');
+}
+function persist(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+UI.btnSaveSecrets.onclick = ()=>{
+  SETTINGS.renderMode = UI.setRenderMode.value;
+  SETTINGS.stylePreset = UI.setStylePreset.value;
+  SETTINGS.fps = UI.setFPS.value; SETTINGS.aspect = UI.setAspect.value;
+  persist('ba_settings', SETTINGS);
+
+  SECRETS.openai = UI.keyOpenAI.value.trim();
+  SECRETS.eleven = UI.keyEleven.value.trim();
+  SECRETS.freesound = UI.keyFreesound.value.trim();
+  persist('ba_secrets', SECRETS);
+  alert('Saved.');
+};
+UI.btnTestOpenAI.onclick = ()=> alert( (UI.keyOpenAI.value||SECRETS.openai) ? 'OpenAI key present.' : 'Enter an OpenAI key first.' );
+
+/* ---------- Characters ---------- */
+function renderCharList(){
+  UI.charList.innerHTML = '';
+  CHARACTERS.forEach((c,idx)=>{
+    const row = document.createElement('div');
+    row.className='item';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:.8rem">
+        <div style="width:40px;height:40px;border-radius:10px;background:#0f0f0f;border:1px solid #333;overflow:hidden">
+          ${c.portrait ? `<img src="${c.portrait}" style="width:100%;height:100%;object-fit:cover">` : ''}
+        </div>
+        <div>
+          <div style="font-weight:600">${c.name}</div>
+          <div style="color:#cfcfcf;font-size:.92rem">${c.voice || '—'} ${c.elevenId?`/ 11L: ${c.elevenId}`:''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn small flat" data-edit="${idx}">Edit</button>
+      </div>`;
+    UI.charList.appendChild(row);
+  });
+
+  // attach edit handlers
+  UI.charList.querySelectorAll('[data-edit]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const i = +btn.dataset.edit; openCharEditor(i);
+    }
+  });
+}
+let editIndex = -1;
+function openCharEditor(i){
+  editIndex = i;
+  const c = CHARACTERS[i];
+  UI.ceName.value = c.name || '';
+  UI.ceNotes.value = c.notes || '';
+  UI.ceVoice.value = c.voice || 'ember';
+  UI.ce11.value = c.elevenId || '';
+  UI.cePortrait.value = '';
+  UI.charEdit.style.display='flex';
+}
+UI.ceCancel.onclick = ()=> UI.charEdit.style.display='none';
+UI.ceSave.onclick = async ()=>{
+  const c = CHARACTERS[editIndex];
+  c.name = UI.ceName.value.trim() || c.name;
+  c.notes = UI.ceNotes.value.trim();
+  c.voice = UI.ceVoice.value;
+  c.elevenId = UI.ce11.value.trim();
+  if(UI.cePortrait.files && UI.cePortrait.files[0]){
+    c.portrait = await fileToDataURL(UI.cePortrait.files[0]);
+  }
+  persist('ba_characters', CHARACTERS);
+  renderCharList();
+  UI.charEdit.style.display='none';
+}
+
+/* ---------- Uploads ---------- */
+UI.fileChars?.addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  try{
+    const text = await file.text();
+    const list = JSON.parse(text);
+    if(Array.isArray(list)){ CHARACTERS = list; persist('ba_characters', CHARACTERS); renderCharList(); alert('Characters imported.'); }
+    else alert('JSON should be an array of character objects.');
+  }catch(err){ alert('Failed to import characters JSON.'); }
+});
+
+/* ---------- Preview / Start ---------- */
+UI.preview.onclick = ()=> {
+  const scenes = splitScenes(UI.txt.value);
+  UI.scenesBadge.textContent = scenes.length;
+  drawThumbGrid(scenes.length);
+  // Place simple labels
+  scenes.forEach((s,i)=> setThumbText(i, short(s,90)) );
+  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+};
+
+UI.start.onclick = async()=>{
+  const scenes = splitScenes(UI.txt.value);
+  UI.scenesBadge.textContent = scenes.length;
+  drawThumbGrid(scenes.length);
+  await renderScenes(scenes);
+};
+
+/* ---------- Save / Zip ---------- */
+UI.btnSave.onclick = ()=>{
+  PROJECT = {
+    text:UI.txt.value, settings:SETTINGS, characters:CHARACTERS, time:Date.now()
+  };
+  persist('ba_project', PROJECT);
+  alert('Saved locally.');
+};
+
+UI.btnZip.onclick = async ()=>{
+  const zip = new JSZip();
+  zip.file('project.json', JSON.stringify({settings:SETTINGS,characters:CHARACTERS,text:UI.txt.value}, null, 2));
+  // collect thumb images
+  const imgs = [...UI.thumbs.querySelectorAll('img')];
+  for(let i=0;i<imgs.length;i++){
+    const blob = await (await fetch(imgs[i].src)).blob();
+    zip.file(`thumbs/thumb_${String(i+1).padStart(3,'0')}.png`, blob);
+  }
+  const out = await zip.generateAsync({type:'blob'});
+  saveAs(out, 'book_animator_export.zip');
+};
+
+/* ---------- Helpers ---------- */
+function splitScenes(txt){
+  // Split by blank lines; strip spaces
+  return (txt||'').split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean);
+}
+function drawThumbGrid(n){
+  UI.thumbs.innerHTML='';
+  for(let i=0;i<n;i++){
+    const d=document.createElement('div'); d.className='thumb';
+    d.innerHTML=`<span class="tag">#${i+1}</span><span>…</span>`;
+    UI.thumbs.appendChild(d);
+  }
+}
+function setThumbImage(i, url){
+  const t = UI.thumbs.children[i]; if(!t) return;
+  t.innerHTML = `<span class="tag">#${i+1}</span><img src="${url}" alt="">`;
+}
+function setThumbText(i, text){
+  const t = UI.thumbs.children[i]; if(!t) return;
+  t.innerHTML = `<span class="tag">#${i+1}</span><div style="padding:.6rem;text-align:left;font-size:.85rem;color:#ddd">${escapeHtml(text)}</div>`;
+}
+function short(s,n){ return s.length>n? s.slice(0,n-1)+'…' : s; }
+function escapeHtml(s){ return s.replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function setProgress(frac){
+  UI.meter.style.setProperty('--pct', Math.max(0,Math.min(1,frac)));
+  UI.pct.textContent = Math.round(100*frac) + '%';
+}
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function fileToDataURL(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); }); }
+
+/* ---------- Rendering loop ---------- */
+async function renderScenes(scenes){
+  const useOnline = (SETTINGS.renderMode||'offline')==='online';
+  const aiKey = SECRETS.openai;
+  const fsKey = SECRETS.freesound;
+
+  for(let i=0;i<scenes.length;i++){
+    // 1) IMAGE
+    try{
+      let url='';
+      if(useOnline && aiKey){
+        const prompt = buildPrompt(scenes[i], SETTINGS.stylePreset);
+        url = await openAIImage(prompt, aiKey);   // returns data URL
+      }else{
+        url = await placeholderImage(scenes[i], SETTINGS.stylePreset);
+      }
+      setThumbImage(i,url);
+    }catch(e){
+      setThumbText(i,'[image failed]');
+    }
+
+    // 2) (Optional) SFX suggestion from Freesound
+    if(fsKey){
+      try{
+        const q = pickSfxQuery(scenes[i]);
+        if(q){
+          const sfx = await searchFreesound(q, fsKey);
+          if(sfx){ /* you could attach sfx.preview to scene meta here */ }
+        }
+      }catch(_){}
+    }
+
+    setProgress((i+1)/scenes.length);
+    await delay(60); // small yield so UI repaints
+  }
+}
+
+/* ---------- OpenAI image generation ---------- */
+async function openAIImage(prompt, apiKey){
+  // Uses gpt-image-1; returns data URL
+  const resp = await fetch('https://api.openai.com/v1/images/generations',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body: JSON.stringify({model:'gpt-image-1',prompt,size:'768x512'})
+  });
+  if(!resp.ok) throw new Error('OpenAI image error');
+  const data = await resp.json();
+  const b64 = data?.data?.[0]?.b64_json;
+  if(!b64) throw new Error('No image data');
+  return 'data:image/png;base64,'+b64;
+}
+
+/* ---------- Offline placeholder (drawn canvas) ---------- */
+async function placeholderImage(scene, style){
+  const w=768,h=512, c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d');
+  ctx.fillStyle = '#0f0f0f'; ctx.fillRect(0,0,w,h);
+  // style strip
+  ctx.fillStyle = '#ef4444'; ctx.fillRect(0,h-22,w,22);
+  ctx.font = 'bold 22px system-ui,Segoe UI,Inter'; ctx.fillStyle='#fff';
+  ctx.textAlign='left'; ctx.fillText(`# ${style}`, 12, h-5);
+  // text
+  ctx.fillStyle='#e7e7e7'; ctx.font='18px system-ui,Segoe UI,Inter'; wrapText(ctx, scene, 24, 32, w-48, 24);
+  return c.toDataURL('image/png');
+}
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(/\s+/); let line=''; let yy=y;
+  for(let n=0;n<words.length;n++){
+    const test=line+words[n]+' '; const w=ctx.measureText(test).width;
+    if(w>maxWidth && n>0){ ctx.fillText(line, x, yy); line=words[n]+' '; yy+=lineHeight; }
+    else line=test;
+  }
+  ctx.fillText(line, x, yy);
+}
+
+/* ---------- Prompt builder ---------- */
+function buildPrompt(scene, style){
+  return `${style} illustration, storybook cinematic frame, ${scene.slice(0,400)}`;
+}
+
+/* ---------- Freesound (simple text search) ---------- */
+async function searchFreesound(query, token){
+  const url = `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(query)}&token=${encodeURIComponent(token)}&page_size=1`;
+  const r = await fetch(url);
+  if(!r.ok) return null;
+  const json = await r.json();
+  const first = json.results?.[0];
+  return first ? {id:first.id,name:first.name,previews:first.previews} : null;
+}
+function pickSfxQuery(scene){
+  // naive mapping from keywords
+  const map = [
+    ['thunder','thunder'],['rain','rain'],['door','door close'],['footstep','footsteps'],
+    ['crowd','crowd'],['wind','wind'],['river','river'],['magic','sparkle chime'],['sword','sword clash']
+  ];
+  const s = scene.toLowerCase();
+  for(const [k,q] of map){ if(s.includes(k)) return q; }
+  return '';
+}
+
+/* ---------- Project utilities ---------- */
+document.getElementById('btnClearThumbs').onclick = ()=> UI.thumbs.innerHTML='';
+document.getElementById('btnWipe').onclick = ()=>{
+  if(confirm('Wipe all local data (settings, secrets, characters, project)?')){
+    ['ba_settings','ba_secrets','ba_characters','ba_project'].forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  }
+};
+
+/* ---------- File -> dataURL for portraits ---------- */
+async function toDataUrlFromUrl(url){
+  const r = await fetch(url); const b= await r.blob();
+  return await fileToDataURL(new File([b],'x',{type:b.type}));
+}
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Book Animator</title>
+
+<!-- ========== THEME ========== -->
+<style>
+:root{
+  --bg:#0b0b0b; --panel:#111; --ink:#fff; --muted:#cfcfcf;
+  --line:#323232; --accent:#ef4444; --ok:#34d399; --warn:#f59e0b;
+}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+}
+.wrap{max-width:1200px;margin:0 auto;padding:1.2rem}
+h1{font-size:2.6rem;text-align:center;margin:1rem 0 1.2rem;letter-spacing:.5px}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:.4rem;background:#161616;color:#e7e7e7;
+ border:1px solid var(--line);padding:.35rem .7rem;border-radius:999px;font-size:.98rem;margin-right:.5rem}
+
+/* textarea */
+textarea{width:100%;min-height:300px;background:#0f0f0f;border:1px solid var(--line);border-radius:14px;
+ color:#e7e7e7;font-size:1.05rem;line-height:1.6;padding:1rem;outline:none}
+
+/* buttons */
+.bar{display:flex;gap:.9rem;flex-wrap:wrap;margin-top:1rem}
+.btn{background:#151515;border:2px solid var(--accent);color:var(--ink);padding:.85rem 1.1rem;border-radius:14px;cursor:pointer}
+.btn:hover{box-shadow:0 0 0 3px #ef44441f}
+.btn.ghost{border-color:#5a5a5a}
+.btn.small{padding:.5rem .7rem;border-radius:10px}
+.btn.flat{border-color:#444}
+.btn.green{border-color:var(--ok)}
+.btn.warn{border-color:var(--warn)}
+
+/* top bar + hamburgers */
+.topbar{display:flex;justify-content:space-between;align-items:center}
+.hamb{width:56px;height:56px;border:2px solid #fff;border-radius:14px;display:grid;place-items:center;background:#121212;cursor:pointer}
+.hamb .line{width:26px;height:3px;background:#ffffff;margin:4px 0;border-radius:2px}
+.hamb:hover{box-shadow:0 0 0 3px #ffffff1a}
+
+/* modal shells */
+.sheet{position:fixed;inset:0;background:#0008;display:none;align-items:flex-start;justify-content:center;padding-top:6vh;z-index:60}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem;max-width:960px;width:92vw;max-height:82vh;overflow:auto;box-shadow:0 10px 36px #0008}
+.card h2{margin:.2rem 0 1rem}
+.tabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.list{display:flex;flex-direction:column;gap:.6rem}
+.item{display:flex;justify-content:space-between;align-items:center;background:#101010;border:1px solid var(--line);padding:.8rem 1rem;border-radius:12px}
+
+/* thumbs grid */
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:1.2rem 0}
+@media(max-width:900px){.thumbs{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.thumbs{grid-template-columns:repeat(2,1fr)}}
+.thumb{height:130px;border:2px dashed #444;border-radius:12px;background:#0f0f0f;display:grid;place-items:center;color:#aaa;position:relative;overflow:hidden}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.thumb .tag{position:absolute;left:6px;top:6px;background:#000b;color:#fff;font-size:.8rem;border:1px solid #444;padding:.1rem .35rem;border-radius:8px}
+
+/* progress footer */
+.progress{position:fixed;left:0;right:0;bottom:0;background:#0d0d0d;border-top:1px solid #1b1b1b;
+ padding:.6rem 1rem;display:flex;gap:1rem;align-items:center;z-index:50}
+.meter{flex:1;height:12px;background:#191919;border-radius:999px;position:relative;overflow:hidden}
+.meter::after{content:"";position:absolute;inset:0;transform:scaleX(var(--pct,0));transform-origin:left;background:#ffffff;border-radius:999px;transition:transform .15s ease}
+.pct{min-width:56px;text-align:right;color:#e7e7e7}
+
+/* forms */
+.row{display:flex;gap:.6rem;align-items:center}
+.row>span{width:13.5rem;color:#e7e7e7}
+select,input[type="text"],input[type="password"],input[type="file"]{
+  flex:1;background:#0f0f0f;border:1px solid var(--line);color:#fff;padding:.6rem .7rem;border-radius:10px
+}
+small.muted{color:#c9c9c9}
+.grid{display:grid;gap:.8rem}
+.two{grid-template-columns:1fr 1fr}
+.hint{color:#cfcfcf}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Top -->
+  <div class="topbar">
+    <div class="hamb" id="btnLeft" aria-label="Open left menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+    <h1>Book Animator</h1>
+    <div class="hamb" id="btnRight" aria-label="Open right menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+  </div>
+
+  <!-- Badges -->
+  <div style="display:flex;gap:.6rem;justify-content:center;margin:.2rem 0 1.1rem">
+    <span class="badge">Mode: <b id="modeBadge">Simple</b></span>
+    <span class="badge">Scenes: <b id="scenesBadge">0</b></span>
+  </div>
+
+  <!-- Input -->
+  <h3 style="margin:.2rem 0 .5rem">Paste your book text:</h3>
+  <textarea id="bookText" placeholder="Paste text here…"></textarea>
+
+  <!-- Actions -->
+  <div class="bar">
+    <button class="btn ghost" id="btnPreview">Preview Scenes</button>
+    <button class="btn" style="background:var(--accent)" id="btnStart">Start Animation</button>
+  </div>
+
+  <!-- Thumbnails -->
+  <div class="thumbs" id="thumbs"></div>
+</div>
+
+<!-- Progress footer -->
+<div class="progress">
+  <button class="btn small flat" id="btnSave">Save</button>
+  <button class="btn small flat" id="btnZip">Export (ZIP)</button>
+  <div class="meter" id="meter"></div>
+  <div class="pct" id="pct">0%</div>
+</div>
+
+<!-- LEFT MENU (Characters / Settings / Secrets / Help) -->
+<div class="sheet" id="leftSheet">
+  <div class="card">
+    <div class="tabs">
+      <button class="btn small flat" data-tab="tabChars">Characters</button>
+      <button class="btn small flat" data-tab="tabSettings">Settings</button>
+      <button class="btn small flat" data-tab="tabSecrets">Secrets (API Keys)</button>
+      <button class="btn small flat" data-tab="tabHelp">Help</button>
+      <button class="btn small" style="margin-left:auto" id="closeLeft">Close</button>
+    </div>
+
+    <section id="tabChars">
+      <h2>Characters</h2>
+      <div id="charList" class="list"></div>
+      <div class="hint">Tap <b>Edit</b> to set traits, portrait, and voice. You can add more later.</div>
+    </section>
+
+    <section id="tabSettings" style="display:none">
+      <h2>Settings</h2>
+      <div class="grid">
+        <label class="row"><span>Render Mode</span>
+          <select id="setRenderMode">
+            <option value="offline">Offline preview (placeholders)</option>
+            <option value="online">Online AI images (OpenAI)</option>
+          </select>
+        </label>
+
+        <label class="row"><span>Visual Style</span>
+          <select id="setStylePreset">
+            <option>Comic</option><option>Cartoon</option><option>Anime</option>
+            <option>Dark Fantasy</option><option>Watercolor</option><option>Ink &amp; Wash</option>
+            <option>Flat Toon</option><option>Retro Pixel</option><option>Painterly</option>
+          </select>
+        </label>
+
+        <label class="row"><span>FPS (export hint)</span>
+          <select id="setFPS"><option>12</option><option selected>24</option><option>30</option></select>
+        </label>
+
+        <label class="row"><span>Aspect</span>
+          <select id="setAspect"><option>16:9</option><option>9:16</option><option>1:1</option></select>
+        </label>
+      </div>
+      <small class="muted">Theme locked to black / white / red as requested.</small>
+    </section>
+
+    <section id="tabSecrets" style="display:none">
+      <h2>Secrets (API Keys)</h2>
+      <div class="grid">
+        <label class="row"><span>OpenAI API Key</span><input id="keyOpenAI" type="password" placeholder="sk-..." /></label>
+        <label class="row"><span>ElevenLabs API Key</span><input id="keyEleven" type="password" placeholder="eleven-..." /></label>
+        <label class="row"><span>Freesound API Token</span><input id="keyFreesound" type="password" placeholder="paste token..." /></label>
+        <div class="row" style="justify-content:flex-end;gap:.6rem">
+          <button class="btn flat" id="btnTestOpenAI">Test OpenAI</button>
+          <button class="btn" style="background:var(--accent)" id="btnSaveSecrets">Save</button>
+        </div>
+        <small class="muted">Keys are stored locally in your browser (localStorage) and never uploaded by this page.</small>
+      </div>
+    </section>
+
+    <section id="tabHelp" style="display:none">
+      <h2>Help</h2>
+      <ol>
+        <li>Paste your script (each empty line = new scene).</li>
+        <li>Open <b>Characters</b> to add portraits and notes.</li>
+        <li>Add <b>OpenAI</b> key in <b>Secrets</b> for AI images (optional).</li>
+        <li>Click <b>Start Animation</b>. Thumbnails fill as scenes render. Export ZIP when done.</li>
+      </ol>
+    </section>
+  </div>
+</div>
+
+<!-- RIGHT MENU (Uploads / Project) -->
+<div class="sheet" id="rightSheet">
+  <div class="card">
+    <div class="tabs">
+      <button class="btn small flat" data-rtab="tabUploads">Uploads</button>
+      <button class="btn small flat" data-rtab="tabProject">Project</button>
+      <button class="btn small" style="margin-left:auto" id="closeRight">Close</button>
+    </div>
+
+    <section id="tabUploads">
+      <h2>Uploads</h2>
+      <div class="grid two">
+        <label class="row"><span>Music Bed</span><input id="fileMusic" type="file" accept="audio/*" /></label>
+        <label class="row"><span>SFX for Scene #</span><input id="sfxIndex" type="text" placeholder="0" /></label>
+        <label class="row"><span>Upload SFX</span><input id="fileSfx" type="file" accept="audio/*" /></label>
+        <label class="row"><span>Import Characters JSON</span><input id="fileChars" type="file" accept="application/json" /></label>
+      </div>
+      <small class="muted">Music is global. Each SFX file is attached to the scene index above.</small>
+    </section>
+
+    <section id="tabProject" style="display:none">
+      <h2>Project</h2>
+      <div class="grid">
+        <button class="btn flat" id="btnClearThumbs">Clear Thumbnails</button>
+        <button class="btn flat warn" id="btnWipe">Wipe Local Data</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Character Editor -->
+<div class="sheet" id="charEdit">
+  <div class="card" style="max-width:820px">
+    <h2>Edit Character</h2>
+    <div class="grid">
+      <label class="row"><span>Name</span><input id="ceName" type="text" /></label>
+      <label class="row"><span>Traits / Notes</span><input id="ceNotes" type="text" placeholder="personality, role…" /></label>
+      <label class="row"><span>Voice (OpenAI)</span>
+        <select id="ceVoice">
+          <!-- Your chosen OpenAI voices -->
+          <option value="alloy">Alloy</option>
+          <option value="amber">Amber</option>
+          <option value="ember">Ember</option>
+          <option value="aria">Aria</option>
+          <option value="verse">Verse</option>
+          <option value="sage">Sage</option>
+        </select>
+      </label>
+      <label class="row"><span>Voice (11Labs ID)</span><input id="ce11" type="text" placeholder="optional voice id" /></label>
+      <label class="row"><span>Portrait</span><input id="cePortrait" type="file" accept="image/*" /></label>
+    </div>
+    <div class="bar" style="justify-content:flex-end">
+      <button class="btn flat" id="ceCancel">Cancel</button>
+      <button class="btn" style="background:var(--accent)" id="ceSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== JS libs for ZIP download ========== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" crossorigin="anonymous"></script>
+
+<!-- ========== APP LOGIC ========== -->
+<script>
+/* ---------- Elements ---------- */
+const UI = {
+  leftBtn:   document.getElementById('btnLeft'),
+  rightBtn:  document.getElementById('btnRight'),
+  leftSheet: document.getElementById('leftSheet'),
+  rightSheet:document.getElementById('rightSheet'),
+  closeLeft: document.getElementById('closeLeft'),
+  closeRight:document.getElementById('closeRight'),
+
+  txt: document.getElementById('bookText'),
+  preview: document.getElementById('btnPreview'),
+  start: document.getElementById('btnStart'),
+  thumbs: document.getElementById('thumbs'),
+  scenesBadge: document.getElementById('scenesBadge'),
+  meter: document.getElementById('meter'),
+  pct: document.getElementById('pct'),
+
+  btnSave: document.getElementById('btnSave'),
+  btnZip: document.getElementById('btnZip'),
+
+  // tabs
+  ltabBtns: document.querySelectorAll('[data-tab]'),
+  rtabBtns: document.querySelectorAll('[data-rtab]'),
+
+  // settings
+  setRenderMode: document.getElementById('setRenderMode'),
+  setStylePreset: document.getElementById('setStylePreset'),
+  setFPS: document.getElementById('setFPS'),
+  setAspect: document.getElementById('setAspect'),
+
+  // secrets
+  keyOpenAI: document.getElementById('keyOpenAI'),
+  keyEleven: document.getElementById('keyEleven'),
+  keyFreesound: document.getElementById('keyFreesound'),
+  btnSaveSecrets: document.getElementById('btnSaveSecrets'),
+  btnTestOpenAI: document.getElementById('btnTestOpenAI'),
+
+  // uploads
+  fileMusic: document.getElementById('fileMusic'),
+  fileSfx: document.getElementById('fileSfx'),
+  sfxIndex: document.getElementById('sfxIndex'),
+  fileChars: document.getElementById('fileChars'),
+
+  // sections
+  tabChars: document.getElementById('tabChars'),
+  tabSettings: document.getElementById('tabSettings'),
+  tabSecrets: document.getElementById('tabSecrets'),
+  tabHelp: document.getElementById('tabHelp'),
+  tabUploads: document.getElementById('tabUploads'),
+  tabProject: document.getElementById('tabProject'),
+
+  // character list + editor
+  charList: document.getElementById('charList'),
+  charEdit: document.getElementById('charEdit'),
+  ceName: document.getElementById('ceName'),
+  ceNotes: document.getElementById('ceNotes'),
+  ceVoice: document.getElementById('ceVoice'),
+  ce11: document.getElementById('ce11'),
+  cePortrait: document.getElementById('cePortrait'),
+  ceSave: document.getElementById('ceSave'),
+  ceCancel: document.getElementById('ceCancel'),
+};
+
+/* ---------- State ---------- */
+let SETTINGS = JSON.parse(localStorage.getItem('ba_settings')||'{}');
+let SECRETS  = JSON.parse(localStorage.getItem('ba_secrets')||'{}');
+let CHARACTERS = JSON.parse(localStorage.getItem('ba_characters')||'[]');
+let PROJECT = JSON.parse(localStorage.getItem('ba_project')||'{}');
+
+const DEFAULT_NAMES = [
+  'Narrator','Sidetracked Sally','Darling Danielle','Dark Dan','Skater Skip',
+  'Creative Callie','Zen Zena','Grumpy Gus','Journey Mark','Abby','Bear',
+  'Zenzina','Cali','Maple','Minstrel','Wise Elder','Hero','Villain','Guide','Companion'
+];
+if (CHARACTERS.length===0){
+  CHARACTERS = DEFAULT_NAMES.map(n=>({name:n,notes:'',voice:'ember',elevenId:'',portrait:''}));
+  persist('ba_characters', CHARACTERS);
+}
+hydrateSettings();  // set form fields
+renderCharList();
+
+/* ---------- Menus & Tabs ---------- */
+UI.leftBtn.onclick = ()=> UI.leftSheet.style.display='flex';
+UI.rightBtn.onclick = ()=> UI.rightSheet.style.display='flex';
+UI.closeLeft.onclick = ()=> UI.leftSheet.style.display='none';
+UI.closeRight.onclick = ()=> UI.rightSheet.style.display='none';
+
+UI.ltabBtns.forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+UI.rtabBtns.forEach(b=>b.onclick=()=>showRTab(b.dataset.rtab));
+function showTab(id){
+  ['tabChars','tabSettings','tabSecrets','tabHelp'].forEach(k=>{
+    document.getElementById(k).style.display = (k===id?'block':'none');
+  });
+}
+function showRTab(id){
+  ['tabUploads','tabProject'].forEach(k=>{
+    document.getElementById(k).style.display = (k===id?'block':'none');
+  });
+}
+
+/* ---------- Settings / Secrets ---------- */
+function hydrateSettings(){
+  UI.setRenderMode.value = SETTINGS.renderMode || 'offline';
+  UI.setStylePreset.value = SETTINGS.stylePreset || 'Comic';
+  UI.setFPS.value = SETTINGS.fps || '24';
+  UI.setAspect.value = SETTINGS.aspect || '16:9';
+  UI.keyOpenAI.value = (SECRETS.openai||'');
+  UI.keyEleven.value = (SECRETS.eleven||'');
+  UI.keyFreesound.value = (SECRETS.freesound||'');
+}
+function persist(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+UI.btnSaveSecrets.onclick = ()=>{
+  SETTINGS.renderMode = UI.setRenderMode.value;
+  SETTINGS.stylePreset = UI.setStylePreset.value;
+  SETTINGS.fps = UI.setFPS.value; SETTINGS.aspect = UI.setAspect.value;
+  persist('ba_settings', SETTINGS);
+
+  SECRETS.openai = UI.keyOpenAI.value.trim();
+  SECRETS.eleven = UI.keyEleven.value.trim();
+  SECRETS.freesound = UI.keyFreesound.value.trim();
+  persist('ba_secrets', SECRETS);
+  alert('Saved.');
+};
+UI.btnTestOpenAI.onclick = ()=> alert( (UI.keyOpenAI.value||SECRETS.openai) ? 'OpenAI key present.' : 'Enter an OpenAI key first.' );
+
+/* ---------- Characters ---------- */
+function renderCharList(){
+  UI.charList.innerHTML = '';
+  CHARACTERS.forEach((c,idx)=>{
+    const row = document.createElement('div');
+    row.className='item';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:.8rem">
+        <div style="width:40px;height:40px;border-radius:10px;background:#0f0f0f;border:1px solid #333;overflow:hidden">
+          ${c.portrait ? `<img src="${c.portrait}" style="width:100%;height:100%;object-fit:cover">` : ''}
+        </div>
+        <div>
+          <div style="font-weight:600">${c.name}</div>
+          <div style="color:#cfcfcf;font-size:.92rem">${c.voice || '—'} ${c.elevenId?`/ 11L: ${c.elevenId}`:''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn small flat" data-edit="${idx}">Edit</button>
+      </div>`;
+    UI.charList.appendChild(row);
+  });
+
+  // attach edit handlers
+  UI.charList.querySelectorAll('[data-edit]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const i = +btn.dataset.edit; openCharEditor(i);
+    }
+  });
+}
+let editIndex = -1;
+function openCharEditor(i){
+  editIndex = i;
+  const c = CHARACTERS[i];
+  UI.ceName.value = c.name || '';
+  UI.ceNotes.value = c.notes || '';
+  UI.ceVoice.value = c.voice || 'ember';
+  UI.ce11.value = c.elevenId || '';
+  UI.cePortrait.value = '';
+  UI.charEdit.style.display='flex';
+}
+UI.ceCancel.onclick = ()=> UI.charEdit.style.display='none';
+UI.ceSave.onclick = async ()=>{
+  const c = CHARACTERS[editIndex];
+  c.name = UI.ceName.value.trim() || c.name;
+  c.notes = UI.ceNotes.value.trim();
+  c.voice = UI.ceVoice.value;
+  c.elevenId = UI.ce11.value.trim();
+  if(UI.cePortrait.files && UI.cePortrait.files[0]){
+    c.portrait = await fileToDataURL(UI.cePortrait.files[0]);
+  }
+  persist('ba_characters', CHARACTERS);
+  renderCharList();
+  UI.charEdit.style.display='none';
+}
+
+/* ---------- Uploads ---------- */
+UI.fileChars?.addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  try{
+    const text = await file.text();
+    const list = JSON.parse(text);
+    if(Array.isArray(list)){ CHARACTERS = list; persist('ba_characters', CHARACTERS); renderCharList(); alert('Characters imported.'); }
+    else alert('JSON should be an array of character objects.');
+  }catch(err){ alert('Failed to import characters JSON.'); }
+});
+
+/* ---------- Preview / Start ---------- */
+UI.preview.onclick = ()=> {
+  const scenes = splitScenes(UI.txt.value);
+  UI.scenesBadge.textContent = scenes.length;
+  drawThumbGrid(scenes.length);
+  // Place simple labels
+  scenes.forEach((s,i)=> setThumbText(i, short(s,90)) );
+  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+};
+
+UI.start.onclick = async()=>{
+  const scenes = splitScenes(UI.txt.value);
+  UI.scenesBadge.textContent = scenes.length;
+  drawThumbGrid(scenes.length);
+  await renderScenes(scenes);
+};
+
+/* ---------- Save / Zip ---------- */
+UI.btnSave.onclick = ()=>{
+  PROJECT = {
+    text:UI.txt.value, settings:SETTINGS, characters:CHARACTERS, time:Date.now()
+  };
+  persist('ba_project', PROJECT);
+  alert('Saved locally.');
+};
+
+UI.btnZip.onclick = async ()=>{
+  const zip = new JSZip();
+  zip.file('project.json', JSON.stringify({settings:SETTINGS,characters:CHARACTERS,text:UI.txt.value}, null, 2));
+  // collect thumb images
+  const imgs = [...UI.thumbs.querySelectorAll('img')];
+  for(let i=0;i<imgs.length;i++){
+    const blob = await (await fetch(imgs[i].src)).blob();
+    zip.file(`thumbs/thumb_${String(i+1).padStart(3,'0')}.png`, blob);
+  }
+  const out = await zip.generateAsync({type:'blob'});
+  saveAs(out, 'book_animator_export.zip');
+};
+
+/* ---------- Helpers ---------- */
+function splitScenes(txt){
+  // Split by blank lines; strip spaces
+  return (txt||'').split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean);
+}
+function drawThumbGrid(n){
+  UI.thumbs.innerHTML='';
+  for(let i=0;i<n;i++){
+    const d=document.createElement('div'); d.className='thumb';
+    d.innerHTML=`<span class="tag">#${i+1}</span><span>…</span>`;
+    UI.thumbs.appendChild(d);
+  }
+}
+function setThumbImage(i, url){
+  const t = UI.thumbs.children[i]; if(!t) return;
+  t.innerHTML = `<span class="tag">#${i+1}</span><img src="${url}" alt="">`;
+}
+function setThumbText(i, text){
+  const t = UI.thumbs.children[i]; if(!t) return;
+  t.innerHTML = `<span class="tag">#${i+1}</span><div style="padding:.6rem;text-align:left;font-size:.85rem;color:#ddd">${escapeHtml(text)}</div>`;
+}
+function short(s,n){ return s.length>n? s.slice(0,n-1)+'…' : s; }
+function escapeHtml(s){ return s.replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function setProgress(frac){
+  UI.meter.style.setProperty('--pct', Math.max(0,Math.min(1,frac)));
+  UI.pct.textContent = Math.round(100*frac) + '%';
+}
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function fileToDataURL(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); }); }
+
+/* ---------- Rendering loop ---------- */
+async function renderScenes(scenes){
+  const useOnline = (SETTINGS.renderMode||'offline')==='online';
+  const aiKey = SECRETS.openai;
+  const fsKey = SECRETS.freesound;
+
+  for(let i=0;i<scenes.length;i++){
+    // 1) IMAGE
+    try{
+      let url='';
+      if(useOnline && aiKey){
+        const prompt = buildPrompt(scenes[i], SETTINGS.stylePreset);
+        url = await openAIImage(prompt, aiKey);   // returns data URL
+      }else{
+        url = await placeholderImage(scenes[i], SETTINGS.stylePreset);
+      }
+      setThumbImage(i,url);
+    }catch(e){
+      setThumbText(i,'[image failed]');
+    }
+
+    // 2) (Optional) SFX suggestion from Freesound
+    if(fsKey){
+      try{
+        const q = pickSfxQuery(scenes[i]);
+        if(q){
+          const sfx = await searchFreesound(q, fsKey);
+          if(sfx){ /* you could attach sfx.preview to scene meta here */ }
+        }
+      }catch(_){}
+    }
+
+    setProgress((i+1)/scenes.length);
+    await delay(60); // small yield so UI repaints
+  }
+}
+
+/* ---------- OpenAI image generation ---------- */
+async function openAIImage(prompt, apiKey){
+  // Uses gpt-image-1; returns data URL
+  const resp = await fetch('https://api.openai.com/v1/images/generations',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body: JSON.stringify({model:'gpt-image-1',prompt,size:'768x512'})
+  });
+  if(!resp.ok) throw new Error('OpenAI image error');
+  const data = await resp.json();
+  const b64 = data?.data?.[0]?.b64_json;
+  if(!b64) throw new Error('No image data');
+  return 'data:image/png;base64,'+b64;
+}
+
+/* ---------- Offline placeholder (drawn canvas) ---------- */
+async function placeholderImage(scene, style){
+  const w=768,h=512, c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d');
+  ctx.fillStyle = '#0f0f0f'; ctx.fillRect(0,0,w,h);
+  // style strip
+  ctx.fillStyle = '#ef4444'; ctx.fillRect(0,h-22,w,22);
+  ctx.font = 'bold 22px system-ui,Segoe UI,Inter'; ctx.fillStyle='#fff';
+  ctx.textAlign='left'; ctx.fillText(`# ${style}`, 12, h-5);
+  // text
+  ctx.fillStyle='#e7e7e7'; ctx.font='18px system-ui,Segoe UI,Inter'; wrapText(ctx, scene, 24, 32, w-48, 24);
+  return c.toDataURL('image/png');
+}
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(/\s+/); let line=''; let yy=y;
+  for(let n=0;n<words.length;n++){
+    const test=line+words[n]+' '; const w=ctx.measureText(test).width;
+    if(w>maxWidth && n>0){ ctx.fillText(line, x, yy); line=words[n]+' '; yy+=lineHeight; }
+    else line=test;
+  }
+  ctx.fillText(line, x, yy);
+}
+
+/* ---------- Prompt builder ---------- */
+function buildPrompt(scene, style){
+  return `${style} illustration, storybook cinematic frame, ${scene.slice(0,400)}`;
+}
+
+/* ---------- Freesound (simple text search) ---------- */
+async function searchFreesound(query, token){
+  const url = `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(query)}&token=${encodeURIComponent(token)}&page_size=1`;
+  const r = await fetch(url);
+  if(!r.ok) return null;
+  const json = await r.json();
+  const first = json.results?.[0];
+  return first ? {id:first.id,name:first.name,previews:first.previews} : null;
+}
+function pickSfxQuery(scene){
+  // naive mapping from keywords
+  const map = [
+    ['thunder','thunder'],['rain','rain'],['door','door close'],['footstep','footsteps'],
+    ['crowd','crowd'],['wind','wind'],['river','river'],['magic','sparkle chime'],['sword','sword clash']
+  ];
+  const s = scene.toLowerCase();
+  for(const [k,q] of map){ if(s.includes(k)) return q; }
+  return '';
+}
+
+/* ---------- Project utilities ---------- */
+document.getElementById('btnClearThumbs').onclick = ()=> UI.thumbs.innerHTML='';
+document.getElementById('btnWipe').onclick = ()=>{
+  if(confirm('Wipe all local data (settings, secrets, characters, project)?')){
+    ['ba_settings','ba_secrets','ba_characters','ba_project'].forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  }
+};
+
+/* ---------- File -> dataURL for portraits ---------- */
+async function toDataUrlFromUrl(url){
+  const r = await fetch(url); const b= await r.blob();
+  return await fileToDataURL(new File([b],'x',{type:b.type}));
+}
+</script>
+</body>
+</html>
