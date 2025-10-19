@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Book Animator — Lite</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --panel: #151515;
+    --text: #e8e8e8;
+    --muted: #b6b6b6;
+    --accent: #2b2b2b;
+    --border: #303030;
+    --focus: #3a82ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  }
+
+  /* Title + content */
+  .wrap { max-width: 900px; margin: 4rem auto 2rem; padding: 0 1rem; }
+  h1 {
+    margin: 0 0 1rem;
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+  }
+  label { display:block; margin:.5rem 0; font-weight:600; color:var(--muted); }
+  textarea {
+    width: 100%;
+    padding: 1rem;
+    min-height: 300px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #111;
+    color: #eee;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent); }
+
+  /* Menus */
+  .hambtn {
+    position: fixed;
+    top: .75rem;
+    width: 44px; height: 44px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    z-index: 1000;
+  }
+  .hambtn:focus-visible { outline: 3px solid var(--focus); }
+  .hambtn.left { left: .75rem; }
+  .hambtn.right { right: .75rem; }
+  .hambtn span { font-size: 1.3rem; line-height: 1; }
+
+  .menu {
+    position: fixed;
+    top: 3.75rem;
+    min-width: 220px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 12px;
+    padding: .35rem;
+    z-index: 999;
+  }
+  .menu.left { left: .75rem; }
+  .menu.right { right: .75rem; }
+  .item {
+    padding: .6rem .75rem;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .item:hover, .item:focus { background: var(--accent); }
+  .hide { display:none; }
+
+  /* Small helper toast */
+  .toast {
+    position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%);
+    background: #202020; color:#ddd; padding:.6rem .9rem; border-radius:10px;
+    border:1px solid var(--border); opacity:0; transition: opacity .2s ease;
+    z-index: 1200; font-size:.95rem;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Left hamburger -->
+<button id="btnLeft" class="hambtn left" aria-label="Open left menu"><span>≡</span></button>
+<!-- Right hamburger -->
+<button id="btnRight" class="hambtn right" aria-label="Open right menu"><span>≡</span></button>
+
+<!-- Left menu -->
+<div id="menuLeft" class="menu left hide" role="menu" aria-label="Left menu">
+  <div class="item" role="menuitem" data-action="settings">Settings</div>
+  <div class="item" role="menuitem" data-action="tutorial">Tutorial</div>
+  <div class="item" role="menuitem" data-action="about">About</div>
+  <div class="item" role="menuitem" data-action="logout">Log Out</div>
+</div>
+
+<!-- Right menu -->
+<div id="menuRight" class="menu right hide" role="menu" aria-label="Right menu">
+  <div class="item" role="menuitem" data-action="new">New Project</div>
+  <div class="item" role="menuitem" data-action="save">Save</div>
+  <div class="item" role="menuitem" data-action="open">Open Project</div>
+  <div class="item" role="menuitem" data-action="exit">Exit</div>
+</div>
+
+<div class="wrap" role="main">
+  <h1>Book Animator</h1>
+  <label for="bookText">Paste your book text:</label>
+  <textarea id="bookText" placeholder="Paste text here..."></textarea>
+</div>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<script>
+  const btnLeft  = document.getElementById('btnLeft');
+  const btnRight = document.getElementById('btnRight');
+  const menuLeft = document.getElementById('menuLeft');
+  const menuRight= document.getElementById('menuRight');
+  const textArea = document.getElementById('bookText');
+  const toast    = document.getElementById('toast');
+  const KEY = 'bookAnimatorText';
+
+  function show(el){ el.classList.remove('hide'); }
+  function hide(el){ el.classList.add('hide'); }
+  function toggle(el){ el.classList.toggle('hide'); }
+  function closeAll(){ hide(menuLeft); hide(menuRight); }
+
+  function note(msg, ms=1400){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(note._t);
+    note._t = setTimeout(()=>toast.classList.remove('show'), ms);
+  }
+
+  // Button actions
+  btnLeft.addEventListener('click', e=>{ toggle(menuLeft); hide(menuRight); });
+  btnRight.addEventListener('click', e=>{ toggle(menuRight); hide(menuLeft); });
+
+  // Click outside closes menus
+  document.addEventListener('click', (e)=>{
+    const inMenus = e.target.closest('.menu') || e.target.closest('.hambtn');
+    if(!inMenus) closeAll();
+  });
+
+  // Keyboard: Esc closes menus
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeAll(); });
+
+  // Persist text automatically (localStorage)
+  textArea.value = localStorage.getItem(KEY) || '';
+  textArea.addEventListener('input', ()=> localStorage.setItem(KEY, textArea.value));
+
+  function handleAction(action){
+    switch(action){
+      case 'settings':
+        note('Settings (placeholder)'); break;
+      case 'tutorial':
+        alert('Tutorial:\n1) Paste your story\n2) Use menus for New/Save/Open\n3) Animations coming later.');
+        break;
+      case 'about':
+        alert('Book Animator — simple demo UI.\nCreated by Blind Art.'); break;
+      case 'logout':
+        note('Logged out (placeholder)'); break;
+
+      case 'new':
+        if(textArea.value.trim() && !confirm('Clear current text?')) return;
+        textArea.value = ''; localStorage.removeItem(KEY); note('New project');
+        break;
+      case 'save':
+        localStorage.setItem(KEY, textArea.value); note('Saved');
+        break;
+      case 'open':
+        const saved = localStorage.getItem(KEY) || '';
+        textArea.value = saved; note(saved ? 'Opened saved text' : 'No saved text');
+        break;
+      case 'exit':
+        closeAll();
+        note('Exit (close the tab manually)');
+        break;
+    }
+    closeAll();
+  }
+
+  // Delegate clicks in menus
+  menuLeft.addEventListener('click', e=>{
+    const item = e.target.closest('.item'); if(!item) return;
+    handleAction(item.dataset.action);
+  });
+  menuRight.addEventListener('click', e=>{
+    const item = e.target.closest('.item'); if(!item) return;
+    handleAction(item.dataset.action);
+  });
+</script>
+</body>
+</html>
