@@ -1,0 +1,45 @@
+  UI.scenesBadge.textContent = String(scenes.length);
+  renderThumbs(scenes.length);
+};
+UI.btnStart.onclick = async ()=>{
+  const scenes = splitScenes(UI.bookText.value);
+  UI.scenesBadge.textContent = String(scenes.length);
+  renderThumbs(scenes.length);
+  // Placeholder: simulate image creation (white progress + thumbnails)
+  for(let i=0;i<scenes.length;i++){
+    setPct((i/scenes.length)*100);
+    await sleep(120); // simulate work
+    const cell = UI.thumbs.children[i];
+    cell.textContent=''; // replace label
+    const p = document.createElement('div');
+    p.style.cssText='width:100%;height:100%;display:grid;place-items:center;color:#ddd;font-size:.8rem;border:1px solid #333;border-radius:10px';
+    p.textContent = `Scene ${i+1}`;
+    cell.appendChild(p);
+  }
+  setPct(100);
+};
+
+UI.btnSave.onclick = ()=>{
+  const blob = new Blob([UI.bookText.value], {type:'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'script.txt'; a.click(); URL.revokeObjectURL(a.href);
+};
+UI.btnZip.onclick = ()=>{
+  alert('ZIP export is stubbed in this build. (Will package script + thumbnails on next pass.)');
+};
+
+/* ---------- helpers ---------- */
+function splitScenes(text){
+  // naive: split by blank lines or '#scene'
+  return text.trim().length ? text.split(/\n\s*\n|^#scene/gi).filter(Boolean) : [];
+}
+function renderThumbs(n){
+  UI.thumbs.innerHTML = '';
+  for(let i=0;i<n;i++){
+    const d = document.createElement('div'); d.className='thumb'; d.textContent = `scene ${i+1}`;
+    UI.thumbs.appendChild(d);
+  }
+}
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+</script>
+</body>
+</html>
