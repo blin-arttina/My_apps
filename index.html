@@ -9,468 +9,246 @@
     --bg:#0b0b0b; --panel:#111; --ink:#eee; --muted:#bbb;
     --line:#333; --accent:#ef4444; --ok:#34d399; --warn:#f59e0b;
   }
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif;}
   h1{font-size:2.6rem;margin:1.1rem 0;text-align:center}
-  .wrap{max-width:1200px;margin:0 auto;padding:1rem}
-  .topbar{display:flex;justify-content:space-between;align-items:center}
-  .hamb{width:56px;height:56px;border:1px solid #444;border-radius:14px;display:grid;place-items:center;background:#121212;cursor:pointer}
-  .hamb .line{width:26px;height:3px;background:#fff;margin:4px 0;border-radius:2px}
-  .badge{display:inline-block;background:#151515;border:1px solid #333;padding:.28rem .7rem;border-radius:999px;margin:.2rem .3rem;color:#ddd}
-  textarea{width:100%;min-height:320px;background:#0f0f0f;border:1px solid #333;border-radius:12px;color:#ddd;font-size:1.06rem;line-height:1.5;padding:1rem}
-  .bar{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1rem}
-  .btn{background:#151515;border:1px solid var(--accent);color:#eee;padding:.75rem 1rem;border-radius:12px;cursor:pointer}
-  .btn:hover{box-shadow:0 0 0 2px #ef44441c}
-  .btn.ghost{border-color:#555}
-  .btn.small{padding:.45rem .7rem;border-radius:10px}
-  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin:1.2rem 0}
-  .tile{height:140px;border:1px dashed #444;border-radius:12px;background:#0f0f0f;display:grid;place-items:center;position:relative}
-  .tile img{width:100%;height:100%;object-fit:cover;border-radius:12px}
-  .tile .num{position:absolute;top:6px;left:6px;font-size:.8rem;background:#000a;padding:.1rem .35rem;border-radius:7px;border:1px solid #333}
-  .tile .err{position:absolute;inset:auto 6px 6px 6px;background:#000c;border:1px solid #3a3a3a;border-radius:8px;padding:.35rem .5rem;font-size:.8rem;color:#fca5a5}
-  .progress{position:fixed;left:0;right:0;bottom:0;background:#0d0d0d;border-top:1px solid #1a1a1a;padding:.6rem 1rem;display:flex;gap:1rem;align-items:center}
-  .meter{flex:1;height:10px;background:#1a1a1a;border-radius:999px;overflow:hidden}
-  .meter>div{height:100%;width:0;background:#fff;transition:width .15s ease}
-  .pct{min-width:48px;text-align:right;color:#bbb}
-  .menu,.modal{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;padding-top:5vh;background:#0008;z-index:40}
-  .card{background:#111;border:1px solid #333;border-radius:16px;box-shadow:0 6px 30px #0009;padding:1rem;max-width:940px;width:92vw;max-height:82vh;overflow:auto}
-  .tabs{display:flex;gap:.5rem;margin-bottom:1rem}
-  .tabs .btn{border-color:#444}
-  .list{display:flex;flex-direction:column;gap:.5rem}
-  .item{display:flex;justify-content:space-between;align-items:center;background:#101010;border:1px solid #333;padding:.75rem 1rem;border-radius:12px}
-  .grid{display:grid;gap:.75rem}
-  .two{grid-template-columns:1fr 1fr}
-  small.muted{color:#aaa}
+  .wrap{max-width:1200px;margin:0 auto;padding:1rem;}
+  .panel{background:var(--panel);border:1px solid var(--line);
+    padding:1rem;border-radius:1rem;margin-bottom:1rem;}
+  .item{margin-bottom:.8rem;display:flex;flex-direction:column;}
+  .item span{font-weight:600;margin-bottom:.4rem;}
+  button{background:var(--accent);border:none;color:var(--ink);
+    padding:.5rem 1rem;border-radius:.5rem;cursor:pointer;font-size:1rem;}
+  button:hover{opacity:.85;}
+  select,input,textarea{background:#222;color:var(--ink);border:1px solid var(--line);
+    border-radius:.4rem;padding:.4rem;}
+  textarea{resize:vertical;}
+  #charList{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:.8rem;}
+  .charCard{background:#1a1a1a;border:1px solid var(--line);
+    border-radius:.8rem;padding:.6rem;text-align:center;cursor:pointer;position:relative;}
+  .charCard:hover{border-color:var(--accent);}
+  .charVoice{font-size:.9rem;color:var(--muted);}
+  .playBtn{position:absolute;top:.4rem;right:.5rem;background:var(--ok);
+    color:#000;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-weight:bold;}
+  .playBtn:hover{opacity:.8;}
+  .status{margin-top:.5rem;font-size:.9rem;color:var(--muted);}
+  #autosaveStatus{font-size:.85rem;color:var(--muted);text-align:center;margin-top:.5rem;}
+  footer{text-align:center;color:var(--muted);margin-top:1rem;font-size:.85rem;}
 </style>
 </head>
 <body>
-<div class="wrap" id="app">
-  <div class="topbar">
-    <div class="hamb" id="btnLeft" aria-label="Open left menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
-    <h1>Book Animator</h1>
-    <div class="hamb" id="btnRight" aria-label="Open right menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
-  </div>
+  <h1>📚 Book Animator</h1>
 
-  <div style="display:flex;justify-content:center;gap:.4rem;margin-bottom:.6rem">
-    <span class="badge">Mode: <b id="modeBadge">Simple</b></span>
-    <span class="badge">Scenes: <b id="scenesBadge">0</b></span>
-  </div>
-
-  <h3>Paste your book text:</h3>
-  <textarea id="bookText" placeholder="Paste text here…"></textarea>
-
-  <div class="bar">
-    <button class="btn" id="btnPreview">Preview Scenes</button>
-    <button class="btn" style="background:var(--accent)" id="btnStart">Start Animation</button>
-  </div>
-
-  <div class="thumbs" id="thumbs"></div>
-</div>
-
-<!-- progress bar -->
-<div class="progress">
-  <button class="btn small" id="btnSave">Save</button>
-  <button class="btn small" id="btnZip">Export (ZIP)</button>
-  <div class="meter"><div id="meterFill"></div></div>
-  <div class="pct" id="pct">0%</div>
-</div>
-
-<!-- LEFT MENU -->
-<div class="menu" id="leftMenu">
-  <div class="card">
-    <div class="tabs">
-      <button class="btn small" data-tab="tChars">Characters</button>
-      <button class="btn small" data-tab="tSettings">Settings</button>
-      <button class="btn small" data-tab="tSecrets">Secrets (API Keys)</button>
-      <button class="btn small" data-tab="tHelp">Help</button>
-      <button class="btn small" style="margin-left:auto" id="closeLeft">Close</button>
-    </div>
-
-    <!-- Characters -->
-    <section id="tChars">
+  <div class="wrap">
+    <div class="panel">
       <h2>Characters</h2>
-      <div id="charList" class="list"></div>
-      <small class="muted">Tip: tap <b>Edit</b> to set traits, voice, and portrait.</small>
-    </section>
-
-    <!-- Settings -->
-    <section id="tSettings" style="display:none">
-      <h2>Settings</h2>
-      <div class="grid two">
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Render Mode</span>
-          <select id="setRenderMode">
-            <option value="offline">Offline (placeholders)</option>
-            <option value="online">Online AI (use keys)</option>
-          </select>
-        </label>
-
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Visual Style (Animation)</span>
-          <select id="setVisual">
-            <option>Ken Burns (pan/zoom)</option>
-            <option>Parallax</option>
-            <option>Static stills</option>
-          </select>
-        </label>
-
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Art Style</span>
-          <select id="setArt">
-            <option>Comic</option>
-            <option>Cartoon</option>
-            <option>Anime Cel</option>
-            <option>Dark Fantasy</option>
-            <option>Watercolor</option>
-            <option>Ink & Wash</option>
-            <option>Flat Toon</option>
-            <option>Retro Pixel</option>
-            <option>Comic Noir</option>
-          </select>
-        </label>
-
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Default Aspect</span>
-          <select id="setAspect">
-            <option>16:9</option><option>9:16</option><option>1:1</option>
-          </select>
-        </label>
-      </div>
-      <small class="muted">Theme fixed: black / white / red.</small>
-    </section>
-
-    <!-- Secrets -->
-    <section id="tSecrets" style="display:none">
-      <h2>Secrets (API Keys)</h2>
-      <div class="grid">
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>AI Proxy URL</span><input id="keyProxy" placeholder="https://YOUR.workers.dev/images"/>
-        </label>
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>OpenAI API Key</span><input id="keyOpenAI" type="password" placeholder="sk-... (optional if Worker has it)"/>
-        </label>
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>ElevenLabs API Key</span><input id="key11" type="password" placeholder="eleven-... (optional)"/>
-        </label>
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Freesound API Key</span><input id="keyFS" type="password" placeholder="optional"/>
-        </label>
-        <div style="display:flex;gap:.6rem;justify-content:flex-end">
-          <button class="btn ghost" id="btnTestProxy">Test Proxy</button>
-          <button class="btn" id="btnSaveSecrets">Save</button>
-        </div>
-        <small class="muted">Keys save to your browser only (localStorage).</small>
-      </div>
-    </section>
-
-    <!-- Help -->
-    <section id="tHelp" style="display:none">
-      <h2>Help</h2>
-      <p>1) Paste text. 2) In <b>Characters</b>, assign voices & portraits. 3) Set <b>AI Proxy URL</b> in <b>Secrets</b>. 4) Press <b>Start Animation</b>. Thumbnails fill as images arrive. Export ZIP when done.</p>
-    </section>
-  </div>
-</div>
-
-<!-- RIGHT MENU -->
-<div class="menu" id="rightMenu">
-  <div class="card">
-    <div class="tabs">
-      <button class="btn small" data-rtab="uUploads">Uploads</button>
-      <button class="btn small" data-rtab="uProject">Project</button>
-      <button class="btn small" style="margin-left:auto" id="closeRight">Close</button>
+      <div id="charList"></div>
+      <button id="btnAddChar">+ Add Character</button>
+      <div id="autosaveStatus">Autosave ready</div>
     </div>
 
-    <section id="uUploads">
+    <div class="panel">
       <h2>Uploads</h2>
-      <div class="grid two">
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Music Bed</span><input id="fileMusic" type="file" accept="audio/*"/>
-        </label>
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Import Characters JSON</span><input id="fileChars" type="file" accept="application/json"/>
-        </label>
-      </div>
-    </section>
-
-    <section id="uProject" style="display:none">
-      <h2>Project</h2>
-      <div class="grid">
-        <button class="btn small" id="btnClearThumbs">Clear Thumbnails</button>
-        <button class="btn small" id="btnWipe">Wipe Local Data</button>
-      </div>
-    </section>
-  </div>
-</div>
-
-<!-- Character editor -->
-<div class="modal" id="charModal">
-  <div class="card" style="max-width:820px">
-    <h2>Edit Character</h2>
-    <div class="grid">
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Name</span><input id="ceName"/>
+      <label class="item">
+        <span>Music Uploads</span>
+        <input id="fileMusic" type="file" accept="audio/*" multiple/>
       </label>
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Traits / Notes</span><input id="ceNotes" placeholder="personality, role…"/>
+      <label class="item">
+        <span>General Uploads</span>
+        <input id="fileGeneral" type="file" accept="*/*" multiple/>
       </label>
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Voice (OpenAI)</span>
-        <select id="ceVoice">
-          <option value="ember">Ember</option><option value="maple">Maple</option>
-          <option value="juniper">Juniper</option><option value="sage">Sage</option>
-          <option value="alloy">Alloy</option><option value="verse">Verse</option>
-          <option value="aria">Aria</option><option value="amber">Amber</option>
-        </select>
-      </label>
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Voice (11Labs ID)</span><input id="ce11" placeholder="optional"/>
-      </label>
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Portrait</span><input id="cePortrait" type="file" accept="image/*"/>
-      </label>
-    </div>
-    <div class="bar" style="justify-content:flex-end">
-      <button class="btn ghost" id="ceCancel">Cancel</button>
-      <button class="btn" id="ceSave">Save</button>
+      <div id="uploadList" class="status">No files uploaded yet.</div>
     </div>
   </div>
-</div>
+
+  <dialog id="charEditor" style="background:#111;border:1px solid var(--line);
+    border-radius:1rem;padding:1.2rem;width:400px;max-width:90%;">
+    <h3>Edit Character</h3>
+
+    <label class="item">
+      <span>Name</span>
+      <input id="ceName" type="text"/>
+    </label>
+
+    <label class="item">
+      <span>Notes</span>
+      <textarea id="ceNotes" rows="3"></textarea>
+    </label>
+
+    <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
+      <span>Voice (OpenAI)</span>
+      <select id="ceVoice">
+        <option value="ember">Ember</option>
+        <option value="maple">Maple</option>
+        <option value="juniper">Juniper</option>
+        <option value="sage">Sage</option>
+        <option value="alloy">Alloy</option>
+        <option value="verse">Verse</option>
+        <option value="aria">Aria</option>
+        <option value="amber">Amber</option>
+        <option value="spruce">Spruce</option>
+        <option value="breeze">Breeze</option>
+        <option value="vale">Vale</option>
+        <option value="shimmer">Shimmer</option>
+        <option value="cove">Cove</option>
+        <option value="sol">Sol</option>
+      </select>
+    </label>
+
+    <label class="item">
+      <span>Eleven Labs Voice ID (optional)</span>
+      <input id="ceEleven" type="text"/>
+    </label>
+
+    <label class="item">
+      <span>Portrait (optional)</span>
+      <input id="cePortrait" type="file" accept="image/*"/>
+    </label>
+
+    <div style="text-align:right;margin-top:.8rem;">
+      <button id="ceSave">Save</button>
+      <button id="ceCancel" style="background:var(--warn);">Cancel</button>
+    </div>
+  </dialog>
+
+  <footer>Book Animator • Auto-Save + Voice Preview</footer>
 
 <script>
-/* ========= basic state ========= */
-const UI = {
-  // menus
-  leftBtn: byId('btnLeft'), rightBtn: byId('btnRight'),
-  leftMenu: byId('leftMenu'), rightMenu: byId('rightMenu'),
-  closeLeft: byId('closeLeft'), closeRight: byId('closeRight'),
-  tabBtns: document.querySelectorAll('[data-tab]'),
-  rtabBtns: document.querySelectorAll('[data-rtab]'),
+let characters = [];
+const charList = document.getElementById("charList");
+const editor = document.getElementById("charEditor");
+const uploadList = document.getElementById("uploadList");
+const autosaveStatus = document.getElementById("autosaveStatus");
 
-  // main
-  txt: byId('bookText'), thumbs: byId('thumbs'),
-  preview: byId('btnPreview'), start: byId('btnStart'),
-  scenesBadge: byId('scenesBadge'), modeBadge: byId('modeBadge'),
-
-  // progress
-  meter: byId('meterFill'), pct: byId('pct'),
-
-  // secrets/settings
-  setRenderMode: byId('setRenderMode'), setVisual: byId('setVisual'),
-  setArt: byId('setArt'), setAspect: byId('setAspect'),
-  keyProxy: byId('keyProxy'), keyOpenAI: byId('keyOpenAI'),
-  key11: byId('key11'), keyFS: byId('keyFS'),
-  btnSaveSecrets: byId('btnSaveSecrets'), btnTestProxy: byId('btnTestProxy'),
-
-  // uploads
-  fileMusic: byId('fileMusic'), fileChars: byId('fileChars'),
-
-  // character editor
-  charList: byId('charList'), charModal: byId('charModal'),
-  ceName: byId('ceName'), ceNotes: byId('ceNotes'),
-  ceVoice: byId('ceVoice'), ce11: byId('ce11'), cePortrait: byId('cePortrait'),
-  ceSave: byId('ceSave'), ceCancel: byId('ceCancel'),
-};
-
-let SETTINGS  = load('ba_settings', {renderMode:'offline', visual:'Ken Burns (pan/zoom)', art:'Comic', aspect:'16:9'});
-let SECRETS   = load('ba_secrets',  {proxy:'', openai:'', elabs:'', fs:''});
-let CHARS     = load('ba_chars',    defaultCharacters());
-let editingIx = -1;
-
-hydrate();
-
-/* ========= menus & tabs ========= */
-UI.leftBtn.onclick  = ()=> UI.leftMenu.style.display='flex';
-UI.rightBtn.onclick = ()=> UI.rightMenu.style.display='flex';
-UI.closeLeft.onclick= ()=> UI.leftMenu.style.display='none';
-UI.closeRight.onclick=()=> UI.rightMenu.style.display='none';
-UI.tabBtns.forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-UI.rtabBtns.forEach(b=>b.onclick=()=>showRTab(b.dataset.rtab));
-function showTab(id){ ['tChars','tSettings','tSecrets','tHelp']
-  .forEach(k=> byId(k).style.display = (k===id?'block':'none')); }
-function showRTab(id){ ['uUploads','uProject']
-  .forEach(k=> byId(k).style.display = (k===id?'block':'none')); }
-
-/* ========= secrets & settings ========= */
-function hydrate(){
-  UI.setRenderMode.value = SETTINGS.renderMode;
-  UI.setVisual.value     = SETTINGS.visual;
-  UI.setArt.value        = SETTINGS.art;
-  UI.setAspect.value     = SETTINGS.aspect;
-  UI.keyProxy.value      = SECRETS.proxy || '';
-  UI.keyOpenAI.value     = SECRETS.openai || '';
-  UI.key11.value         = SECRETS.elabs  || '';
-  UI.keyFS.value         = SECRETS.fs     || '';
-  renderCharList();
-}
-
-UI.btnSaveSecrets.onclick=()=>{
-  SECRETS = {
-    proxy: UI.keyProxy.value.trim(),
-    openai: UI.keyOpenAI.value.trim(),
-    elabs: UI.key11.value.trim(),
-    fs: UI.keyFS.value.trim()
-  };
-  save('ba_secrets', SECRETS);
-  alert('Secrets saved.');
-};
-
-UI.btnTestProxy.onclick= async ()=>{
-  if(!SECRETS.proxy) return alert('Set AI Proxy URL first.');
-  try{
-    const r = await fetch(SECRETS.proxy.replace(/\/images?$/,'')+'/health', {mode:'cors'});
-    alert(r.ok ? 'Proxy reachable ✅' : 'Proxy responded with an error ❌');
-  }catch(e){ alert('Proxy not reachable ❌'); }
-};
-
-['setRenderMode','setVisual','setArt','setAspect'].forEach(id=>{
-  byId(id).addEventListener('change', ()=>{
-    SETTINGS.renderMode = UI.setRenderMode.value;
-    SETTINGS.visual     = UI.setVisual.value;
-    SETTINGS.art        = UI.setArt.value;
-    SETTINGS.aspect     = UI.setAspect.value;
-    save('ba_settings', SETTINGS);
-    UI.modeBadge.textContent = SETTINGS.renderMode==='online'?'Online':'Simple';
-  });
-});
-
-/* ========= characters ========= */
 function defaultCharacters(){
-  const names = ['Narrator','Sidetracked Sally','Darling Danielle','Dark Dan','Skater Skip','Creative Callie','Zen Zena','Grumpy Gus','Journey Mark','Abby','Bear'];
-  return names.map(n=>({name:n, notes:'', voice:'ember', eleven:'', portrait:''}));
-}
-
-function renderCharList(){
-  UI.charList.innerHTML = '';
-  CHARS.forEach((c,ix)=>{
-    const el = document.createElement('div'); el.className='item';
-    el.innerHTML = `<div>
-        <div style="font-weight:600">${escapeHtml(c.name)}</div>
-        <div style="color:#bbb;font-size:.9rem">${c.voice||'ember'} ${c.eleven?` · 11Labs:${escapeHtml(c.eleven)}`:''}</div>
-      </div>
-      <div style="display:flex;gap:.5rem">
-        <button class="btn small" data-edit="${ix}">Edit</button>
-      </div>`;
-    UI.charList.appendChild(el);
+  const base = [
+    'Narrator','Sidetracked Sally','Darling Danielle','Dark Dan',
+    'Skater Skip','Creative Callie','Zen Zena','Grumpy Gus','Ambush Annie'
+  ];
+  const voiceMap = {
+    'narrator': 'ember','sidetracked sally': 'maple','sidetrack sally': 'maple',
+    'darling danielle': 'juniper','dark dan': 'spruce','skater skip': 'breeze',
+    'creative callie': 'vale','zen zena': 'shimmer','grumpy gus': 'cove','ambush annie': 'sol'
+  };
+  return base.map(n=>{
+    const key = n.toLowerCase();
+    return { name:n, notes:'', voice: voiceMap[key] || 'ember', eleven:'', portrait:'' };
   });
-  UI.charList.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openChar(+b.dataset.edit));
-}
-function openChar(ix){
-  editingIx = ix;
-  const c = CHARS[ix];
-  UI.ceName.value=c.name; UI.ceNotes.value=c.notes||''; UI.ceVoice.value=c.voice||'ember';
-  UI.ce11.value=c.eleven||''; UI.cePortrait.value='';
-  UI.charModal.style.display='flex';
-}
-UI.ceCancel.onclick=()=> UI.charModal.style.display='none';
-UI.ceSave.onclick=()=>{
-  const c = CHARS[editingIx];
-  c.name=UI.ceName.value.trim()||c.name; c.notes=UI.ceNotes.value.trim(); c.voice=UI.ceVoice.value; c.eleven=UI.ce11.value.trim();
-  const f = UI.cePortrait.files?.[0];
-  if(f) fileToDataURL(f).then(url=>{ c.portrait=url; save('ba_chars', CHARS); renderCharList(); });
-  else { save('ba_chars', CHARS); renderCharList(); }
-  UI.charModal.style.display='none';
 }
 
-/* ========= scene logic ========= */
-UI.preview.onclick = ()=> updateSceneCount();
-function updateSceneCount(){
-  const scenes = splitScenes(UI.txt.value);
-  UI.scenesBadge.textContent = scenes.length;
-  // pre-allocate tiles
-  UI.thumbs.innerHTML='';
-  scenes.forEach((_,i)=> UI.thumbs.appendChild(makeTile(i+1)));
-}
-function splitScenes(text){
-  const lines = text.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
-  return lines.length?lines:[];
-}
-function makeTile(n){
-  const t=document.createElement('div'); t.className='tile';
-  t.innerHTML = `<div class="num">#${n}</div><span class="hint" style="color:#888">waiting…</span>`;
-  return t;
+function renderCharacters(){
+  charList.innerHTML = "";
+  characters.forEach((c,i)=>{
+    const div = document.createElement("div");
+    div.className="charCard";
+    div.innerHTML = `
+      <div>${c.name}</div>
+      <div class="charVoice">${c.voice}</div>
+      <button class="playBtn" title="Preview Voice">🔊</button>
+    `;
+    div.querySelector(".playBtn").onclick=(e)=>{
+      e.stopPropagation();
+      playVoicePreview(c.voice, c.name);
+    };
+    div.onclick=()=>openEditor(i);
+    charList.appendChild(div);
+  });
+  autoSave();
 }
 
-/* ========= rendering ========= */
-UI.start.onclick = async ()=>{
-  const scenes = splitScenes(UI.txt.value);
-  if(!scenes.length) return alert('Paste some text first.');
-  UI.thumbs.innerHTML=''; scenes.forEach((_,i)=> UI.thumbs.appendChild(makeTile(i+1)));
-  UI.meter.style.width='0%'; UI.pct.textContent='0%';
+async function playVoicePreview(voice, name){
+  const proxyURL = "https://ai-proxydjs.8deaea231.workers.dev/v1/audio/speech";
+  const text = `Hello, I am ${name}. This is my voice.`;
+  autosaveStatus.textContent = "Generating voice preview...";
+  try{
+    const response = await fetch(proxyURL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":"Bearer OPENAI_API_KEY"
+      },
+      body:JSON.stringify({
+        model:"gpt-4o-mini-tts",
+        voice:voice,
+        input:text
+      })
+    });
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.play();
+    autosaveStatus.textContent = `Playing ${name}'s voice`;
+  }catch(err){
+    console.error(err);
+    autosaveStatus.textContent = "Voice preview failed.";
+  }
+}
 
-  for(let i=0;i<scenes.length;i++){
-    const tile = UI.thumbs.children[i];
+function openEditor(index){
+  const c = characters[index];
+  editor.dataset.index=index;
+  document.getElementById("ceName").value = c.name;
+  document.getElementById("ceNotes").value = c.notes;
+  document.getElementById("ceVoice").value = c.voice;
+  document.getElementById("ceEleven").value = c.eleven;
+  editor.showModal();
+}
+
+function saveEditor(){
+  const i = editor.dataset.index;
+  characters[i].name=document.getElementById("ceName").value;
+  characters[i].notes=document.getElementById("ceNotes").value;
+  characters[i].voice=document.getElementById("ceVoice").value;
+  characters[i].eleven=document.getElementById("ceEleven").value;
+  editor.close();
+  renderCharacters();
+}
+
+function addCharacter(){
+  characters.push({name:"New Character",notes:"",voice:"ember",eleven:"",portrait:""});
+  renderCharacters();
+}
+
+const fileMusic = document.getElementById("fileMusic");
+const fileGeneral = document.getElementById("fileGeneral");
+
+function listFiles(input){
+  if(!input.files.length){return;}
+  const names=[...input.files].map(f=>f.name);
+  uploadList.innerHTML = "Uploaded:<br>"+names.join("<br>");
+  autoSave();
+}
+fileMusic.addEventListener("change",()=>listFiles(fileMusic));
+fileGeneral.addEventListener("change",()=>listFiles(fileGeneral));
+
+function autoSave(){
+  const data = {characters, uploads: uploadList.innerHTML};
+  localStorage.setItem("bookAnimatorData", JSON.stringify(data));
+  autosaveStatus.textContent = "Autosaved ✓ " + new Date().toLocaleTimeString();
+}
+function autoLoad(){
+  const saved = localStorage.getItem("bookAnimatorData");
+  if(saved){
     try{
-      const imgUrl = await renderSceneToImage(scenes[i], i);
-      tile.innerHTML = `<div class="num">#${i+1}</div><img alt="scene ${i+1}" src="${imgUrl}"/>`;
-    }catch(err){
-      const msg = (err && (err.user || err.message)) || 'Failed';
-      // graceful placeholder
-      const url = await placeholderPNG(`Scene ${i+1}`, msg);
-      tile.innerHTML = `<div class="num">#${i+1}</div><img src="${url}" alt="placeholder"/><div class="err" title="${escapeHtml(msg)}">⚠ ${escapeHtml(msg.slice(0,60))}</div>`;
-    }
-    const p = Math.round(((i+1)/scenes.length)*100);
-    UI.meter.style.width=p+'%'; UI.pct.textContent=p+'%';
+      const data = JSON.parse(saved);
+      if(data.characters){ characters = data.characters; }
+      if(data.uploads){ uploadList.innerHTML = data.uploads; }
+      autosaveStatus.textContent = "Loaded saved data.";
+    }catch(e){ console.warn("Could not load saved data:", e); }
+  } else {
+    characters = defaultCharacters();
+    autosaveStatus.textContent = "Default characters loaded.";
   }
-};
-
-async function renderSceneToImage(sceneText, idx){
-  const prompt = buildPrompt(sceneText);
-  const art = SETTINGS.art;
-  const visual = SETTINGS.visual;
-
-  if(SETTINGS.renderMode!=='online'){
-    // offline fallback: just produce a nice placeholder
-    return await placeholderPNG(`Scene ${idx+1}`, `${art} • ${visual}`);
-  }
-
-  const proxy = (SECRETS.proxy||'').replace(/\/$/,'');
-  if(!proxy) throw {user:'Set AI Proxy URL in Secrets.'};
-
-  // POST to Worker /images
-  const body = { prompt, style: art, aspect: SETTINGS.aspect, seed: idx };
-  const r = await fetch(proxy + '/images', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(body)
-  });
-  if(!r.ok){
-    const text = await r.text().catch(()=>r.statusText);
-    throw {user:`Proxy error ${r.status}`, message:text||''};
-  }
-  const data = await r.json();
-  if(!data || !data.image) throw {user:'Proxy returned no image.'};
-  return data.image; // expected to be dataURL or https URL
 }
+setInterval(autoSave, 600000);
 
-function buildPrompt(scene){
-  // very small prompt builder that respects selected art style
-  const base = `Illustration, ${SETTINGS.art}, cinematic lighting, clean composition, high detail.`;
-  // strip directives like #music #camera for the art model
-  const clean = scene.replace(/^\s*#.*$/gm,'').trim();
-  return `${base}\nScene: ${clean}`;
-}
+document.getElementById("btnAddChar").onclick=addCharacter;
+document.getElementById("ceSave").onclick=saveEditor;
+document.getElementById("ceCancel").onclick=()=>editor.close();
 
-/* ========= utils ========= */
-function byId(id){ return document.getElementById(id); }
-function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)||'')||def; }catch{ return def; } }
-function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-function fileToDataURL(f){ return new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(f); }); }
-async function placeholderPNG(title, subtitle=''){
-  const w=512,h=320, pad=16, r=12;
-  const c = document.createElement('canvas'); c.width=w; c.height=h;
-  const x = c.getContext('2d');
-  x.fillStyle='#0f0f0f'; x.fillRect(0,0,w,h);
-  x.strokeStyle='#3a3a3a'; x.lineWidth=2; roundRect(x,pad,pad,w-pad*2,h-pad*2,r); x.stroke();
-  x.fillStyle='#fff'; x.font='bold 20px Inter, system-ui'; x.fillText(title, 24, 44);
-  x.fillStyle='#bbb'; x.font='14px Inter, system-ui'; wrapText(x, subtitle, 24, 72, w-48, 18);
-  return c.toDataURL('image/png');
-}
-function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
-function wrapText(ctx, text, x, y, max, lh){
-  const words=(text||'').split(/\s+/), line=[];
-  for(const w of words){ const test=[...line,w].join(' '); if(ctx.measureText(test).width>max){ ctx.fillText(line.join(' '),x,y); line.length=0;y+=lh; } line.push(w); }
-  ctx.fillText(line.join(' '),x,y);
-}
+autoLoad();
+renderCharacters();
 </script>
 </body>
 </html>
