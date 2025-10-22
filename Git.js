@@ -1,3 +1,0 @@
-git add docs/book_animator_blueprint.md
-git commit -m "Add Book Animator blueprint"
-git push origin main
