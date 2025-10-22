@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Book Animator</title>
+<style>
+:root{
+  --bg:#0b0b0b;--panel:#111;--ink:#eee;--muted:#bbb;
+  --line:#333;--accent:#ef4444;--ok:#34d399;--warn:#f59e0b;
+}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif;}
+h1{font-size:2.6rem;margin:1.1rem 0;text-align:center}
+.wrap{max-width:1200px;margin:0 auto;padding:1rem}
+.topbar{display:flex;justify-content:space-between;align-items:center}
+.hamb{width:64px;height:64px;border:1px solid #888;border-radius:14px;display:grid;place-items:center;background:#121212;cursor:pointer}
+.hamb .line{width:30px;height:4px;background:#fff;margin:5px 0;border-radius:2px}
+.badge{display:inline-block;background:#151515;border:1px solid #333;padding:.28rem .7rem;border-radius:999px;margin:.2rem .3rem;color:#ddd}
+textarea{width:100%;min-height:320px;background:#0f0f0f;border:1px solid #333;border-radius:12px;color:#ddd;font-size:1.06rem;line-height:1.5;padding:1rem}
+.bar{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1rem}
+.btn{background:#151515;border:1px solid var(--accent);color:#eee;padding:.75rem 1rem;border-radius:12px;cursor:pointer}
+.btn:hover{box-shadow:0 0 0 2px #ef44441c}
+.btn.ghost{border-color:#555}
+.btn.small{padding:.45rem .7rem;border-radius:10px}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin:1.2rem 0}
+.tile{height:160px;border:1px dashed #777;border-radius:12px;background:#0f0f0f;display:grid;place-items:center;position:relative}
+.tile img, .tile video{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.tile .num{position:absolute;top:6px;left:6px;font-size:.9rem;background:#000a;padding:.1rem .4rem;border-radius:7px;border:1px solid #333}
+.tile .err{position:absolute;inset:auto 6px 6px 6px;background:#000c;border:1px solid #3a3a3a;border-radius:8px;padding:.35rem .5rem;font-size:.85rem;color:#fca5a5}
+.progress{position:fixed;left:0;right:0;bottom:0;background:#0d0d0d;border-top:1px solid #1a1a1a;padding:.6rem 1rem;display:flex;gap:1rem;align-items:center}
+.meter{flex:1;height:10px;background:#1a1a1a;border-radius:999px;overflow:hidden}
+.meter>div{height:100%;width:0;background:#fff;transition:width .15s ease}
+.pct{min-width:64px;text-align:right;color:#bbb}
+.menu,.modal{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;padding-top:5vh;background:#0008;z-index:40}
+.card{background:#111;border:1px solid #333;border-radius:16px;box-shadow:0 6px 30px #0009;padding:1rem;max-width:980px;width:92vw;max-height:82vh;overflow:auto}
+.tabs{display:flex;gap:.5rem;margin-bottom:1rem}
+.tabs .btn{border-color:#444}
+.list{display:flex;flex-direction:column;gap:.5rem}
+.item{display:flex;justify-content:space-between;align-items:center;background:#101010;border:1px solid #333;padding:.75rem 1rem;border-radius:12px}
+.grid{display:grid;gap:.75rem}
+.two{grid-template-columns:1fr 1fr}
+small.muted{color:#aaa}
+</style>
+<!-- JSZip for Export (ZIP) -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="topbar">
+    <div class="hamb" id="btnLeft" aria-label="Open left menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+    <h1>Book Animator</h1>
+    <div class="hamb" id="btnRight" aria-label="Open right menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
+  </div>
+
+  <div style="display:flex;justify-content:center;gap:.4rem;margin-bottom:.6rem">
+    <span class="badge">Mode: <b id="modeBadge">Simple</b></span>
+    <span class="badge">Scenes: <b id="scenesBadge">0</b></span>
+  </div>
+
+  <h3>Paste your book text:</h3>
+  <textarea id="bookText" placeholder="Paste text here…"></textarea>
+
+  <div class="bar">
+    <button class="btn" id="btnPreview">Preview Scenes</button>
+    <button class="btn" style="background:var(--accent)" id="btnStart">Start Animation</button>
+  </div>
+
+  <div class="thumbs" id="thumbs"></div>
+</div>
+
+<!-- progress bar -->
+<div class="progress">
+  <button class="btn small" id="btnSave">Save</button>
+  <button class="btn small" id="btnZip">Export (ZIP)</button>
+  <div class="meter"><div id="meterFill"></div></div>
+  <div class="pct" id="pct">0%</div>
+</div>
+
+<!-- LEFT MENU -->
+<div class="menu" id="leftMenu">
+  <div class="card">
+    <div class="tabs">
+      <button class="btn small" data-tab="tChars">Characters</button>
+      <button class="btn small" data-tab="tSettings">Settings</button>
+      <button class="btn small" data-tab="tSecrets">Secrets</button>
+      <button class="btn small" data-tab="tHelp">Help</button>
+      <button class="btn small" style="margin-left:auto" id="closeLeft">Close</button>
+    </div>
+
+    <!-- Characters -->
+    <section id="tChars">
+      <h2>Characters</h2>
+      <div id="charList" class="list"></div>
+      <small class="muted">Tap <b>Edit</b> to change voice (OpenAI or ElevenLabs), notes, and portrait.</small>
+    </section>
+
+    <!-- Settings -->
+    <section id="tSettings" style="display:none">
+      <h2>Settings</h2>
+      <div class="grid two">
+        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
+          <span>Render Mode</span>
+          <select id="setRenderMode">
+            <option value="offline">Offline (placeholders)</option>
+            <option value="online">Online AI (use proxy)</option>
+          </select>
+        </label>
+        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
+          <span>Visual Motion</span>
+          <select id="setVisualMotion">
+            <option>Ken Burns</option><option>Pan Left</option><option>Pan Right</option>
+            <option>Zoom In</option><option>Zoom Out</option><option>Static</option>
+          </select>
+        </label>
+        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
+          <span>Art Style</span>
+          <select id="setArtStyle">
+            <option>Comic</option><option>Cartoon</option><option>Anime</option>
+            <option>Watercolor</option><option>Ink & Wash</option><option>Digital Paint</option>
+            <option>Flat Toon</option><option>Dark Fantasy</option>
+          </select>
+        </label>
+        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
+          <span>Aspect</span>
+          <select id="setAspect">
+            <option>16:9</option><option>9:16</option><option>1:1</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- Secrets -->
+    <section id="tSecrets" style="display:none">
+      <h2>Secrets (AI Proxy)</h2>
+      <div class="grid">
+        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
+          <span>Proxy URL</span>
+          <input id="proxyBase" placeholder="https://ai-proxydjs.YOURNAME.workers.dev"/>
+        </label>
+        <div style="display:flex;gap:.6rem;justify-content:flex-end">
+          <button class="btn ghost" id="btnTestProxy">Test Proxy</button>
+          <button class="btn" id="btnSaveSecrets">Save</button>
+        </div>
+        <small class="muted">Put your Cloudflare Worker URL here. Your API keys live in the Worker (safe).</small>
+      </div>
+    </section>
+
+    <section id="tHelp" style="display:none">
+      <h2>Help</h2>
+      <p>Flow: Paste → Characters → Settings → Secrets (Proxy URL) → Start. Thumbnails fill as scenes render. Export ZIP bundles images and audio.</p>
+    </section>
+  </div>
+</div>
+
+<!-- RIGHT MENU -->
+<div class="menu" id="rightMenu">
+  <div class="card">
+    <div class="tabs">
+      <button class="btn small" data-rtab="uUploads">Uploads</button>
+      <button class="btn small" data-rtab="uProject">Project</button>
+      <button class="btn small" style="margin-left:auto" id="closeRight">Close</button>
+    </div>
+
+    <section id="uUploads">
+      <h2>Uploads</h2>
+      <div class="grid two">
+        <label class="item"><span>Import Characters JSON</span><input id="fileChars" type="file" accept="application/json"/></label>
+        <label class="item"><span>General Uploads</span><input id="fileGeneral" type="file" multiple/></label>
+      </div>
+      <div id="uploadList" class="list"></div>
+    </section>
+
+    <section id="uProject" style="display:none">
+      <h2>Project</h2>
+      <div class="grid">
+        <button class="btn small" id="btnClearThumbs">Clear Thumbnails</button>
+        <button class="btn small" id="btnWipe">Wipe Local Data</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Character editor -->
+<div class="modal" id="charModal">
+  <div class="card" style="max-width:820px">
+    <h2>Edit Character</h2>
+    <div class="grid">
+      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
+        <span>Name</span><input id="ceName"/>
+      </label>
+      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
+        <span>Traits / Notes</span><input id="ceNotes" placeholder="personality, role…"/>
+      </label>
+      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
+        <span>Voice (OpenAI)</span>
+        <select id="ceVoice">
+          <option value="ember">Ember</option><option value="maple">Maple</option>
+          <option value="juniper">Juniper</option><option value="sage">Sage</option>
+          <option value="alloy">Alloy</option><option value="verse">Verse</option>
+          <option value="aria">Aria</option><option value="amber">Amber</option>
+        </select>
+      </label>
+      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
+        <span>Voice (11Labs ID)</span><input id="ce11" placeholder="optional"/>
+      </label>
+      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
+        <span>Portrait</span><input id="cePortrait" type="file" accept="image/*"/>
+      </label>
+    </div>
+    <div class="bar" style="justify-content:flex-end">
+      <button class="btn ghost" id="ceCancel">Cancel</button>
+      <button class="btn" id="ceSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========= helpers ========= */
+const byId = id => document.getElementById(id);
+const save = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
+const load = (k,def)=> { try{ return JSON.parse(localStorage.getItem(k))||def; }catch{ return def; } };
+const fileToDataURL = f => new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(f); });
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+/* ========= UI refs ========= */
+const UI={
+  leftBtn:byId('btnLeft'), rightBtn:byId('btnRight'),
+  leftMenu:byId('leftMenu'), rightMenu:byId('rightMenu'),
+  closeLeft:byId('closeLeft'), closeRight:byId('closeRight'),
+  tabBtns:document.querySelectorAll('[data-tab]'),
+  rtabBtns:document.querySelectorAll('[data-rtab]'),
+  setRenderMode:byId('setRenderMode'),
+  setVisualMotion:byId('setVisualMotion'),
+  setArtStyle:byId('setArtStyle'),
+  setAspect:byId('setAspect'),
+  proxyBase:byId('proxyBase'),
+  btnSaveSecrets:byId('btnSaveSecrets'),
+  btnTestProxy:byId('btnTestProxy'),
+  fileChars:byId('fileChars'),
+  fileGeneral:byId('fileGeneral'),
+  uploadList:byId('uploadList'),
+  txt:byId('bookText'), thumbs:byId('thumbs'),
+  preview:byId('btnPreview'), start:byId('btnStart'),
+  scenesBadge:byId('scenesBadge'), modeBadge:byId('modeBadge'),
+  meter:byId('meterFill'), pct:byId('pct'),
+  btnZip:byId('btnZip'), btnSave:byId('btnSave')
+};
+
+/* ========= persistent state ========= */
+let SETTINGS = load('ba_settings', {renderMode:'offline', visualMotion:'Ken Burns', artStyle:'Comic', aspect:'16:9'});
+let SECRETS  = load('ba_secrets',  {proxy:''});
+let CHARS    = load('ba_chars', defaultCharacters());
+let ASSETS   = { images:[], narration:[], sfx:[] }; // filled during render
+let editingIx = -1;
+
+/* ========= init ========= */
+UI.setRenderMode.value   = SETTINGS.renderMode;
+UI.setVisualMotion.value = SETTINGS.visualMotion;
+UI.setArtStyle.value     = SETTINGS.artStyle;
+UI.setAspect.value       = SETTINGS.aspect;
+UI.proxyBase.value       = SECRETS.proxy||'';
+UI.modeBadge.textContent = SETTINGS.renderMode==='online'?'Online':'Simple';
+renderCharList();
+
+/* ========= menus ========= */
+UI.leftBtn.onclick = ()=> UI.leftMenu.style.display='flex';
+UI.rightBtn.onclick= ()=> UI.rightMenu.style.display='flex';
+UI.closeLeft.onclick=()=> UI.leftMenu.style.display='none';
+UI.closeRight.onclick=()=> UI.rightMenu.style.display='none';
+UI.tabBtns.forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+UI.rtabBtns.forEach(b=>b.onclick=()=>showRTab(b.dataset.rtab));
+function showTab(id){ ['tChars','tSettings','tSecrets','tHelp'].forEach(k=>byId(k).style.display=(k===id?'block':'none')); }
+function showRTab(id){ ['uUploads','uProject'].forEach(k=>byId(k).style.display=(k===id?'block':'none')); }
+
+/* ========= settings & secrets ========= */
+UI.btnSaveSecrets.onclick=()=>{
+  SECRETS.proxy = UI.proxyBase.value.trim();
+  save('ba_secrets', SECRETS);
+  SETTINGS.renderMode   = UI.setRenderMode.value;
+  SETTINGS.visualMotion = UI.setVisualMotion.value;
+  SETTINGS.artStyle     = UI.setArtStyle.value;
+  SETTINGS.aspect       = UI.setAspect.value;
+  save('ba_settings', SETTINGS);
+  UI.modeBadge.textContent = SETTINGS.renderMode==='online'?'Online':'Simple';
+  alert('Saved.');
+};
+UI.btnTestProxy.onclick= async ()=>{
+  const base=(UI.proxyBase.value||'').replace(/\/$/,'');
+  if(!base) return alert('Enter your Proxy URL first.');
+  try{
+    const r=await fetch(base+'/health'); alert(r.ok?'✅ Proxy reachable':'❌ Proxy error');
+  }catch(e){ alert('❌ Proxy unreachable'); }
+};
+
+/* ========= uploads ========= */
+UI.fileChars.onchange=async e=>{
+  const f=e.target.files[0]; if(!f)return;
+  try{
+    const data = JSON.parse(await f.text());
+    save('ba_chars', data); CHARS=data; renderCharList(); alert('Characters imported!');
+  }catch{ alert('Invalid characters.json'); }
+};
+UI.fileGeneral.onchange=e=>{
+  const files=[...e.target.files]; UI.uploadList.innerHTML='';
+  files.forEach(f=>{
+    const row=document.createElement('div'); row.className='item';
+    row.textContent=f.name+' ('+Math.round(f.size/1024)+' KB)';
+    UI.uploadList.appendChild(row);
+  });
+};
+
+/* ========= characters UI ========= */
+function defaultCharacters(){
+  const names=['Narrator','Sidetracked Sally','Darling Danielle','Dark Dan','Skater Skip','Creative Callie','Zen Zena','Grumpy Gus','Journey Mark','Abby','Bear'];
+  return names.map(n=>({name:n, notes:'', voice:'ember', eleven:'', portrait:''}));
+}
+function renderCharList(){
+  const list = byId('charList'); list.innerHTML='';
+  CHARS.forEach((c,ix)=>{
+    const el=document.createElement('div'); el.className='item';
+    el.innerHTML = `
+      <div>
+        <div style="font-weight:700">${escapeHtml(c.name)}</div>
+        <div style="color:#bbb;font-size:.9rem">OpenAI: ${escapeHtml(c.voice||'ember')}${c.eleven?` · 11Labs:${escapeHtml(c.eleven)}`:''}</div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn small" data-edit="${ix}">Edit</button>
+      </div>`;
+    list.appendChild(el);
+  });
+  list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openChar(+b.dataset.edit));
+}
+function openChar(ix){
+  editingIx=ix; const c=CHARS[ix];
+  showCharModal(true);
+  byId('ceName').value=c.name; byId('ceNotes').value=c.notes||''; byId('ceVoice').value=c.voice||'ember';
+  byId('ce11').value=c.eleven||''; byId('cePortrait').value='';
+}
+function showCharModal(v){ byId('charModal').style.display=v?'flex':'none'; }
+byId('ceCancel').onclick=()=> showCharModal(false);
+byId('ceSave').onclick=async ()=>{
+  const c=CHARS[editingIx];
+  c.name   = byId('ceName').value.trim()||c.name;
+  c.notes  = byId('ceNotes').value.trim();
+  c.voice  = byId('ceVoice').value;
+  c.eleven = byId('ce11').value.trim();
+  const f=byId('cePortrait').files?.[0];
+  if(f) c.portrait = await fileToDataURL(f);
+  save('ba_chars', CHARS); renderCharList(); showCharModal(false);
+};
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+/* ========= scene split & preview ========= */
+UI.preview.onclick = ()=> updateSceneCount();
+function updateSceneCount(){
+  const scenes=splitScenes(UI.txt.value);
+  UI.scenesBadge.textContent=scenes.length;
+  UI.thumbs.innerHTML=''; scenes.forEach((_,i)=> UI.thumbs.appendChild(makeTile(i+1)));
+}
+function splitScenes(text){
+  const blocks = text.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
+  return blocks.length?blocks:[];
+}
+function makeTile(n){
+  const t=document.createElement('div'); t.className='tile';
+  t.innerHTML = `<div class="num">#${n}</div><span style="color:#ccc">waiting…</span>`;
+  return t;
+}
+
+/* ========= proxy helpers ========= */
+function getProxyBase(){
+  const base = (SECRETS.proxy||'').replace(/\/+$/,'');
+  return base || 'https://ai-proxydjs.YOURNAME.workers.dev';
+}
+async function callProxy(path,{method='POST',json=null,qs=null,expect='json'}={}){
+  const base=getProxyBase();
+  const q=qs?('?'+new URLSearchParams(qs).toString()):'';
+  const url=`${base}${path}${q}`;
+  const res=await fetch(url,{method,headers:json?{'Content-Type':'application/json'}:undefined,body:json?JSON.stringify(json):undefined});
+  if(!res.ok){ throw new Error(`${path} ${res.status}`); }
+  if(expect==='blob') return await res.blob();
+  return await res.json();
+}
+// OpenAI image via worker -> returns blob (PNG)
+async function genImage(prompt,style,aspect){
+  const blob = await callProxy('/images',{json:{prompt,style,aspect}},null,'blob');
+  return URL.createObjectURL(blob);
+}
+// OpenAI TTS -> audio blob URL
+async function ttsOpenAI(text,voice='ember'){
+  const blob = await callProxy('/voice/openai',{json:{text,voice}},null,'blob');
+  return URL.createObjectURL(blob);
+}
+// ElevenLabs TTS -> audio blob URL
+async function ttsEleven(text,voice_id){
+  const blob = await callProxy('/voice/11labs',{json:{text,voice_id}},null,'blob');
+  return URL.createObjectURL(blob);
+}
+// Freesound auto-pick -> mp3 blob URL
+async function autoSfx(text){
+  const blob = await callProxy('/sfx/auto',{json:{text}},null,'blob');
+  return URL.createObjectURL(blob);
+}
+
+/* ========= render loop ========= */
+UI.start.onclick = async ()=>{
+  const scenes=splitScenes(UI.txt.value);
+  if(!scenes.length) return alert('Paste some text first.');
+  UI.thumbs.innerHTML=''; scenes.forEach((_,i)=> UI.thumbs.appendChild(makeTile(i+1)));
+  UI.meter.style.width='0%'; UI.pct.textContent='0%';
+  ASSETS={images:[], narration:[], sfx:[]};
+
+  const online = SETTINGS.renderMode==='online';
+  const narrator = CHARS.find(c=>/^narrator$/i.test(c.name)) || CHARS[0] || {voice:'ember'};
+
+  for(let i=0;i<scenes.length;i++){
+    const tile = UI.thumbs.children[i];
+    try{
+      // 1) IMAGE
+      let imgUrl;
+      if(online){
+        const prompt = buildPrompt(scenes[i], SETTINGS.artStyle);
+        imgUrl = await genImage(prompt, SETTINGS.artStyle, SETTINGS.aspect);
+      }else{
+        imgUrl = await placeholderPNG(`Scene ${i+1}`, `${SETTINGS.artStyle} • ${SETTINGS.visualMotion}`);
+      }
+      ASSETS.images[i]=imgUrl;
+      tile.innerHTML = `<div class="num">#${i+1}</div><img alt="scene ${i+1}" src="${imgUrl}"/>`;
+
+      // 2) NARRATION (OpenAI or ElevenLabs if narrator has eleven id)
+      let voiceUrl;
+      if(online){
+        if(narrator.eleven){
+          voiceUrl = await ttsEleven(scenes[i], narrator.eleven);
+        }else{
+          voiceUrl = await ttsOpenAI(scenes[i], narrator.voice||'ember');
+        }
+      }else{
+        voiceUrl = null; // offline skip
+      }
+      ASSETS.narration[i]=voiceUrl;
+
+      // 3) SFX (auto) — best effort
+      let sfxUrl = null;
+      if(online){
+        try{ sfxUrl = await autoSfx(scenes[i]); }catch(e){ sfxUrl=null; }
+      }
+      ASSETS.sfx[i]=sfxUrl;
+
+    }catch(err){
+      const msg = (err && err.message) || 'Failed';
+      const ph = await placeholderPNG(`Scene ${i+1}`, msg);
+      ASSETS.images[i]=ph;
+      tile.innerHTML = `<div class="num">#${i+1}</div><img src="${ph}"/><div class="err" title="${msg}">⚠ ${escapeHtml(msg).slice(0,70)}</div>`;
+    }
+    const p=Math.round(((i+1)/scenes.length)*100);
+    UI.meter.style.width=p+'%'; UI.pct.textContent=p+'%';
+    await sleep(50);
+  }
+  alert('Scenes processed.');
+};
+
+/* ========= prompt builder & placeholder ========= */
+function buildPrompt(scene, art){
+  const base = `Illustration, ${art}, cinematic lighting, clean composition, high detail.`;
+  const clean = scene.replace(/^\s*#.*$/gm,'').trim();
+  return `${base}\nScene: ${clean}`;
+}
+async function placeholderPNG(title, subtitle=''){
+  const w=640,h=360, pad=18, r=12;
+  const c = document.createElement('canvas'); c.width=w; c.height=h;
+  const x = c.getContext('2d');
+  x.fillStyle='#0f0f0f'; x.fillRect(0,0,w,h);
+  x.strokeStyle='#666'; x.lineWidth=2; roundRect(x,pad,pad,w-pad*2,h-pad*2,r); x.stroke();
+  x.fillStyle='#fff'; x.font='bold 22px Inter, system-ui'; x.fillText(title, 26, 50);
+  x.fillStyle='#bbb'; x.font='15px Inter, system-ui'; wrapText(x, subtitle, 26, 80, w-52, 20);
+  return c.toDataURL('image/png');
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function wrapText(ctx, text, x, y, max, lh){
+  const words=(text||'').split(/\s+/), line=[];
+  for(const w of words){ const test=[...line,w].join(' '); if(ctx.measureText(test).width>max){ ctx.fillText(line.join(' '),x,y); line.length=0;y+=lh; } line.push(w); }
+  ctx.fillText(line.join(' '),x,y);
+}
+
+/* ========= export ZIP ========= */
+UI.btnZip.onclick = async ()=>{
+  const zip = new JSZip();
+  const manifest = {settings:SETTINGS, characters:CHARS, scenes:[]};
+  for(let i=0;i<ASSETS.images.length;i++){
+    manifest.scenes[i] = { image:`scene-${(i+1).toString().padStart(3,'0')}.png`, narration: ASSETS.narration[i]?`scene-${(i+1).toString().padStart(3,'0')}.mp3`:null, sfx:ASSETS.sfx[i]?`scene-${(i+1).toString().padStart(3,'0')}-sfx.mp3`:null };
+    // image
+    if(ASSETS.images[i]){
+      const imgBlob = await fetch(ASSETS.images[i]).then(r=>r.blob());
+      zip.file(manifest.scenes[i].image, imgBlob);
+    }
+    // narration
+    if(ASSETS.narration[i]){
+      const vBlob = await fetch(ASSETS.narration[i]).then(r=>r.blob());
+      zip.file(manifest.scenes[i].narration, vBlob);
+    }
+    // sfx
+    if(ASSETS.sfx[i]){
+      const sBlob = await fetch(ASSETS.sfx[i]).then(r=>r.blob());
+      zip.file(manifest.scenes[i].sfx, sBlob);
+    }
+  }
+  zip.file('manifest.json', JSON.stringify(manifest,null,2));
+  const blob = await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='BookAnimator_Project.zip'; a.click();
+};
+
+/* ========= misc ========= */
+UI.btnSave.onclick = ()=>{
+  save('ba_settings', SETTINGS);
+  save('ba_secrets', SECRETS);
+  save('ba_chars', CHARS);
+  alert('Saved to this browser.');
+};
+byId('btnClearThumbs').onclick=()=>{ UI.thumbs.innerHTML=''; ASSETS={images:[],narration:[],sfx:[]}; };
+byId('btnWipe').onclick=()=>{
+  localStorage.removeItem('ba_settings');
+  localStorage.removeItem('ba_secrets');
+  localStorage.removeItem('ba_chars');
+  alert('Cleared saved data. Reload the page.');
+};
+
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+</script>
+</body>
+</html>
+
+
+<!-- === Added Sidebar Menu, Secrets, and Settings Panels === -->
+
+<div class="topbar">
+  <button id="btnHamburger" class="hamburger" aria-label="Menu">☰</button>
+  <h1>📚 Book Animator</h1>
+</div>
+
+<aside id="sidebar" class="sidebar">
+  <button class="navbtn" data-target="characters">Characters</button>
+  <button class="navbtn" data-target="uploads">Uploads</button>
+  <button class="navbtn" data-target="secrets">Secrets</button>
+  <button class="navbtn" data-target="settings">Settings</button>
+</aside>
+
+<section id="secrets" class="panel" style="display:none">
+  <h2>Secrets</h2>
+  <label>OpenAI API Key: <input id="openaiKey" type="password"/></label>
+  <label>Cloudflare Proxy URL: <input id="proxyUrl" type="text"/></label>
+  <label>ElevenLabs API Key: <input id="elevenKey" type="password"/></label>
+  <button id="saveSecrets">Save Secrets</button>
+</section>
+
+<section id="settings" class="panel" style="display:none">
+  <h2>Settings</h2>
+  <label>Autosave Interval
+    <select id="autosaveInterval">
+      <option value="5">Every 5 minutes</option>
+      <option value="10" selected>Every 10 minutes</option>
+      <option value="15">Every 15 minutes</option>
+    </select>
+  </label>
+  <label>Auto Preview on Open
+    <select id="autoPreview">
+      <option value="off" selected>Off</option>
+      <option value="on">On</option>
+    </select>
+  </label>
+  <button id="saveSettings">Save Settings</button>
+</section>
+
+<script>
+document.getElementById("btnHamburger")?.addEventListener("click", ()=>{
+  document.getElementById("sidebar")?.classList.toggle("open");
+});
+
+document.getElementById("saveSecrets")?.addEventListener("click", ()=>{
+  const secrets = {
+    openai: document.getElementById("openaiKey").value,
+    proxy: document.getElementById("proxyUrl").value,
+    eleven: document.getElementById("elevenKey").value
+  };
+  localStorage.setItem("bookAnimatorSecrets", JSON.stringify(secrets));
+  alert("Secrets saved locally.");
+});
+
+document.getElementById("saveSettings")?.addEventListener("click", ()=>{
+  const settings = {
+    autosave: parseInt(document.getElementById("autosaveInterval").value, 10),
+    autoPreview: document.getElementById("autoPreview").value === "on"
+  };
+  localStorage.setItem("bookAnimatorSettings", JSON.stringify(settings));
+  alert("Settings saved locally.");
+});
+</script>
