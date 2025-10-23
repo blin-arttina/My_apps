@@ -1,6 +1,517 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><title>Test</title></head>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Book Animator — Full Suite</title>
+<style>
+  :root{ --bg:#0b0b0b; --panel:#111; --ink:#eee; --muted:#bbb; --line:#333; --accent:#ef4444; --ok:#34d399; --warn:#f59e0b; }
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif;}
+  h1{font-size:2rem;margin:.6rem 0;display:flex;align-items:center;gap:.6rem}
+  .wrap{max-width:1200px;margin:0 auto;padding:1rem;}
+  .panel{background:var(--panel);border:1px solid var(--line);padding:1rem;border-radius:1rem;margin-bottom:1rem;}
+  .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+  button{background:var(--accent);border:none;color:var(--ink);padding:.5rem 1rem;border-radius:.5rem;cursor:pointer}
+  button:hover{opacity:.92}
+  select,input,textarea{background:#222;color:var(--ink);border:1px solid var(--line);border-radius:.4rem;padding:.45rem}
+  textarea{width:100%;min-height:120px;resize:vertical}
+  .topbar{position:sticky;top:0;background:var(--bg);z-index:20;border-bottom:1px solid var(--line);padding:.4rem .6rem;display:flex;align-items:center;gap:.6rem}
+  .hamburger{background:#222;border:1px solid var(--line);color:var(--ink);width:38px;height:38px;border-radius:.5rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.2rem}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:280px;background:#0f0f0f;border-right:1px solid var(--line);transform:translateX(-100%);transition:transform .25s ease;z-index:30;padding:1rem .8rem;box-shadow:2px 0 12px rgba(0,0,0,.35)}
+  .sidebar.open{transform:translateX(0)}
+  .navbtn{width:100%;text-align:left;background:#1a1a1a;border:1px solid var(--line);margin-bottom:.6rem;padding:.6rem .7rem;border-radius:.6rem;cursor:pointer}
+  .navbtn.active{border-color:var(--accent)}
+  #charList{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem}
+  .charCard{background:#151515;border:1px solid var(--line);border-radius:.8rem;padding:.7rem;display:grid;grid-template-columns:56px 1fr;gap:.6rem;align-items:center;cursor:pointer;position:relative}
+  .charCard:hover{border-color:var(--accent)}
+  .charThumb{width:56px;height:56px;border-radius:.5rem;background:#0002;object-fit:cover}
+  .charName{font-weight:700}
+  .charVoice{font-size:.9rem;color:var(--muted)}
+  .playBtn{position:absolute;top:.5rem;right:.5rem;width:32px;height:32px;border-radius:999px;background:var(--ok);color:#000;border:none;font-weight:700}
+  .grid2{display:grid;grid-template-columns:13rem 1fr;gap:.6rem;align-items:center}
+  .warning{display:none;background:#3b1f1f;color:#ffd6d6;border:1px solid #a33;padding:.6rem;border-radius:.6rem;margin-bottom:.8rem}
+  #sceneGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.6rem}
+  .sceneCard{background:#1a1a1a;border:1px solid #333;border-radius:.6rem;padding:.5rem}
+  .sceneCard img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:.4rem;background:#0003}
+  .muted{color:var(--muted)}
+</style>
+</head>
 <body>
-<script>const VOICE_MAP={"Darling Danielle": "Juniper", "Skater skip": "Breeze", "Creative Callie": "Vale", "Zen Xena": "Shimmer", "Grumpy Gus": "Cove", "Ambush Annie": "Sol", "Sidetracked Sally": "Maple", "Narrator": "Ember"}; const CHARACTER_SEED=[{"name": "Zen Zena – Guardian of Balance", "voice": "Shimmer", "age": 32, "style": "Semi-realistic fantasy, tranquil and ethereal", "image": "./Zen_Zena.png", "gallery": [], "appearance": ["Long, flowing silver-white hair and calm glowing eyes (blind but perceptive)", "Wears layered blue and silver robes, representing harmony and wisdom", "Carries a specially crafted blind cane made of white ash wood with glowing runes", "Often surrounded by drifting leaves and soft beams of light"], "personality": ["Wise, gentle, and grounded — the moral center of the group", "Speaks in calm, thoughtful tones, guiding others to balance", "Sees through emotion rather than sight, finding peace in chaos"], "abilities": ["Echo Sense: Detects movement and energy through sound and air vibrations", "Nature’s Harmony: Calms corrupted or chaotic environments", "Spirit Communion: Communicates with natural spirits for protection or insight"], "background": "Born into the Order of the Whispering Grove, Zena lost her vision at birth but gained spiritual perception. Her empathy made her the chosen protector of balance across realms."}, {"name": "Darling Danielle – The Compassionate Knight", "voice": "Juniper", "age": 28, "style": "Noble fantasy realism, radiant and warm", "image": "./Darling_Danielle.png", "gallery": [], "appearance": ["Wavy blonde-brown hair and gentle blue eyes behind round glasses", "Wears silver armor over a flowing lavender gown", "Visibly pregnant, resting a hand proudly on her belly", "Radiates calm strength and maternal warmth"], "personality": ["Nurturing, patient, and endlessly brave", "Protects not just with her sword but with her heart", "Acts as the moral and emotional leader of the group"], "abilities": ["Aura of Courage: Inspires allies with unshakable resolve", "Guardian’s Blessing: Shields others with divine energy", "Light of Life: Her child represents prophecy and renewal"], "background": "A knight of the Silver Banner Order, Danielle left battle to seek peace. Her pregnancy marks the dawn of a new age she vows to protect."}, {"name": "Creative Callie – The Painter of Worlds", "voice": "Vale", "age": 25, "style": "Dreamlike fantasy, artistic and luminous", "image": "./Creative_Callie.png", "gallery": [], "appearance": ["Very long light brown hair, expressive eyes, and paint-stained fingers", "Wears robes in teal, gold, and cream with swirling magical patterns", "Carries a glowing paintbrush that leaves trails of light in the air"], "personality": ["Imaginative, passionate, and a bit scatterbrained", "Sees potential and beauty in everything", "Loves to create, even when chaos follows"], "abilities": ["Reality Brush: Paints objects or landscapes into existence", "Chromatic Ward: Creates barriers of color and emotion", "Artisan’s Vision: Sees the story behind every object or being"], "background": "A student of the Grand Academy of Artistry and Magic, Callie opened a portal to her own imagination — and now wields its creative power."}, {"name": "Skater Skip – The Sky Racer", "voice": "Breeze", "age": 22, "style": "Modern fantasy, energetic and confident", "image": "./Skater_Skip.png", "gallery": ["./Skater_Skip_ManBun.png"], "appearance": ["Tan, athletic build with long blonde hair tied in a man bun", "Wears rune-powered rollerblades and a sleek racing vest", "Bright blue eyes and a perpetual grin"], "personality": ["Fearless, funny, and endlessly polite", "Loves competition but values fairness", "A thrill-seeker with a golden heart"], "abilities": ["Rift Glide: Skates across dimensional rifts and energy waves", "Runic Boost: Enhances speed and reflexes with magic sigils", "Time Skip: Briefly slows time to outmaneuver enemies"], "background": "A champion racer from the Neon Spires who competes in magical tournaments across realms, always chasing adventure and helping those left behind."}, {"name": "Dark Dan – The Cursed Bard", "voice": "Spruce", "age": 30, "style": "Gothic fantasy, brooding but magnetic", "image": "./Dark_Dan.png", "gallery": ["./Dark_Dan_Bright.png"], "appearance": ["Dark brown hair, shaved sides, long in front over one eye", "Gauged ears, nose ring, lip piercing, and sharp blue eyes", "Wears dark leather armor with glowing blue runes", "Carries his enchanted guitar that channels spectral fire"], "personality": ["Sarcastic but loyal, carrying deep emotional scars", "Expresses truth through music more than words", "Protective of his team, especially the broken-hearted"], "abilities": ["Song of Shadows: Summons spectral flames with melody", "Harmony of the Dead: Calms or binds restless spirits", "Crescendo: Unleashes devastating power through sound"], "background": "Once a famed musician of the Midnight Kingdom, Dan’s music awakened forbidden magic. Now cursed, he roams seeking redemption."}, {"name": "Ambush Annie – The Street Rogue", "voice": "Sol", "age": 23, "style": "Urban fantasy, bold and quick-witted", "image": "./Ambush_Annie.png", "gallery": [], "appearance": ["Short curly red hair, round face, and sharp blue eyes", "Curvy, athletic build; wears light leather gear and daggers", "Always ready with a smirk or sly grin"], "personality": ["Cunning, witty, and fearless", "Hides compassion behind sarcasm", "Always up for a challenge"], "abilities": ["Shadow Step: Teleports short distances between shadows", "Quick Trick: Disarms or confuses enemies instantly", "Echo Blades: Daggers return when thrown, striking twice"], "background": "A bounty hunter from Sunreach Outskirts who learned survival the hard way, now fights for honor and loyalty over gold."}, {"name": "Sidetrack Sally – The Curious Explorer", "voice": "Maple", "age": 24, "style": "Bright fantasy, lighthearted and hopeful", "image": "./Sidetrack_Sally.png", "gallery": [], "appearance": ["Long blonde hair, bright blue eyes, soft pink outfit", "Carries a glowing lantern and travel pack", "Cheerful and radiant, always looking for hidden paths"], "personality": ["Curious and kind-hearted", "Easily distracted but always finds something valuable", "Believes every detour leads to destiny"], "abilities": ["Lantern of Whispers: Reveals hidden paths or secrets", "Echo Memory: Hears lingering voices of history", "Serendipity: Luck subtly alters fate in her favor"], "background": "From the quiet village of Fernhollow, Sally discovered the secret tunnels of the Order of the Echoes, setting her on a lifelong adventure."}, {"name": "Grumpy Gus – The Iron Veteran", "voice": "Cove", "age": 48, "style": "Classic dark fantasy, grim yet noble", "image": "./Grumpy_Gus.png", "gallery": [], "appearance": ["Light brown cropped hair, long gray goatee, rugged build", "Wears dented steel armor and carries a massive sword", "Blue-gray eyes and a weathered, stern face"], "personality": ["Gruff but loyal", "Short-tempered, secretly caring", "Believes in discipline, not speeches"], "abilities": ["Iron Will: Immune to fear and mental magic", "Shieldbreaker: Destroys enemy defenses", "Veteran’s Instinct: Predicts attacks through experience"], "background": "A retired commander of Ironhold Fortress, Gus returned to battle when his homeland was threatened again, grumbling all the way."}];</script>
-done
-</body></html>
+  <div class="topbar">
+    <button id="btnHamburger" class="hamburger" aria-label="Menu">☰</button>
+    <h1>📚 Book Animator</h1>
+  </div>
+
+  <aside id="sidebar" class="sidebar" aria-hidden="true">
+    <div style="font-weight:700;margin:.2rem 0 1rem 0;">Menu</div>
+    <button class="navbtn" data-target="viewCharacters">Characters</button>
+    <button class="navbtn" data-target="viewScenes">Scenes</button>
+    <button class="navbtn" data-target="viewUploads">Uploads</button>
+    <button class="navbtn" data-target="viewSecrets">Secrets</button>
+    <button class="navbtn" data-target="viewSettings">Settings</button>
+    <div class="muted" style="margin-top:1rem">v2.1 • Auto SFX + Export</div>
+  </aside>
+
+  <div class="wrap">
+    <section id="viewCharacters" class="panel">
+      <h2>Characters</h2>
+      <div id="charList"></div>
+      <div class="row" style="margin-top:.6rem">
+        <button id="btnAddChar">+ Add Character</button>
+        <div id="autosaveStatus" class="muted">Autosave ready</div>
+      </div>
+    </section>
+
+    <section id="viewScenes" class="panel" style="display:none">
+      <h2>Scenes</h2>
+      <textarea id="scenesText" placeholder="Write your scenes here. Blank line splits scenes.&#10;&#10;Example:&#10;A calm forest with birds chirping.&#10;&#10;A storm with thunder and heavy rain.&#10;&#10;Footsteps echoing in a quiet hallway."></textarea>
+      <div class="row" style="margin-top:.6rem">
+        <button id="btnPreviewScenes">Preview Scenes</button>
+        <button id="btnStartAnimation">Generate Images + Narration + SFX</button>
+        <button id="btnExportAudio">Export Final Audio (MP3/WAV)</button>
+        <button id="btnExportVideo">Export Final Video (WebM / MP4*)</button>
+        <span class="muted">* MP4 uses ffmpeg.wasm (CPU heavy).</span>
+      </div>
+      <div id="sceneGrid" style="margin-top:.8rem"></div>
+    </section>
+
+    <section id="viewUploads" class="panel" style="display:none">
+      <h2>Uploads</h2>
+      <label class="item"><div>Music Uploads</div><input id="fileMusic" type="file" accept="audio/*" multiple/></label>
+      <label class="item" style="margin-top:.5rem"><div>General Uploads</div><input id="fileGeneral" type="file" accept="*/*" multiple/></label>
+      <div id="uploadList" class="muted" style="margin-top:.8rem">No files uploaded yet.</div>
+      <div class="row" style="margin-top:.6rem"><button id="btnExportUploads">Export Uploaded Files</button></div>
+    </section>
+
+    <section id="viewSecrets" class="panel" style="display:none">
+      <h2>Secrets</h2>
+      <div id="storageWarning" class="warning">Storage is blocked; enable site storage or avoid private mode.</div>
+      <div class="grid2">
+        <label>Cloudflare Proxy URL</label><input id="secProxy" type="text" placeholder="https://ai-proxydjs.blindart2020.workers.dev"/>
+        <label>OpenAI API Key</label><input id="secOpenAI" type="password" placeholder="sk-..."/>
+        <label>ElevenLabs API Key</label><input id="secEleven" type="password" placeholder="eleven-..."/>
+        <label>FreeSound API Key</label><input id="secFreesound" type="password" placeholder="freesound-..."/>
+        <label>Hugging Face Token</label><input id="secHF" type="password" placeholder="hf_..."/>
+        <label>Stability/DreamStudio</label><input id="secStability" type="password" placeholder="sk-stability-..."/>
+        <label>Custom Token 1</label><input id="secCustom1" type="password" placeholder="custom-1"/>
+        <label>Custom Token 2</label><input id="secCustom2" type="password" placeholder="custom-2"/>
+        <label>Custom Token 3</label><input id="secCustom3" type="password" placeholder="custom-3"/>
+      </div>
+      <div class="row" style="margin-top:.8rem">
+        <button id="btnSaveSecrets">Save Secrets</button>
+        <button id="btnClearSecrets" style="background:var(--warn)">Clear</button>
+        <button id="btnExportSecrets">Export (.json)</button>
+        <label><input id="fileImportSecrets" type="file" accept="application/json" style="display:none"/><button id="btnImportSecrets">Import (.json)</button></label>
+      </div>
+      <div class="muted" style="margin-top:.6rem">Kept locally in this browser (localStorage/IndexedDB).</div>
+    </section>
+
+    <section id="viewSettings" class="panel" style="display:none">
+      <h2>Settings</h2>
+      <div class="grid2">
+        <label>Autosave Interval</label>
+        <select id="setAutosave">
+          <option value="2">Every 2 minutes</option>
+          <option value="5">Every 5 minutes</option>
+          <option value="10" selected>Every 10 minutes</option>
+          <option value="15">Every 15 minutes</option>
+          <option value="30">Every 30 minutes</option>
+        </select>
+
+        <label>Auto-preview on open</label>
+        <select id="setAutoPreview">
+          <option value="off" selected>Off</option>
+          <option value="on">On</option>
+        </select>
+
+        <label>Theme</label>
+        <select id="setTheme">
+          <option value="system" selected>System</option>
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+
+        <label>Default Voice</label>
+        <select id="setDefaultVoice"></select>
+
+        <label>Image Size</label>
+        <select id="setImageSize">
+          <option>512x512</option>
+          <option selected>1024x1024</option>
+          <option>1024x1536</option>
+        </select>
+
+        <label>Scene Split</label>
+        <select id="setSceneSplit">
+          <option value="blank" selected>Blank line</option>
+          <option value="hash">Lines starting with “#”</option>
+          <option value="every4">Every 4 lines</option>
+        </select>
+
+        <label>SFX Source</label>
+        <select id="setSfxSource">
+          <option value="freesound" selected>FreeSound</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:.8rem">
+        <button id="btnSaveSettings">Save Settings</button>
+        <button id="btnResetDefault" style="background:var(--warn)">Reset to Defaults</button>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="charEditor" style="background:#111;border:1px solid var(--line);border-radius:1rem;padding:1.2rem;width:520px;max-width:92%;position:relative;">
+    <button id="ceCloseX" aria-label="Close" title="Close" style="position:absolute;top:.6rem;right:.6rem;background:#222;border:1px solid #444;color:#eee;border-radius:999px;width:32px;height:32px;cursor:pointer;">✕</button>
+    <h3 style="margin-top:0;">Edit Character</h3>
+    <div class="grid2">
+      <label>Name</label><input id="ceName" type="text"/>
+      <label>Notes</label><textarea id="ceNotes" rows="3"></textarea>
+      <label>Voice (OpenAI)</label><select id="ceVoice"></select>
+      <label>Eleven Labs Voice ID (optional)</label><input id="ceEleven" type="text" placeholder="(optional)"/>
+      <label>Portrait</label><input id="cePortrait" type="file" accept="image/*"/>
+    </div>
+    <div style="margin-top:.8rem;text-align:right;">
+      <button id="ceSave">Save</button>
+      <button id="ceCancel" style="background:var(--warn)">Cancel</button>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/ffmpeg.min.js"></script>
+
+<script>
+/* ===== Voice & Character seeds (optional runtime injection) ===== */
+const CORE_VOICES = ["ember","maple","juniper","sage","alloy","verse","aria","amber","spruce","breeze","vale","shimmer","cove","sol"];
+let ALL_VOICES = [...CORE_VOICES];
+const VOICE_MAP = {};   // If you want to hardwire: {"Narrator":"ember", ...}
+let CHARACTER_SEED = []; // If you want to hardwire: [{name, voice, image?}, ...]
+
+function fillVoiceSelect(sel){
+  sel.innerHTML = ALL_VOICES.map(v=>`<option value="${v}">${v[0].toUpperCase()+v.slice(1)}</option>`).join("");
+}
+
+/* ===== Persistence (localStorage + IndexedDB) ===== */
+const DB_NAME="book-animator-db", DB_STORE="kv";
+const LS_DATA="bookAnimatorData", LS_SECRETS="bookAnimatorSecrets", LS_SETTINGS="bookAnimatorSettings";
+let idb;
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(DB_STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbPut(k,v){idb=idb||await idbOpen();return new Promise((res,rej)=>{const tx=idb.transaction(DB_STORE,"readwrite");tx.objectStore(DB_STORE).put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+async function idbGet(k){idb=idb||await idbOpen();return new Promise((res,rej)=>{const tx=idb.transaction(DB_STORE,"readonly");const q=tx.objectStore(DB_STORE).get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+async function storeSet(k,o){try{localStorage.setItem(k,JSON.stringify(o));}catch{await idbPut(k,o);}}
+async function storeGet(k,f={}){try{const raw=localStorage.getItem(k);if(raw)return JSON.parse(raw);}catch{}const v=await idbGet(k);return v??f;}
+function storageWritable(){try{const k="__t"+Math.random();localStorage.setItem(k,"1");const ok=localStorage.getItem(k)==="1";localStorage.removeItem(k);return ok;}catch{return false;}}
+
+/* ===== Sidebar ===== */
+const sidebar=document.getElementById("sidebar");
+document.getElementById("btnHamburger").onclick=()=>sidebar.classList.toggle("open");
+const navs=[...document.querySelectorAll(".navbtn")];
+navs.forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll("section.panel").forEach(s=>s.style.display="none");document.getElementById(btn.dataset.target).style.display="";navs.forEach(b=>b.classList.remove("active"));btn.classList.add("active");sidebar.classList.remove("open");}));
+navs[0].classList.add("active");
+
+/* ===== Characters ===== */
+let characters=[];
+const charList=document.getElementById("charList");
+const editor=document.getElementById("charEditor");
+const autosaveStatus=document.getElementById("autosaveStatus");
+
+function defaultCharacters(){
+  if (Array.isArray(CHARACTER_SEED) && CHARACTER_SEED.length){
+    return CHARACTER_SEED.map(c=>({name:c.name, notes:c.notes||"", voice:(c.voice||"ember").toLowerCase(), eleven:"", portrait:c.image||""}));
+  }
+  const base = Object.keys(VOICE_MAP).length? Object.keys(VOICE_MAP) : ["Narrator","Sidetracked Sally","Darling Danielle","Dark Dan","Skater Skip","Creative Callie","Zen Zena","Grumpy Gus","Ambush Annie"];
+  return base.map(n=>({name:n, notes:"", voice:(VOICE_MAP[n]||"ember").toLowerCase(), eleven:"", portrait:""}));
+}
+
+function renderCharacters(){
+  charList.innerHTML="";
+  characters.forEach((c,i)=>{
+    const div=document.createElement("div");
+    div.className="charCard";
+    const img=document.createElement("img"); img.className="charThumb"; img.src=c.portrait||""; img.alt="portrait";
+    const meta=document.createElement("div"); meta.innerHTML=`<div class="charName">${c.name}</div><div class="charVoice">${c.voice}</div>`;
+    const play=document.createElement("button"); play.className="playBtn"; play.textContent="🔊"; play.onclick=(e)=>{e.stopPropagation(); playVoicePreview(c.voice,c.name);};
+    div.appendChild(img); div.appendChild(meta); div.appendChild(play);
+    div.onclick=()=>openEditor(i);
+    charList.appendChild(div);
+  });
+  autoSave();
+}
+
+function openEditor(i){
+  const c=characters[i];
+  editor.dataset.index=i;
+  fillVoiceSelect(document.getElementById("ceVoice"));
+  document.getElementById("ceName").value=c.name;
+  document.getElementById("ceNotes").value=c.notes;
+  document.getElementById("ceVoice").value=c.voice;
+  document.getElementById("ceEleven").value=c.eleven;
+  document.getElementById("cePortrait").value="";
+  editor.showModal();
+}
+
+document.getElementById("ceCancel").onclick=()=>editor.close();
+document.getElementById("ceCloseX").onclick=()=>editor.close();
+editor.addEventListener("keydown",(e)=>{if(e.key==="Escape") editor.close();});
+editor.addEventListener("click",(e)=>{const r=editor.getBoundingClientRect();const inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;if(!inside) editor.close();});
+
+document.getElementById("ceSave").onclick=async()=>{
+  const i=Number(editor.dataset.index||0);
+  characters[i].name=document.getElementById("ceName").value;
+  characters[i].notes=document.getElementById("ceNotes").value;
+  characters[i].voice=document.getElementById("ceVoice").value;
+  characters[i].eleven=document.getElementById("ceEleven").value;
+  const pf=document.getElementById("cePortrait").files?.[0];
+  if(pf){ characters[i].portrait = await fileToDataURL(pf); }
+  editor.close(); renderCharacters();
+};
+document.getElementById("btnAddChar").onclick=()=>{characters.push({name:"New Character",notes:"",voice:"ember",eleven:"",portrait:""}); renderCharacters();};
+function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(file);});}
+
+/* ===== Uploads Vault (IDB) ===== */
+const uploadList=document.getElementById("uploadList");
+const FILES_KEY="uploads_index"; // [{id,name,type,size,savedAt}]
+async function vaultList(){ return await storeGet(FILES_KEY, []); }
+async function vaultSaveAll(list){ await storeSet(FILES_KEY, list); }
+async function vaultAddFiles(fileList){ const db=idb||await idbOpen(); const tx=db.transaction(DB_STORE,"readwrite"); const store=tx.objectStore(DB_STORE); const index=await vaultList(); for (const file of fileList){ const id=crypto.randomUUID(); store.put(file, "file:"+id); index.push({id,name:file.name,type:file.type,size:file.size,savedAt:Date.now()}); } await new Promise((res,rej)=>{ tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); await vaultSaveAll(index); return index; }
+async function vaultGetFileBlob(id){ const db=idb||await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(DB_STORE,"readonly"); const req=tx.objectStore(DB_STORE).get("file:"+id); req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error); }); }
+async function refreshUploadsUI(){ const idx=await vaultList(); uploadList.innerHTML = idx.length? idx.map(x=>`${x.name} <span class='muted'>(${Math.round(x.size/1024)} KB)</span>`).join("<br>") : "No files uploaded yet."; }
+for (const id of ["fileMusic","fileGeneral"]){ const el=document.getElementById(id); if(el) el.addEventListener("change", async ()=>{ if(!el.files?.length) return; await vaultAddFiles(el.files); await refreshUploadsUI(); await autoSave(); }); }
+document.getElementById("btnExportUploads").onclick=async()=>{ const files=await vaultList(); if(!files.length) return alert("No files to export."); for (const f of files){ const blob=await vaultGetFileBlob(f.id); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=f.name; a.click(); } };
+
+/* ===== Settings & Secrets ===== */
+function defaultSettings(){ return { autosaveMinutes:10, autoPreviewOnOpen:false, theme:"system", defaultVoice:"ember", imageSize:"1024x1024", sceneSplit:"blank", sfxSource:"freesound" }; }
+async function loadSettingsIntoForm(){ const s=await storeGet(LS_SETTINGS, defaultSettings()); document.getElementById("setAutosave").value=String(s.autosaveMinutes); document.getElementById("setAutoPreview").value = s.autoPreviewOnOpen?"on":"off"; document.getElementById("setTheme").value=s.theme; document.getElementById("setImageSize").value=s.imageSize; document.getElementById("setSceneSplit").value=s.sceneSplit; document.getElementById("setSfxSource").value=s.sfxSource; fillVoiceSelect(document.getElementById("setDefaultVoice")); document.getElementById("setDefaultVoice").value=s.defaultVoice; setAutosaveInterval(s.autosaveMinutes); }
+async function saveSettingsObj(s){ await storeSet(LS_SETTINGS, s); }
+document.getElementById("btnSaveSettings").onclick=async()=>{ const s={ autosaveMinutes:parseInt(document.getElementById("setAutosave").value,10)||10, autoPreviewOnOpen:(document.getElementById("setAutoPreview").value==="on"), theme:document.getElementById("setTheme").value, defaultVoice:document.getElementById("setDefaultVoice").value, imageSize:document.getElementById("setImageSize").value, sceneSplit:document.getElementById("setSceneSplit").value, sfxSource:document.getElementById("setSfxSource").value }; await saveSettingsObj(s); setAutosaveInterval(s.autosaveMinutes); autosaveStatus.textContent="Settings saved ✓"; };
+document.getElementById("btnResetDefault").onclick=async()=>{ const s=defaultSettings(); await saveSettingsObj(s); await loadSettingsIntoForm(); autosaveStatus.textContent="Settings reset ✓"; };
+
+const fields={proxy:"secProxy",openai:"secOpenAI",eleven:"secEleven",freesound:"secFreesound",hf:"secHF",stability:"secStability",custom1:"secCustom1",custom2:"secCustom2",custom3:"secCustom3"};
+async function loadSecretsIntoForm(){ const v=await storeGet(LS_SECRETS,{}); Object.entries(fields).forEach(([k,id])=>{const el=document.getElementById(id); if(el) el.value = v[k] || (k==="proxy" ? "https://ai-proxydjs.blindart2020.workers.dev" : "");}); if(!storageWritable()) document.getElementById("storageWarning").style.display="block"; }
+async function saveSecrets(){ const v={}; Object.entries(fields).forEach(([k,id])=>{const el=document.getElementById(id); if(el) v[k]=(el.value||"").trim();}); await storeSet(LS_SECRETS, v); autosaveStatus.textContent="Secrets saved ✓"; }
+function clearSecrets(){ localStorage.removeItem(LS_SECRETS); idbPut(LS_SECRETS, {}); loadSecretsIntoForm(); autosaveStatus.textContent="Secrets cleared"; }
+document.getElementById("btnSaveSecrets").onclick=saveSecrets;
+document.getElementById("btnClearSecrets").onclick=clearSecrets;
+document.getElementById("btnExportSecrets").onclick=async()=>{ const blob=new Blob([JSON.stringify(await storeGet(LS_SECRETS,{}),null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="book-animator-secrets.json"; a.click(); };
+document.getElementById("btnImportSecrets").onclick=()=>document.getElementById("fileImportSecrets").click();
+document.getElementById("fileImportSecrets").addEventListener("change", async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); try{ const v=JSON.parse(text); await storeSet(LS_SECRETS,v); loadSecretsIntoForm(); autosaveStatus.textContent="Secrets imported ✓"; }catch{ alert("Invalid JSON"); } });
+
+/* ===== Autosave core data ===== */
+let autosaveTimer=null;
+async function autoSave(){ await storeSet(LS_DATA, { characters, uploads: uploadList?.innerHTML || "" }); autosaveStatus.textContent="Autosaved ✓ " + new Date().toLocaleTimeString(); }
+async function autoLoad(){ const saved=await storeGet(LS_DATA,null); if(saved?.characters) characters=saved.characters; else characters=defaultCharacters(); const up=document.getElementById("uploadList"); if(saved?.uploads && up) up.innerHTML=saved.uploads; }
+
+function setAutosaveInterval(mins){ if(autosaveTimer) clearInterval(autosaveTimer); autosaveTimer=setInterval(autoSave, Math.max(1, mins)*60000); }
+
+/* ===== OpenAI TTS Preview ===== */
+async function playVoicePreview(voice,name){
+  const v=await storeGet(LS_SECRETS,{});
+  const base=(v.proxy||"https://ai-proxydjs.blindart2020.workers.dev").replace(/\/$/,"");
+  const headers={"Content-Type":"application/json"};
+  if(v.openai) headers["Authorization"]="Bearer "+v.openai;
+  try{
+    const r=await fetch(base+"/v1/audio/speech",{method:"POST",headers,body:JSON.stringify({model:"gpt-4o-mini-tts",voice,input:`Hello, I am ${name}. This is my voice.`})});
+    if(!r.ok) throw new Error("TTS "+r.status);
+    const blob=await r.blob(); new Audio(URL.createObjectURL(blob)).play();
+    autosaveStatus.textContent=`Playing ${name}'s voice`;
+  }catch(e){ console.error(e); autosaveStatus.textContent="Voice preview failed"; }
+}
+
+/* ===== Scene helpers ===== */
+function getScenes(){ const ta=document.getElementById("scenesText"); if(!ta) return []; return ta.value.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean); }
+function ensureSceneTiles(n){
+  const grid=document.getElementById("sceneGrid");
+  while (grid.children.length < n){
+    const i=grid.children.length+1;
+    const card=document.createElement("div"); card.className="sceneCard";
+    card.innerHTML=`<div class="muted" style="font-size:.8rem;margin-bottom:.3rem;">#${i}</div>
+      <img id="sceneThumb-${i}" alt="thumb ${i}"/>
+      <audio id="sceneNarr-${i}" controls style="width:100%;margin-top:.3rem"></audio>
+      <audio id="sceneSfx-${i}" controls style="width:100%;margin-top:.3rem"></audio>`;
+    grid.appendChild(card);
+  }
+}
+
+/* ===== OpenAI images + TTS + FreeSound SFX ===== */
+async function generateImageForScene(promptText){
+  const v=await storeGet(LS_SECRETS,{});
+  const base=(v.proxy||"https://ai-proxydjs.blindart2020.workers.dev").replace(/\/$/,"");
+  const headers={"Content-Type":"application/json"}; if(v.openai) headers["Authorization"]="Bearer "+v.openai;
+  const res=await fetch(base+"/v1/images/generations",{method:"POST",headers,body:JSON.stringify({model:"gpt-image-1",prompt:promptText,size:document.getElementById("setImageSize").value||"1024x1024"})});
+  if(!res.ok) throw new Error("Image gen "+res.status);
+  const json=await res.json(); const b64=json?.data?.[0]?.b64_json; if(!b64) throw new Error("No image data"); return "data:image/png;base64,"+b64;
+}
+async function generateNarration(text,voice){
+  const v=await storeGet(LS_SECRETS,{});
+  const base=(v.proxy||"https://ai-proxydjs.blindart2020.workers.dev").replace(/\/$/,"");
+  const headers={"Content-Type":"application/json"}; if(v.openai) headers["Authorization"]="Bearer "+v.openai;
+  const res=await fetch(base+"/v1/audio/speech",{method:"POST",headers,body:JSON.stringify({model:"gpt-4o-mini-tts",voice,input:text})});
+  if(!res.ok) throw new Error("TTS "+res.status);
+  const blob=await res.blob(); return URL.createObjectURL(blob);
+}
+function sfxKeywordFrom(text){
+  const tag=(text.match(/\\[sfx:\\s*([^\\]]+)\\]/i)||[])[1];
+  if(tag) return tag;
+  const dict=[["thunder","thunder"],["rain","rain"],["ocean","ocean waves"],["wind","wind"],
+              ["forest","forest birds"],["birds","birds"],["footsteps","footsteps"],
+              ["door","door close"],["crowd","crowd"],["city","city ambience"],
+              ["car","car engine"],["applause","applause"],["laugh","laughter"]];
+  text=text.toLowerCase();
+  for (const [k,q] of dict) if (text.includes(k)) return q;
+  return "ambience";
+}
+async function findFreeSoundPreview(query){
+  const v=await storeGet(LS_SECRETS,{});
+  if(!v.freesound) throw new Error("Missing FreeSound API key");
+  const url=new URL("https://freesound.org/apiv2/search/text/");
+  url.searchParams.set("query", query);
+  url.searchParams.set("fields","id,name,previews,duration");
+  url.searchParams.set("filter","duration:[0 TO 20]");
+  url.searchParams.set("page_size","1");
+  const res=await fetch(url.toString(),{headers:{Authorization:"Token "+v.freesound}});
+  if(!res.ok) throw new Error("FreeSound "+res.status);
+  const js=await res.json();
+  const item=js.results?.[0];
+  return item?.previews?.["preview-hq-mp3"] || item?.previews?.["preview-lq-mp3"] || "";
+}
+
+/* ===== Audio utils: fetch/mix/concat, export MP3/WAV ===== */
+async function fetchAsArrayBuffer(url){ const r=await fetch(url); return await r.arrayBuffer(); }
+async function decodeToBuffer(ctx, data){ return await ctx.decodeAudioData(data.slice(0)); }
+function mixToLength(ctx, a, b){ const len=Math.max(a.length, b.length); const out=ctx.createBuffer(Math.max(a.numberOfChannels,b.numberOfChannels), len, a.sampleRate); for (let ch=0; ch<out.numberOfChannels; ch++){ const oa=out.getChannelData(ch); const aa=a.getChannelData(Math.min(ch,a.numberOfChannels-1)); for (let i=0;i<aa.length;i++) oa[i]+=aa[i]; if (b){ const bb=b.getChannelData(Math.min(ch,b.numberOfChannels-1)); for (let i=0;i<bb.length;i++) oa[i]+=bb[i]; } } return out; }
+function concatBuffers(ctx, arr){ const total = arr.reduce((n,b)=>n+b.length,0); const out=ctx.createBuffer(2, total, arr[0].sampleRate); let o=0; for(const b of arr){ for(let ch=0; ch<Math.min(2,b.numberOfChannels); ch++){ out.getChannelData(ch).set(b.getChannelData(ch), o); } o+=b.length; } return out; }
+function bufferToWavBlob(buffer){ const numOfChan=buffer.numberOfChannels, length=buffer.length* numOfChan * 2 + 44, bufferArr=new ArrayBuffer(length), view=new DataView(bufferArr), channels=[]; let pos=0; function setUint16(data){view.setUint16(pos,data,true); pos+=2;} function setUint32(data){view.setUint32(pos,data,true); pos+=4;} setUint32(0x46464952); setUint32(length-8); setUint32(0x45564157); setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan); setUint32(buffer.sampleRate); setUint32(buffer.sampleRate * 2 * numOfChan); setUint16(numOfChan*2); setUint16(16); setUint32(0x61746164); setUint32(length-44); for(let i=0;i<numOfChan;i++) channels.push(buffer.getChannelData(i)); let offset=0; while(offset<buffer.length){ for(let i=0;i<numOfChan;i++){ let s=Math.max(-1, Math.min(1, channels[i][offset])); view.setInt16(pos, s<0?s*0x8000:s*0x7FFF, true); pos+=2; } offset++; } return new Blob([view], {type:"audio/wav"}); }
+function bufferToMp3Blob(buffer){ const mp3encoder = new lamejs.Mp3Encoder(Math.min(2, buffer.numberOfChannels), buffer.sampleRate, 128); const samplesL = buffer.getChannelData(0); const samplesR = buffer.numberOfChannels>1 ? buffer.getChannelData(1) : samplesL; const blockSize = 1152; let mp3Data=[]; for (let i=0; i<samplesL.length; i+=blockSize){ const left = samplesL.subarray(i, i+blockSize); const right = samplesR.subarray(i, i+blockSize); const buf = mp3encoder.encodeBuffer(floatTo16BitPCM(left), floatTo16BitPCM(right)); if (buf.length>0) mp3Data.push(new Int8Array(buf)); } const end = mp3encoder.flush(); if (end.length>0) mp3Data.push(new Int8Array(end)); return new Blob(mp3Data, {type:"audio/mPEG"}); }
+function floatTo16BitPCM(float32Array){ const output = new Int16Array(float32Array.length); for (let i=0;i<float32Array.length;i++){ const s=Math.max(-1,Math.min(1,float32Array[i])); output[i]=s<0?s*0x8000:s*0x7FFF; } return output; }
+
+/* ===== Video export via MediaRecorder canvas capture ===== */
+async function exportVideoWebM(images, durations, mixedBuffer){
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024; canvas.height = 1024;
+  const ctx = canvas.getContext("2d");
+  const stream = canvas.captureStream(30); // 30fps
+
+  // Audio from WebAudio into MediaStream
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  const dest = ac.createMediaStreamDestination();
+  const src = ac.createBufferSource(); src.buffer = mixedBuffer; src.connect(dest); src.start();
+  const combined = new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+  const rec = new MediaRecorder(combined, { mimeType: "video/webm;codecs=vp9,opus" });
+
+  const chunks=[];
+  rec.ondataavailable = (e)=>{ if(e.data && e.data.size) chunks.push(e.data); };
+  const done = new Promise(r=>rec.onstop=()=>r());
+  rec.start(250);
+
+  // Draw slideshow synced with durations
+  const start = performance.now();
+  let idx = 0, elapsed = 0, img = null;
+  async function load(idx){ const im = new Image(); im.src = images[idx]; await im.decode(); return im; }
+  img = await load(0);
+  function draw(t){
+    const now = t - start; // ms
+    // advance slide if needed
+    if (now/1000 >= elapsed + (durations[idx]||2)){
+      elapsed += durations[idx]||2;
+      idx++;
+      if (idx >= images.length){ rec.stop(); return; }
+      load(idx).then(v=>{ img=v; });
+    }
+    ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width,canvas.height);
+    if (img){ 
+      // cover
+      const iw=img.width, ih=img.height, cw=canvas.width, ch=canvas.height;
+      const ir = iw/ih, cr = cw/ch;
+      let dw, dh; if (ir>cr){ dh=ch; dw=dh*ir; } else { dw=cw; dh=dw/ir; }
+      ctx.drawImage(img, (cw-dw)/2, (ch-dh)/2, dw, dh);
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+  await done;
+  return new Blob(chunks, {type:"video/webm"});
+}
+
+/* ===== Wire buttons ===== */
+document.getElementById("btnPreviewScenes").onclick=()=>{ const scenes=getScenes(); ensureSceneTiles(scenes.length); };
+document.getElementById("btnStartAnimation").onclick=async()=>{
+  const scenes=getScenes(); if(!scenes.length){ alert("No scenes."); return; }
+  ensureSceneTiles(scenes.length);
+  const defaultVoice = (await storeGet(LS_SETTINGS, defaultSettings())).defaultVoice || "ember";
+  const images=[], narrUrls=[], sfxUrls=[], narrDur=[], ac = new (window.AudioContext||window.webkitAudioContext)();
+  for(let i=0;i<scenes.length;i++){
+    const text=scenes[i];
+    try{
+      const imgURL = await generateImageForScene(text); images.push(imgURL); document.getElementById(`sceneThumb-${i+1}`).src = imgURL;
+    }catch(e){ images.push(""); console.warn("IMG fail", e); }
+    try{
+      const nURL = await generateNarration(text, defaultVoice); narrUrls.push(nURL); document.getElementById(`sceneNarr-${i+1}`).src = nURL;
+      // estimate duration after decode
+      const nBuf = await decodeToBuffer(ac, await fetchAsArrayBuffer(nURL)); narrDur.push(nBuf.duration);
+    }catch(e){ narrUrls.push(""); narrDur.push(2); console.warn("TTS fail", e); }
+    try{
+      const q=sfxKeywordFrom(text); const u=await findFreeSoundPreview(q); sfxUrls.push(u||""); if(u) document.getElementById(`sceneSfx-${i+1}`).src=u; else document.getElementById(`sceneSfx-${i+1}`).outerHTML='<div class="muted">No SFX</div>';
+    }catch(e){ sfxUrls.push(""); console.warn("SFX fail", e); document.getElementById(`sceneSfx-${i+1}`).outerHTML='<div class="muted">No SFX</div>'; }
+  }
+  // Cache for export
+  window.__BA_EXPORT__ = { images, narrUrls, sfxUrls, narrDur };
+  autosaveStatus.textContent = "Generation complete ✓";
+};
+
+document.getElementById("btnExportAudio").onclick=async()=>{
+  const data = window.__BA_EXPORT__; if(!data){ return alert("Generate scenes first."); }
+  const ac = new (window.AudioContext||window.webkitAudioContext)();
+  const narrBufs = []; const mixedPerScene = [];
+  for (let i=0; i<data.images.length; i++){
+    const n = data.narrUrls[i] ? await decodeToBuffer(ac, await fetchAsArrayBuffer(data.narrUrls[i])) : ac.createBuffer(1, ac.sampleRate*2, ac.sampleRate);
+    const s = data.sfxUrls[i] ? await decodeToBuffer(ac, await fetchAsArrayBuffer(data.sfxUrls[i])) : ac.createBuffer(1, n.length, n.sampleRate);
+    const m = mixToLength(ac, n, s); mixedPerScene.push(m);
+  }
+  const full = concatBuffers(ac, mixedPerScene);
+  const wavBlob = bufferToWavBlob(full);
+  const mp3Blob = bufferToMp3Blob(full);
+  const a1 = document.createElement("a"); a1.href=URL.createObjectURL(wavBlob); a1.download="book-animator-final.wav"; a1.click();
+  const a2 = document.createElement("a"); a2.href=URL.createObjectURL(mp3Blob); a2.download="book-animator-final.mp3"; a2.click();
+};
+
+document.getElementById("btnExportVideo").onclick=async()=>{
+  const data = window.__BA_EXPORT__; if(!data){ return alert("Generate scenes first."); }
+  const ac = new (window.AudioContext||window.webkitAudioContext)();
+  const mixedPerScene = [];
+  for (let i=0;i<data.images.length;i++){
+    const n = data.narrUrls[i] ? await decodeToBuffer(ac, await fetchAsArrayBuffer(data.narrUrls[i])) : ac.createBuffer(1, ac.sampleRate*2, ac.sampleRate);
+    const s = data.sfxUrls[i] ? await decodeToBuffer(ac, await fetchAsArrayBuffer(data.sfxUrls[i])) : ac.createBuffer(1, n.length, n.sampleRate);
+    const m = mixToLength(ac, n, s); mixedPerScene.push(m);
+  }
+  const full = concatBuffers(ac, mixedPerScene);
+  const webm = await exportVideoWebM(data.images, data.narrDur.map(d=>Math.max(2,d)), full);
+  const a = document.createElement("a"); a.href=URL.createObjectURL(webm); a.download="book-animator-final.webm"; a.click();
+
+  // Optional MP4 with ffmpeg.wasm (heavy, may take time)
+  if (window.FFmpeg){
+    try{
+      const { createFFmpeg } = FFmpeg;
+      const ffmpeg = createFFmpeg({ log: false });
+      await ffmpeg.load();
+      // write inputs
+      const webmBuf = new Uint8Array(await webm.arrayBuffer());
+      ffmpeg.FS('writeFile','in.webm', webmBuf);
+      await ffmpeg.run('-i','in.webm','-c:v','libx264','-b:v','2000k','-c:a','aac','-b:a','192k','out.mp4');
+      const mp4 = ffmpeg.FS('readFile','out.mp4');
+      const a2=document.createElement("a"); a2.href=URL.createObjectURL(new Blob([mp4.buffer],{type:"video/mp4"})); a2.download="book-animator-final.mp4"; a2.click();
+    }catch(e){ console.warn("MP4 transcode failed:", e); }
+  }
+};
+
+/* ===== Startup ===== */
+(async()=>{
+  characters = defaultCharacters();
+  ALL_VOICES = [...new Set([...CORE_VOICES])]; // extend if you later parse Voices.txt
+  renderCharacters();
+  await refreshUploadsUI();
+  await loadSecretsIntoForm();
+  await loadSettingsIntoForm();
+})();
+</script>
+</body>
+</html>
