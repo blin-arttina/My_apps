@@ -1,0 +1,134 @@
+Title: Sidetrack Sally and the Potion of Focus
+Creation Date: October 2025
+Project Type: Animated Storybook
+Style: Fantasy Anime | Ken Burns Cinematic Movement
+
+# --- AUDIO / VOICE METADATA (OPENAI) ---
+voice_provider: "openai"
+tts_model: "gpt-4o-mini-tts"
+audio_format: "mp3"
+sample_rate: 48000
+voices:
+  - id: Maple
+    name: "Sidetrack Sally"
+    provider: "openai"
+  - id: Ember
+    name: "Narrator"
+    provider: "openai"
+  - id: Spruce
+    name: "Magda (Magnus)"
+    provider: "openai"
+
+metadata:
+  description: "Includes SFX, music, camera and lighting cues for Book Animator integration with OpenAI voices."
+
+------------------------------------------------------------
+Scene 1 – The Market Chase
+------------------------------------------------------------
+sfx: [ "footsteps_clatter.mp3", "parchment_rustle.mp3", "market_murmur_morning.mp3" ]
+music: "whimsical_adventure_theme.mp3"
+
+Narrator (Ember):
+In the bustling town of Everwhim, one wizard-in-training raced through the cobblestone streets with great purpose… or at least, that was the plan.
+
+Sidetrack Sally (Maple):
+Right! Task for today—pick up a vial of Moonblossom Nectar! Easy peasy!
+
+sfx: [ "paper_rustle_soft.mp3", "breeze_whoosh_light.mp3", "candle_float_whoosh.mp3" ]
+
+Sidetrack Sally (Maple):
+Oooooh! Floating candles!
+
+sfx: [ "quick_steps_short.mp3", "staff_jingle.mp3", "crowd_laugh_light.mp3" ]
+music: [ hold, fade_out 1.0s ]
+
+------------------------------------------------------------
+Scene 2 – A Bakery Distraction
+------------------------------------------------------------
+sfx: [ "door_bell_ding.mp3", "oven_crackle_cozy.mp3", "bakery_chatter_warm.mp3" ]
+music: "cozy_bakery_theme.mp3"
+
+Narrator (Ember):
+Ten minutes later, Sally emerged with three cinnamon buns and a tiny fire sprite that had hitched a ride in her pocket.
+
+Sidetrack Sally (Maple):
+Alright! No more distractions. Focus, Sally! Focus—ooooooh! A street magician!
+
+sfx: [ "crowd_applause_small.mp3", "juggling_orbs_whoosh.mp3", "sparkle_pop.mp3" ]
+
+Narrator (Ember):
+A street magician juggled glowing orbs while the crowd cheered.
+
+Sidetrack Sally (Maple):
+Wait—I can do that! Watch this!
+
+sfx: [ "magic_surge_whoosh.mp3", "crowd_gasp.mp3" ]
+
+Narrator (Ember):
+And then… she turned the magician’s hat into a bowl of pudding.
+
+sfx: [ "pudding_splat_wet.mp3" ]
+music: "comedic_plunk_sting.mp3"
+
+Sidetrack Sally (Maple):
+Oops.
+
+------------------------------------------------------------
+Scene 3 – The Street Magician’s Mishap
+------------------------------------------------------------
+sfx: [ "soft_laughter_bg.mp3", "birds_midday.mp3" ]
+music: "whimsical_bounce_to_calm.mp3"
+
+Narrator (Ember):
+And just like that… professionalism vanished.
+
+------------------------------------------------------------
+Scene 4 – Magda’s Potion Shop
+------------------------------------------------------------
+sfx: [ "door_creak_wood.mp3", "shop_bell_tinkle.mp3", "glass_clink_soft.mp3" ]
+music: "evening_shop_theme.mp3"
+
+Narrator (Ember):
+By the time Sally reached Magda’s Potion Shop, the sun was setting. Magda looked unimpressed.
+
+Magda (Spruce):
+Let me guess… you got distracted?
+
+Sidetrack Sally (Maple):
+What? Me? Pfft. No way! I just… took the scenic route?
+
+sfx: [ "vial_slide_counter.mp3" ]
+
+Narrator (Ember):
+Magda handed her the vial of Moonblossom Nectar.
+
+Sidetrack Sally (Maple):
+Thank you! Master Orwyn will be so happy I—wait… why did I need this again?
+
+sfx: [ "harp_pluck_light.mp3", "potion_bubble_soft.mp3" ]
+
+Sidetrack Sally (Maple):
+Oh! Right! Focus potion! No time to waste!
+
+------------------------------------------------------------
+Scene 5 – The Shiny Frog
+------------------------------------------------------------
+sfx: [ "frog_croak_magic.mp3", "sparkle_twinkle.mp3" ]
+music: "soft_harp_twinkle.mp3"
+
+Narrator (Ember):
+But then… a tiny glowing frog croaked in the corner.
+
+Sidetrack Sally (Maple):
+Ooooh… shiny.
+
+sfx: [ "sparkle_chime.mp3", "giggle_faint.mp3" ]
+
+Narrator (Ember):
+And off she went—once more, gloriously sidetracked.
+
+music: "soft_outro_theme.mp3"
+sfx: [ "candle_crackle_soft.mp3" ]
+
+Narrator (Ember):
+The end… for now.

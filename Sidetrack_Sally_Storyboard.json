@@ -1,0 +1,146 @@
+{
+  "title": "Sidetrack Sally and the Potion of Focus",
+  "style": "Fantasy Anime - Ken Burns Cinematic",
+  "voices": {
+    "Sidetrack Sally": "Maple",
+    "Narrator": "Ember",
+    "Magda (Magnus)": "Spruce"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "title": "The Market Chase",
+      "image": "A_semi-realistic_digital_painting_with_elements_of.png",
+      "sfx": [
+        "footsteps",
+        "parchment rustle",
+        "morning chatter"
+      ],
+      "music": "whimsical_adventure_theme.mp3",
+      "dialogue": [
+        {
+          "speaker": "Narrator",
+          "voice": "Ember",
+          "text": "In the bustling town of Everwhim, one wizard-in-training raced through the cobblestone streets with great purpose\u2026 or at least, that was the plan."
+        },
+        {
+          "speaker": "Sally",
+          "voice": "Maple",
+          "text": "Right! Task for today\u2014pick up a vial of Moonblossom Nectar! Easy peasy!"
+        }
+      ],
+      "camera": "Pan right following Sally",
+      "lighting": "Bright morning sunlight"
+    },
+    {
+      "id": 2,
+      "title": "A Bakery Distraction",
+      "image": "A_traditional_anime_and_fantasy-style_illustration.png",
+      "sfx": [
+        "bell ding",
+        "oven crackle",
+        "crowd chatter"
+      ],
+      "music": "cozy_bakery_theme.mp3",
+      "dialogue": [
+        {
+          "speaker": "Narrator",
+          "voice": "Ember",
+          "text": "Ten minutes later, Sally emerged with three cinnamon buns and a tiny fire sprite that had hitched a ride in her pocket."
+        },
+        {
+          "speaker": "Sally",
+          "voice": "Maple",
+          "text": "Alright! No more distractions. Focus, Sally! Focus\u2014ooooh! A street magician!"
+        }
+      ],
+      "camera": "Zoom-in on Sally\u2019s face then glowing sprite",
+      "lighting": "Warm morning sunlight through bakery windows"
+    },
+    {
+      "id": 3,
+      "title": "The Street Magician\u2019s Mishap",
+      "image": "A_traditional_or_digital_painting_in_a_semi-realis.png",
+      "sfx": [
+        "applause",
+        "magic whoosh",
+        "pudding splat"
+      ],
+      "music": "playful_magic_theme.mp3",
+      "dialogue": [
+        {
+          "speaker": "Sally",
+          "voice": "Maple",
+          "text": "Wait\u2014I can do that! Watch this!"
+        },
+        {
+          "speaker": "Narrator",
+          "voice": "Ember",
+          "text": "And then\u2026 she turned the magician\u2019s hat into a bowl of pudding."
+        }
+      ],
+      "camera": "Quick zoom and shake on magical burst",
+      "lighting": "Bright midday with glowing spell light"
+    },
+    {
+      "id": 4,
+      "title": "Magda\u2019s Potion Shop",
+      "image": "A_traditional,_semi-realistic,_painterly_style_ill.png",
+      "sfx": [
+        "door creak",
+        "glass clink",
+        "bell ring"
+      ],
+      "music": "evening_shop_theme.mp3",
+      "dialogue": [
+        {
+          "speaker": "Narrator",
+          "voice": "Ember",
+          "text": "By the time Sally reached Magda\u2019s Potion Shop, the sun was setting."
+        },
+        {
+          "speaker": "Magda",
+          "voice": "Spruce",
+          "text": "Let me guess\u2026 you got distracted?"
+        },
+        {
+          "speaker": "Sally",
+          "voice": "Maple",
+          "text": "What? Me? Pfft. No way! I just\u2026 took the scenic route?"
+        }
+      ],
+      "camera": "Over-the-shoulder to glowing vial on counter",
+      "lighting": "Golden sunset through glass bottles"
+    },
+    {
+      "id": 5,
+      "title": "The Shiny Frog",
+      "image": "A_digital_painting_in_a_semi-realistic_style_with_.png",
+      "sfx": [
+        "magical frog croak",
+        "sparkle twinkle",
+        "soft laughter"
+      ],
+      "music": "soft_outro_theme.mp3",
+      "dialogue": [
+        {
+          "speaker": "Narrator",
+          "voice": "Ember",
+          "text": "But then\u2026 a tiny glowing frog croaked in the corner."
+        },
+        {
+          "speaker": "Sally",
+          "voice": "Maple",
+          "text": "Ooooh\u2026 shiny."
+        },
+        {
+          "speaker": "Narrator",
+          "voice": "Ember",
+          "text": "And off she went\u2014once more, gloriously sidetracked."
+        }
+      ],
+      "camera": "Pan from frog to Sally\u2019s amused expression",
+      "lighting": "Soft candlelight and green glow"
+    }
+  ]
+}
