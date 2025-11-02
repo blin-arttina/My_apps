@@ -1,815 +1,474 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Book Animator</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Book Animator — Standalone</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b0b0b">
 <style>
-:root{
-  --bg:#0b0b0b;--panel:#111;--ink:#eee;--muted:#bbb;
-  --line:#333;--accent:#ef4444;--ok:#34d399;--warn:#f59e0b;
-}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif;}
-h1{font-size:2.6rem;margin:1.1rem 0;text-align:center}
-.wrap{max-width:1200px;margin:0 auto;padding:1rem}
-.topbar{display:flex;justify-content:space-between;align-items:center}
-.hamb{width:64px;height:64px;border:1px solid #888;border-radius:14px;display:grid;place-items:center;background:#121212;cursor:pointer}
-.hamb .line{width:30px;height:4px;background:#fff;margin:5px 0;border-radius:2px}
-.badge{display:inline-block;background:#151515;border:1px solid #333;padding:.28rem .7rem;border-radius:999px;margin:.2rem .3rem;color:#ddd}
-textarea{width:100%;min-height:320px;background:#0f0f0f;border:1px solid #333;border-radius:12px;color:#ddd;font-size:1.06rem;line-height:1.5;padding:1rem}
-.bar{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1rem}
-.btn{background:#151515;border:1px solid var(--accent);color:#eee;padding:.75rem 1rem;border-radius:12px;cursor:pointer}
-.btn:hover{box-shadow:0 0 0 2px #ef44441c}
-.btn.ghost{border-color:#555}
-.btn.small{padding:.45rem .7rem;border-radius:10px}
-.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin:1.2rem 0}
-.tile{height:160px;border:1px dashed #777;border-radius:12px;background:#0f0f0f;display:grid;place-items:center;position:relative}
-.tile img{width:100%;height:100%;object-fit:cover;border-radius:12px}
-.tile .num{position:absolute;top:6px;left:6px;font-size:.9rem;background:#000a;padding:.1rem .4rem;border-radius:7px;border:1px solid #333}
-.tile .err{position:absolute;inset:auto 6px 6px 6px;background:#000c;border:1px solid #3a3a3a;border-radius:8px;padding:.35rem .5rem;font-size:.85rem;color:#fca5a5}
-.progress{position:fixed;left:0;right:0;bottom:0;background:#0d0d0d;border-top:1px solid #1a1a1a;padding:.6rem 1rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
-.meter{flex:1;min-width:240px;height:10px;background:#1a1a1a;border-radius:999px;overflow:hidden}
-.meter>div{height:100%;width:0;background:#fff;transition:width .15s ease}
-.pct{min-width:64px;text-align:right;color:#bbb}
-.menu,.modal{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;padding-top:5vh;background:#0008;z-index:40}
-.card{background:#111;border:1px solid #333;border-radius:16px;box-shadow:0 6px 30px #0009;padding:1rem;max-width:980px;width:92vw;max-height:82vh;overflow:auto}
-.tabs{display:flex;gap:.5rem;margin-bottom:1rem}
-.tabs .btn{border-color:#444}
-.list{display:flex;flex-direction:column;gap:.5rem}
-.item{display:flex;justify-content:space-between;align-items:center;background:#101010;border:1px solid #333;padding:.75rem 1rem;border-radius:12px}
-.grid{display:grid;gap:.75rem}
-.two{grid-template-columns:1fr 1fr}
-small.muted{color:#aaa}
-
-.previewWrap{display:none;place-items:center;margin:12px 0}
-#previewCanvas{width:100%;max-width:960px;border:1px solid #333;border-radius:12px;background:#000}
+  :root{--bg:#0b0b0b;--panel:#111214;--ink:#f5f5f5;--muted:#a1a1aa;--line:#232324;--accent:#ef4444;--ok:#22c55e;--warn:#f59e0b;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1250px;margin:0 auto;padding:16px}
+  h1{font-size:1.8rem;margin:8px 0 12px}
+  .grid{display:grid;gap:12px}
+  .g-3{grid-template-columns:1.15fr .85fr}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+  label{font-size:.85rem;color:var(--muted)}
+  input[type="text"], textarea, select{width:100%;background:#0c0c0f;border:1px solid #2a2a2e;color:var(--ink);border-radius:12px;padding:10px}
+  textarea{min-height:120px}
+  button{background:#18181b;border:1px solid #2a2a2e;color:#fafafa;border-radius:12px;padding:10px 14px;cursor:pointer}
+  button.accent{background:var(--accent);border-color:var(--accent);color:white}
+  button.ghost{background:transparent;border:1px dashed #3a3a40}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{font-size:.8rem;padding:6px 8px;border:1px solid #2a2a2e;border-radius:999px}
+  .list{display:grid;gap:6px}
+  .item{padding:8px 10px;border:1px solid #2a2a2e;border-radius:12px;background:#0f0f12}
+  .muted{color:var(--muted)} .small{font-size:.85rem}
+  .right{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .thumb{width:100%;aspect-ratio:16/9;background:#0b0b0f;border:1px solid #1f1f22;border-radius:12px}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+  .slot{position:relative;border:1px solid #242428;border-radius:10px;overflow:hidden;background:#0d0d10}
+  .slot img{width:100%;display:block}
+  .slot .cap{position:absolute;inset:auto 0 0 0;background:linear-gradient(transparent,#0008);color:#fff;font-size:.75rem;padding:4px 6px}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#101014;border:1px solid #25252a;border-radius:6px;padding:2px 6px;font-size:.85rem}
+  .drag{cursor:grab} .drag:active{cursor:grabbing}
+  .visgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .viscell{border:1px dashed #2b2b30;border-radius:8px;padding:8px;display:grid;gap:6px}
+  .viscell img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#0c0c10;border:1px solid #222}
 </style>
-<!-- JSZip for Export (ZIP) -->
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
-<div class="wrap" id="app">
-  <div class="topbar">
-    <div class="hamb" id="btnLeft" aria-label="Open left menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
-    <h1>Book Animator</h1>
-    <div class="hamb" id="btnRight" aria-label="Open right menu"><div class="line"></div><div class="line"></div><div class="line"></div></div>
-  </div>
+<div class="wrap">
+  <header class="bar">
+    <h1 style="flex:1">Book Animator • Standalone</h1>
+    <button id="installBtn" class="ghost small">Install App</button>
+    <span class="pill muted">status: <span id="netState">online</span></span>
+  </header>
 
-  <div style="display:flex;justify-content:center;gap:.4rem;margin-bottom:.6rem">
-    <span class="badge">Mode: <b id="modeBadge">Simple</b></span>
-    <span class="badge">Scenes: <b id="scenesBadge">0</b></span>
-    <span class="badge">Status: <b id="statusBadge">Idle</b></span>
-  </div>
-
-  <h3>Paste your book text:</h3>
-  <textarea id="bookText" placeholder="Paste text here…"></textarea>
-
-  <div class="bar">
-    <button class="btn" id="btnPreviewScenes">Preview Scenes</button>
-    <button class="btn" style="background:var(--accent)" id="btnStart">Generate Images & Audio</button>
-    <button class="btn ghost" id="btnPreviewLive">Play Synced Preview</button>
-  </div>
-
-  <div class="previewWrap" id="previewWrap">
-    <canvas id="previewCanvas" width="1280" height="720"></canvas>
-  </div>
-
-  <div class="thumbs" id="thumbs"></div>
-</div>
-
-<!-- progress bar -->
-<div class="progress">
-  <button class="btn small" id="btnSave">Save</button>
-  <button class="btn small" id="btnZip">Export (ZIP)</button>
-  <button class="btn small" id="btnRenderVideo">Render Video (WebM)</button>
-  <div class="meter"><div id="meterFill"></div></div>
-  <div class="pct" id="pct">0%</div>
-</div>
-
-<!-- LEFT MENU -->
-<div class="menu" id="leftMenu">
-  <div class="card">
-    <div class="tabs">
-      <button class="btn small" data-tab="tChars">Characters</button>
-      <button class="btn small" data-tab="tSettings">Settings</button>
-      <button class="btn small" data-tab="tSecrets">Secrets</button>
-      <button class="btn small" data-tab="tHelp">Help</button>
-      <button class="btn small" style="margin-left:auto" id="closeLeft">Close</button>
-    </div>
-
-    <!-- Characters -->
-    <section id="tChars">
-      <h2>Characters</h2>
-      <div id="charList" class="list"></div>
-      <small class="muted">Tap <b>Edit</b> to change OpenAI voice, optional ElevenLabs voice ID, notes, and portrait.</small>
-    </section>
-
-    <!-- Settings -->
-    <section id="tSettings" style="display:none">
-      <h2>Settings</h2>
-      <div class="grid two">
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Render Mode</span>
-          <select id="setRenderMode">
-            <option value="offline">Offline (placeholders)</option>
-            <option value="online">Online AI (use proxy)</option>
-          </select>
-        </label>
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Visual Motion</span>
-          <select id="setVisualMotion">
-            <option>Ken Burns</option><option>Pan Left</option><option>Pan Right</option>
-            <option>Zoom In</option><option>Zoom Out</option><option>Static</option>
-          </select>
-        </label>
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Art Style</span>
-          <select id="setArtStyle">
-            <option>Comic</option><option>Cartoon</option><option>Anime</option>
-            <option>Watercolor</option><option>Ink & Wash</option><option>Digital Paint</option>
-            <option>Flat Toon</option><option>Dark Fantasy</option>
-          </select>
-        </label>
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Aspect</span>
-          <select id="setAspect">
-            <option>16:9</option><option>9:16</option><option>1:1</option>
-          </select>
-        </label>
-      </div>
-    </section>
-
-    <!-- Secrets -->
-    <section id="tSecrets" style="display:none">
-      <h2>Secrets (AI Proxy)</h2>
-      <div class="grid">
-        <label class="item" style="display:grid;grid-template-columns:12rem 1fr;gap:.6rem">
-          <span>Proxy URL</span>
-          <input id="proxyBase" placeholder="https://proxy.blindart2020.workers.dev"/>
-        </label>
-        <div style="display:flex;gap:.6rem;justify-content:flex-end">
-          <button class="btn ghost" id="btnTestProxy">Test Proxy</button>
-          <button class="btn" id="btnSaveSecrets">Save</button>
+  <section class="grid g-3">
+    <!-- LEFT: Project + Editor + Timeline + Video -->
+    <div class="grid" style="align-content:start;gap:12px">
+      <!-- Project -->
+      <div class="card">
+        <div class="bar" style="justify-content:space-between">
+          <div><label class="small">Project Name</label><input id="projectName" type="text" placeholder="e.g., MyAnimationProject" /></div>
+          <div class="right"><button id="newProjectBtn">New</button><button id="openProjectBtn">Open</button><button id="saveProjectBtn" class="accent">Save</button></div>
         </div>
-        <small class="muted">Put your Cloudflare Worker URL here. Keys live in the Worker, not in the browser.</small>
+        <p class="muted small" style="margin-top:6px">Projects live in the browser’s private storage (OPFS/IndexedDB). Nothing is uploaded.</p>
       </div>
-    </section>
 
-    <section id="tHelp" style="display:none">
-      <h2>Help</h2>
-      <p>Format dialogue as <code>Character: line…</code>; everything else is Narrator. Steps: Paste → Characters → Settings → Secrets (Proxy) → Generate → Preview or Export.</p>
-    </section>
-  </div>
-</div>
+      <!-- Script -->
+      <div class="card">
+        <label>Storyboard / Script</label>
+        <textarea id="scriptBox" placeholder="Write or paste your scene script here..."></textarea>
+        <div class="right" style="margin-top:8px"><button id="importTextBtn">Import .txt</button><button id="clearTextBtn">Clear</button></div>
+      </div>
 
-<!-- RIGHT MENU -->
-<div class="menu" id="rightMenu">
-  <div class="card">
-    <div class="tabs">
-      <button class="btn small" data-rtab="uUploads">Uploads</button>
-      <button class="btn small" data-rtab="uProject">Project</button>
-      <button class="btn small" style="margin-left:auto" id="closeRight">Close</button>
+      <!-- Frame Canvas -->
+      <div class="card">
+        <label>Frame Canvas</label>
+        <canvas id="canvas" class="thumb"></canvas>
+        <div class="row" style="margin-top:8px">
+          <button id="drawTextBtn">Add Title Text</button>
+          <button id="clearCanvasBtn">Clear Canvas</button>
+          <button id="saveFrameBtn" class="accent">Save Frame</button>
+        </div>
+        <p class="muted small" style="margin-top:6px">(Frames embed metadata.)</p>
+      </div>
+
+      <!-- NEW: Timeline Editor -->
+      <div class="card">
+        <div class="bar" style="justify-content:space-between">
+          <label>Timeline Editor</label>
+          <div class="row small">
+            <button id="btnAddFrameFromAsset">Add Selected Image(s)</button>
+            <button id="btnRemoveTimelineSel">Remove Selected</button>
+          </div>
+        </div>
+        <div class="list" id="timelineList" style="margin-top:8px"></div>
+        <div class="row small" style="margin-top:8px">
+          <span>Total duration: <strong id="timelineTotal">0.00s</strong></span>
+          <span class="muted">Drag rows to reorder • Set per-frame duration (sec)</span>
+        </div>
+      </div>
+
+      <!-- Video Render -->
+      <div class="card">
+        <label>Video Renderer</label>
+        <div class="row">
+          <input id="fps" type="text" value="24" style="max-width:100px" /> 
+          <select id="audioForVideo"></select>
+          <button id="renderVideoBtn" class="accent">Render WebM (video-only)</button>
+          <button id="stopRenderBtn">Stop</button>
+        </div>
+        <div class="row small" style="margin-top:8px">
+          <button id="muxWithAudioBtn">Mux with Audio (FFmpeg-wasm)</button>
+        </div>
+        <p class="muted small">Renders timeline frames. If a lip-sync track and sprite map exist, mouths are composited per viseme.</p>
+        <video id="renderPreview" controls class="thumb" style="margin-top:8px"></video>
+      </div>
     </div>
 
-    <section id="uUploads">
-      <h2>Uploads</h2>
-      <div class="grid two">
-        <label class="item"><span>Import Characters JSON</span><input id="fileChars" type="file" accept="application/json"/></label>
-        <label class="item"><span>General Uploads</span><input id="fileGeneral" type="file" multiple/></label>
+    <!-- RIGHT: Assets + Illustration + Voices + Mouth Sprites + Export -->
+    <div class="grid" style="align-content:start;gap:12px">
+      <!-- Assets -->
+      <div class="card">
+        <div class="bar" style="justify-content:space-between">
+          <label>Assets (images / audio / video / json)</label>
+          <div class="right"><input id="assetInput" type="file" multiple style="display:none" /><button id="addAssetsBtn">Add Assets</button></div>
+        </div>
+        <div id="assetList" class="list" style="margin-top:8px"></div>
       </div>
-      <div id="uploadList" class="list"></div>
-    </section>
 
-    <section id="uProject" style="display:none">
-      <h2>Project</h2>
-      <div class="grid">
-        <button class="btn small" id="btnClearThumbs">Clear Thumbnails</button>
-        <button class="btn small" id="btnWipe">Wipe Local Data</button>
+      <!-- Illustration Studio (with Batch) -->
+      <div class="card">
+        <div class="bar" style="justify-content:space-between">
+          <label>Illustration Studio</label>
+          <div class="row">
+            <select id="stylePreset">
+              <option value="Anime cel-shaded, vibrant, clean line art">Anime</option>
+              <option value="Dark fantasy, moody lighting, painterly, dramatic shadows">Dark Fantasy</option>
+              <option value="Watercolor storybook, soft edges, pastel palette">Watercolor Storybook</option>
+              <option value="Comic ink, halftone, bold outlines">Comic Ink</option>
+              <option value="Pixel art, 32x32 aesthetic, crisp dither">Pixel Art</option>
+              <option value="Oil painting, impasto, rich texture">Oil Painting</option>
+              <option value="Neon synthwave, glow accents, retro-futurism">Neon Synthwave</option>
+              <option value="Gothic, baroque ornament, chiaroscuro">Gothic</option>
+              <option value="Children's pastel, friendly shapes">Children's Pastel</option>
+              <option value="Paper cutout, layered shapes, tactile">Paper Cutout</option>
+              <option value="Pencil sketch, cross-hatching">Pencil Sketch</option>
+              <option value="Ukiyo-e woodblock, flat color, flowing lines">Ukiyo-e</option>
+              <option value="Isometric game art, crisp edges">Isometric</option>
+              <option value="Cyberpunk, neon rain, reflective streets">Cyberpunk</option>
+              <option value="Minimal flat, geometric forms">Minimal Flat</option>
+              <option value="Photoreal scene, shallow depth of field">Photoreal</option>
+            </select>
+            <select id="imgSize">
+              <option value="1024x1024">1024×1024</option><option value="1280x720">1280×720 (16:9)</option>
+              <option value="1024x576">1024×576 (16:9)</option><option value="768x1024">768×1024 (portrait)</option>
+            </select>
+          </div>
+        </div>
+        <textarea id="illustrationPrompt" placeholder="Describe the scene to illustrate..."></textarea>
+        <div class="row" style="margin-top:8px">
+          <input id="batchCount" type="text" value="4" style="max-width:80px" />
+          <button id="genLocalBtn">Render on Canvas</button>
+          <button id="genAIBtn" class="accent">Generate with AI</button>
+          <button id="genBatchBtn">Batch Generate</button>
+          <button id="saveIlloBtn">Save Selected to Project</button>
+        </div>
+        <details style="margin-top:8px">
+          <summary class="small muted">Image API (optional)</summary>
+          <div class="row" style="margin-top:6px">
+            <select id="provider"><option value="proxy">Custom Proxy</option><option value="openai">OpenAI Direct</option></select>
+            <input id="endpoint" type="text" placeholder="Proxy endpoint (POST returns {base64_png})">
+            <input id="openaiKey" type="text" placeholder="OpenAI API Key (local only)">
+          </div>
+        </details>
+        <div id="illoGallery" class="gallery" style="margin-top:8px"></div>
       </div>
-    </section>
-  </div>
+
+      <!-- Voice Studio -->
+      <div class="card">
+        <div class="bar" style="justify-content:space-between">
+          <label>Voice Studio</label>
+          <div class="row small">
+            <select id="ttsProvider"><option value="proxy">Proxy</option><option value="openai">OpenAI</option></select>
+            <input id="ttsEndpoint" type="text" placeholder="Proxy TTS endpoint (POST {text,voice})">
+            <input id="ttsApiKey" type="text" placeholder="OpenAI API Key (local only)">
+          </div>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <input id="voiceName" type="text" placeholder="Voice name (e.g., Adam, MyClone)" style="flex:1" />
+          <input id="voiceImport" type="file" accept="audio/*" style="display:none" />
+          <button id="btnImportVoice">Import Audio as Voice</button>
+          <button id="btnCloneVoice">Clone (register sample)</button>
+        </div>
+        <div class="row small" style="margin-top:6px">
+          <select id="voiceList" style="min-width:240px"></select>
+          <button id="btnPlayVoice">Play Sample</button>
+          <button id="btnDeleteVoice">Delete</button>
+        </div>
+        <textarea id="ttsText" placeholder="Type text to synthesize..."></textarea>
+        <div class="row small" style="margin-top:6px">
+          <label>Emotion</label><input id="emo" type="range" min="0" max="1" step="0.01" value="0.5">
+          <label>Pitch</label><input id="pit" type="range" min="-12" max="12" step="1" value="0">
+          <label>Speed</label><input id="spd" type="range" min="0.5" max="2" step="0.05" value="1">
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button id="btnSynthesize" class="accent">Synthesize</button>
+          <button id="btnSaveTTS">Save Audio to Project</button>
+          <button id="btnMakeLipSync">Build Lip-Sync Track</button>
+        </div>
+        <div class="list" id="trackList" style="margin-top:8px"></div>
+        <audio id="ttsPlayer" controls style="width:100%;margin-top:8px"></audio>
+      </div>
+
+      <!-- NEW: Mouth Sprites Mapper -->
+      <div class="card">
+        <div class="bar" style="justify-content:space-between"><label>Mouth Sprites (Viseme Mapper)</label></div>
+        <div class="visgrid" id="visGrid" style="margin-top:8px"></div>
+        <div class="row small" style="margin-top:8px">
+          <button id="btnSaveVisMap" class="accent">Save Sprite Map to Project</button>
+          <button id="btnClearVisMap">Clear</button>
+        </div>
+        <p class="muted small" style="margin-top:6px">Tokens: X (closed), M:H, M:O, A:H, A:O, E:H, E:O</p>
+      </div>
+
+      <!-- Preview + Export -->
+      <div class="card">
+        <label>Preview</label>
+        <video id="previewVideo" class="thumb" controls></video>
+        <img id="previewImage" class="thumb" style="display:none" />
+        <audio id="previewAudio" controls style="width:100%;margin-top:8px"></audio>
+        <div class="row" style="margin-top:8px"><button id="previewSelectedBtn">Preview Selected</button><button id="removeSelectedBtn">Remove Selected</button></div>
+      </div>
+
+      <div class="card">
+        <label>Export</label>
+        <div class="row" style="margin-top:6px">
+          <button id="exportProjectBtn" class="accent">Export Project (.zip)</button>
+          <button id="exportImageBtn">Export Canvas as PNG</button>
+          <button id="exportJsonBtn">Export Script as JSON</button>
+        </div>
+        <p class="muted small" style="margin-top:6px">All exports embed/attach metadata (fingerprints, timestamps).</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bar" style="margin-top:12px">
+    <span class="muted small">Local storage: OPFS (fallback IndexedDB)</span>
+    <span id="saveState" class="small muted">Idle</span>
+  </footer>
 </div>
 
-<!-- Character editor -->
-<div class="modal" id="charModal">
-  <div class="card" style="max-width:820px">
-    <h2>Edit Character</h2>
-    <div class="grid">
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Name</span><input id="ceName"/>
-      </label>
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Traits / Notes</span><input id="ceNotes" placeholder="personality, role…"/>
-      </label>
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Voice (OpenAI)</span>
-        <select id="ceVoice">
-          <option value="ember">Ember</option><option value="maple">Maple</option>
-          <option value="juniper">Juniper</option><option value="sage">Sage</option>
-          <option value="alloy">Alloy</option><option value="verse">Verse</option>
-          <option value="aria">Aria</option><option value="amber">Amber</option>
-        </select>
-      </label>
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Voice (11Labs ID)</span><input id="ce11" placeholder="optional"/>
-      </label>
-      <label class="item" style="display:grid;grid-template-columns:10rem 1fr;gap:.6rem">
-        <span>Portrait</span><input id="cePortrait" type="file" accept="image/*"/>
-      </label>
-    </div>
-    <div class="bar" style="justify-content:flex-end">
-      <button class="btn ghost" id="ceCancel">Cancel</button>
-      <button class="btn" id="ceSave">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- hidden canvas for WebM render -->
-<canvas id="stage" width="1280" height="720" style="display:none"></canvas>
-
+<!-- JSZip (export) -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
+<!-- FFmpeg-wasm (loaded on-demand inside JS) -->
 <script>
-/* ========= helpers ========= */
-const byId = id => document.getElementById(id);
-const save = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
-const load = (k,def)=> { try{ return JSON.parse(localStorage.getItem(k))||def; }catch{ return def; } };
-const fileToDataURL = f => new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(f); });
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
-function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+/* ==== PWA install + network badge ==== */
+let deferredPrompt=null; const installBtn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredPrompt=e;installBtn.style.display='inline-flex';});
+installBtn.addEventListener('click',async()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.style.display='none';});
+const netState=document.getElementById('netState'); window.addEventListener('online',()=>netState.textContent='online'); window.addEventListener('offline',()=>netState.textContent='offline'); netState.textContent=navigator.onLine?'online':'offline';
 
-/* ========= UI refs ========= */
-const UI={
-  leftBtn:byId('btnLeft'), rightBtn:byId('btnRight'),
-  leftMenu:byId('leftMenu'), rightMenu:byId('rightMenu'),
-  closeLeft:byId('closeLeft'), closeRight:byId('closeRight'),
-  tabBtns:document.querySelectorAll('[data-tab]'),
-  rtabBtns:document.querySelectorAll('[data-rtab]'),
-  setRenderMode:byId('setRenderMode'),
-  setVisualMotion:byId('setVisualMotion'),
-  setArtStyle:byId('setArtStyle'),
-  setAspect:byId('setAspect'),
-  proxyBase:byId('proxyBase'),
-  btnSaveSecrets:byId('btnSaveSecrets'),
-  btnTestProxy:byId('btnTestProxy'),
-  fileChars:byId('fileChars'),
-  fileGeneral:byId('fileGeneral'),
-  uploadList:byId('uploadList'),
-  txt:byId('bookText'), thumbs:byId('thumbs'),
-  previewScenesBtn:byId('btnPreviewScenes'),
-  startBtn:byId('btnStart'),
-  previewLiveBtn:byId('btnPreviewLive'),
-  scenesBadge:byId('scenesBadge'), modeBadge:byId('modeBadge'),
-  statusBadge:byId('statusBadge'),
-  meter:byId('meterFill'), pct:byId('pct'),
-  btnZip:byId('btnZip'), btnSave:byId('btnSave'),
-  previewWrap:byId('previewWrap'), previewCanvas:byId('previewCanvas')
-};
+/* ==== Storage (OPFS → IDB) ==== */
+const useOpfs=!!(navigator.storage && navigator.storage.getDirectory);
+let rootDirHandle=null,idb=null;
+async function ensureIDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open('book-animator-db',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+async function idbWrite(path,blob){if(!idb) idb=await ensureIDB();return new Promise((res,rej)=>{const tx=idb.transaction('files','readwrite');tx.objectStore('files').put({data:blob,ts:Date.now()},path);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error);});}
+async function idbRead(path){if(!idb) idb=await ensureIDB();return new Promise((res,rej)=>{const tx=idb.transaction('files','readonly');const q=tx.objectStore('files').get(path);q.onsuccess=()=>res(q.result?.data||null);q.onerror=()=>rej(q.error);});}
+async function opfsWrite(path,blob){if(!rootDirHandle) rootDirHandle=await navigator.storage.getDirectory();const parts=path.split('/').filter(Boolean);let dir=rootDirHandle;for(let i=0;i<parts.length-1;i++){dir=await dir.getDirectoryHandle(parts[i],{create:true});}const file=await dir.getFileHandle(parts.at(-1),{create:true});const w=await file.createWritable();await w.write(blob);await w.close();return true;}
+async function opfsRead(path){if(!rootDirHandle) rootDirHandle=await navigator.storage.getDirectory();const parts=path.split('/').filter(Boolean);let dir=rootDirHandle;for(let i=0;i<parts.length-1;i++){dir=await dir.getDirectoryHandle(parts[i],{create:false});}const file=await dir.getFileHandle(parts.at(-1),{create:false});return await file.getFile();}
+async function writeFile(path,blob){try{if(useOpfs) return await opfsWrite(path,blob);return await idbWrite(path,blob);}catch(e){return await idbWrite(path,blob);}}
+async function readFile(path){try{if(useOpfs) return await opfsRead(path);return await idbRead(path);}catch(e){return await idbRead(path);}}
 
-/* ========= persistent state ========= */
-let SETTINGS = load('ba_settings', {renderMode:'offline', visualMotion:'Ken Burns', artStyle:'Comic', aspect:'16:9'});
-let SECRETS  = load('ba_secrets',  {proxy:'https://proxy.blindart2020.workers.dev'});
-let CHARS    = load('ba_chars', defaultCharacters());
+/* ==== Model & helpers ==== */
+const $=id=>document.getElementById(id); const saveStateEl=$('saveState');
+const state={projectName:'',assets:[],frames:[],timeline:[],illos:[],tracks:[],vismap:{},selected:null,lastAudioBlob:null,lastVideoBlob:null};
+function setProjectName(n){state.projectName=(n||'').trim();$('projectName').value=state.projectName;}
+function projectPath(sub=''){return `Projects/${state.projectName}/${sub}`;}
+function ensureProject(){if(!state.projectName) throw new Error('Set a project name first.');}
 
-// ASSETS: the movie plan
-// images[i] -> image URL for scene i
-// clips[i]  -> [{ url, when, dur, speaker }]
-// sfx[i]    -> URL or null
-let ASSETS   = { images:[], clips:[], sfx:[] };
+/* ==== Metadata + PNG tEXt embed ==== */
+function makeFingerprint(){return btoa(unescape(encodeURIComponent(`${state.projectName}|${new Date().toISOString()}|${crypto.getRandomValues(new Uint32Array(2)).join('-')}`)));}
+function baseMetadata(extra={}){return{app:'Book Animator Standalone',version:'1.3.0',project:state.projectName,createdAt:new Date().toISOString(),fingerprint:makeFingerprint(),...extra};}
+function addPNGTextChunk(pngBytes,keyword,text){function crc32(buf){let c=~0;for(let n=0;n<buf.length;n++){c^=buf[n];for(let k=0;k<8;k++){c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);}}return ~c>>>0;}
+ const u8=new Uint8Array(pngBytes),sig=[137,80,78,71,13,10,26,10];for(let i=0;i<8;i++)if(u8[i]!==sig[i])throw new Error('Not a PNG');
+ let p=8;const read32=i=>(u8[i]<<24)|(u8[i+1]<<16)|(u8[i+2]<<8)|(u8[i+3]);const ihdrLen=read32(p);const ihdrType=String.fromCharCode(...u8.slice(p+4,p+8));if(ihdrType!=='IHDR')throw new Error('PNG missing IHDR');const afterIHDR=p+12+ihdrLen;
+ const keyBytes=new TextEncoder().encode(keyword);const txtBytes=new TextEncoder().encode(text);const data=new Uint8Array(keyBytes.length+1+txtBytes.length);data.set(keyBytes,0);data[keyBytes.length]=0;data.set(txtBytes,keyBytes.length+1);
+ const type=new TextEncoder().encode('tEXt');const lenArr=new Uint8Array(4);new DataView(lenArr.buffer).setUint32(0,data.length);
+ const crcArr=new Uint8Array(4);{const crcBuf=new Uint8Array(type.length+data.length);crcBuf.set(type,0);crcBuf.set(data,type.length);new DataView(crcArr.buffer).setUint32(0,crc32(crcBuf));}
+ const before=u8.slice(0,afterIHDR),rest=u8.slice(afterIHDR);const chunk=new Uint8Array(4+4+data.length+4);chunk.set(lenArr,0);chunk.set(type,4);chunk.set(data,8);chunk.set(crcArr,8+data.length);
+ const out=new Uint8Array(before.length+chunk.length+rest.length);out.set(before,0);out.set(chunk,before.length);out.set(rest,before.length+chunk.length);return out;}
 
-/* ========= init ========= */
-UI.setRenderMode.value   = SETTINGS.renderMode;
-UI.setVisualMotion.value = SETTINGS.visualMotion;
-UI.setArtStyle.value     = SETTINGS.artStyle;
-UI.setAspect.value       = SETTINGS.aspect;
-UI.proxyBase.value       = SECRETS.proxy||'https://proxy.blindart2020.workers.dev';
-UI.modeBadge.textContent = SETTINGS.renderMode==='online'?'Online':'Simple';
-renderCharList();
+/* ==== Canvas ==== */
+const canvas=$('canvas'),ctx=canvas.getContext('2d');canvas.width=1024;canvas.height=576;
+function drawTitle(text){ctx.fillStyle='#0b0b10';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fff';ctx.font='bold 48px Inter, system-ui';ctx.fillText(text,48,120);ctx.strokeStyle='#ef4444';ctx.lineWidth=6;ctx.strokeRect(24,24,canvas.width-48,canvas.height-48);}
+$('drawTextBtn').onclick=()=>drawTitle('Scene Title');$('clearCanvasBtn').onclick=()=>ctx.clearRect(0,0,canvas.width,canvas.height);
 
-/* ========= menus ========= */
-UI.leftBtn.onclick = ()=> UI.leftMenu.style.display='flex';
-UI.rightBtn.onclick= ()=> UI.rightMenu.style.display='flex';
-UI.closeLeft.onclick=()=> UI.leftMenu.style.display='none';
-UI.closeRight.onclick=()=> UI.rightMenu.style.display='none';
-UI.tabBtns.forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-UI.rtabBtns.forEach(b=>b.onclick=()=>showRTab(b.dataset.rtab));
-function showTab(id){ ['tChars','tSettings','tSecrets','tHelp'].forEach(k=>byId(k).style.display=(k===id?'block':'none')); }
-function showRTab(id){ ['uUploads','uProject'].forEach(k=>byId(k).style.display=(k===id?'block':'none')); }
+/* ==== Assets ==== */
+function renderAssetList(){const list=$('assetList');list.innerHTML='';if(!state.assets.length){const d=document.createElement('div');d.className='item muted small';d.textContent='No assets yet. Use “Add Assets.”';list.appendChild(d);return;}
+ state.assets.forEach(a=>{const row=document.createElement('label');row.className='item row';row.style.alignItems='center';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!a.selected;cb.onchange=()=>a.selected=cb.checked;const span=document.createElement('span');span.innerHTML=`<strong>${a.name}</strong> <span class="muted small">(${a.type}, ${(a.size/1024|0)} KB)</span>`;row.appendChild(cb);row.appendChild(span);list.appendChild(row);});updateAudioSelect();}
+$('addAssetsBtn').onclick=()=>$('assetInput').click();
+$('assetInput').addEventListener('change', async (e)=>{ensureProject();const files=[...e.target.files];for(const f of files){const path=projectPath(`assets/${crypto.randomUUID()}_${f.name}`);await writeFile(path,f);state.assets.push({name:f.name,type:f.type||'application/octet-stream',path,size:f.size,selected:false});}await saveProjectIndex();renderAssetList();});
 
-/* ========= settings & secrets ========= */
-UI.btnSaveSecrets.onclick=()=>{
-  SECRETS.proxy = (UI.proxyBase.value.trim()||'https://proxy.blindart2020.workers.dev').replace(/\/+$/,'');
-  save('ba_secrets', SECRETS);
-  SETTINGS.renderMode   = UI.setRenderMode.value;
-  SETTINGS.visualMotion = UI.setVisualMotion.value;
-  SETTINGS.artStyle     = UI.setArtStyle.value;
-  SETTINGS.aspect       = UI.setAspect.value;
-  save('ba_settings', SETTINGS);
-  UI.modeBadge.textContent = SETTINGS.renderMode==='online'?'Online':'Simple';
-  alert('Saved.');
-};
-UI.btnTestProxy.onclick= async ()=>{
-  const base=(UI.proxyBase.value||'').replace(/\/$/,'')||'https://proxy.blindart2020.workers.dev';
-  try{
-    const r=await fetch(base+'/health'); alert(r.ok?'✅ Proxy reachable':'❌ Proxy error');
-  }catch(e){ alert('❌ Proxy unreachable'); }
-};
+/* ==== Script import ==== */
+$('importTextBtn').onclick=async()=>{ensureProject();const [h]=await window.showOpenFilePicker?.({types:[{description:"Text",accept:{'text/plain':['.txt']}}]})??[];if(!h)return;const f=await h.getFile();$('scriptBox').value=await f.text();};
+$('clearTextBtn').onclick=()=>$('scriptBox').value='';
 
-/* ========= uploads ========= */
-UI.fileChars.onchange=async e=>{
-  const f=e.target.files[0]; if(!f)return;
-  try{
-    const data = JSON.parse(await f.text());
-    save('ba_chars', data); CHARS=data; renderCharList(); alert('Characters imported!');
-  }catch{ alert('Invalid characters.json'); }
-};
-UI.fileGeneral.onchange=e=>{
-  const files=[...e.target.files]; UI.uploadList.innerHTML='';
-  files.forEach(f=>{
-    const row=document.createElement('div'); row.className='item';
-    row.textContent=f.name+' ('+Math.round(f.size/1024)+' KB)';
-    UI.uploadList.appendChild(row);
-  });
-};
+/* ==== Frames & Timeline ==== */
+$('saveFrameBtn').onclick=async()=>{try{ensureProject();const raw=atob(canvas.toDataURL('image/png').split(',')[1]);const buf=new ArrayBuffer(raw.length);const u8=new Uint8Array(buf);for(let i=0;i<raw.length;i++)u8[i]=raw.charCodeAt(i);
+ const meta=baseMetadata({kind:'frame',note:'Canvas export'});const injected=addPNGTextChunk(buf,'book-animator',JSON.stringify(meta));const pngBlob=new Blob([injected],{type:'image/png'});
+ const name=`frame_${Date.now()}.png`;const path=projectPath(`frames/${name}`);await writeFile(path,pngBlob);const fr={name,path,dur:0.25,selected:false};state.frames.push({name,path});state.timeline.push(fr);await saveProjectIndex();renderTimeline();saveStateEl.textContent='Saved frame ✔';}catch(e){alert(e.message||e);}};
+$('btnAddFrameFromAsset').onclick=async()=>{ensureProject();const imgs=state.assets.filter(a=>a.selected && a.type.startsWith('image/'));if(!imgs.length){alert('Select image assets first.');return;}
+ imgs.forEach(a=>state.timeline.push({name:a.name,path:a.path,dur:0.25,selected:false}));await saveProjectIndex();renderTimeline();};
+$('btnRemoveTimelineSel').onclick=async()=>{state.timeline=state.timeline.filter(f=>!f.selected);await saveProjectIndex();renderTimeline();};
+function renderTimeline(){const list=$('timelineList');list.innerHTML=''; let total=0;
+ if(!state.timeline.length){const d=document.createElement('div');d.className='item muted small';d.textContent='Timeline is empty.';list.appendChild(d);}
+ state.timeline.forEach((f,idx)=>{total+=Number(f.dur)||0.25;const row=document.createElement('div');row.className='item row drag';row.draggable=true;row.dataset.index=idx;
+  const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!f.selected;cb.onchange=()=>f.selected=cb.checked;
+  const lbl=document.createElement('span');lbl.textContent=f.name;
+  const dur=document.createElement('input');dur.type='text';dur.value=f.dur;dur.style.maxWidth='80px';dur.onchange=()=>{f.dur=Math.max(0.04,parseFloat(dur.value)||0.25);updateTimelineTotal();};
+  row.appendChild(cb);row.appendChild(lbl);row.appendChild(dur);list.appendChild(row);});
+ enableDnD(list); updateTimelineTotal(total);}
+function updateTimelineTotal(total=0){if(!total){total=state.timeline.reduce((s,f)=>s+(Number(f.dur)||0.25),0);} $('timelineTotal').textContent=total.toFixed(2)+'s';}
+function enableDnD(container){let dragIdx=null;container.querySelectorAll('[draggable=true]').forEach(el=>{
+ el.addEventListener('dragstart',e=>{dragIdx=Number(el.dataset.index); e.dataTransfer.setData('text/plain',dragIdx);});
+ el.addEventListener('dragover',e=>e.preventDefault());
+ el.addEventListener('drop',async e=>{e.preventDefault();const from=dragIdx;const to=Number(el.dataset.index);if(isNaN(from)||isNaN(to))return;
+ const [m]=state.timeline.splice(from,1);state.timeline.splice(to,0,m);await saveProjectIndex();renderTimeline();});
+});}
 
-/* ========= characters UI ========= */
-function defaultCharacters(){
-  const names=['Narrator','Sidetracked Sally','Darling Danielle','Dark Dan','Skater Skip','Creative Callie','Zen Zena','Grumpy Gus','Journey Mark','Abby','Bear'];
-  // default OpenAI voice: ember
-  return names.map(n=>({name:n, notes:'', voice:'ember', eleven:'', portrait:''}));
+/* ==== Save/Load project ==== */
+async function saveProjectIndex(){ensureProject();const index={...baseMetadata({kind:'project-index'}),assets:state.assets.map(({name,type,path,size})=>({name,type,path,size})),frames:state.frames.map(({name,path})=>({name,path})),timeline:state.timeline,tracks:state.tracks||[],vismap:state.vismap||{},script:$('scriptBox').value};await writeFile(projectPath('project.index.json'),new Blob([JSON.stringify(index,null,2)],{type:'application/json'}));}
+$('saveProjectBtn').onclick=async()=>{try{ensureProject();await saveProjectIndex();saveStateEl.textContent='Project saved ✔';}catch(e){alert(e.message||e);}};
+$('newProjectBtn').onclick=()=>{const n=prompt('Project name?');if(!n)return;setProjectName(n);Object.assign(state,{assets:[],frames:[],timeline:[],tracks:[],illos:[],vismap:{}});$('scriptBox').value='';renderAssetList();renderTimeline();renderGallery();renderTracks();renderVisGrid();saveStateEl.textContent='Ready.';};
+$('openProjectBtn').onclick=async()=>{const n=prompt('Open project name?');if(!n)return;setProjectName(n);try{const idx=await readFile(projectPath('project.index.json'));const json=JSON.parse(await idx.text());
+ state.assets=json.assets||[];state.frames=json.frames||[];state.timeline=json.timeline||[];state.tracks=json.tracks||[];state.vismap=json.vismap||{};$('scriptBox').value=json.script||'';
+ renderAssetList();renderTimeline();renderGallery();renderTracks();renderVisGrid();saveStateEl.textContent='Loaded ✔';}catch(e){alert('No saved project by that name yet.');}};
+
+/* ==== Illustration Studio (incl. Batch) ==== */
+const gallery=$('illoGallery'); function renderGallery(){gallery.innerHTML='';if(!state.illos.length){const d=document.createElement('div');d.className='muted small';d.textContent='No illustrations yet.';gallery.appendChild(d);return;}
+ state.illos.forEach(it=>{const slot=document.createElement('div');slot.className='slot';const img=document.createElement('img');img.src=it.url;slot.appendChild(img);const cap=document.createElement('div');cap.className='cap';cap.textContent=it.meta?.styleName||'Illustration';slot.appendChild(cap);slot.onclick=()=>{state.illos.forEach(i=>i.selected=false);it.selected=true;slot.style.outline='2px solid var(--accent)';};gallery.appendChild(slot);});}
+function parseSize(s){const [w,h]=s.split('x').map(n=>parseInt(n,10));return [w||1024,h||1024];}
+function jitter(n,amt=0.03){return (Math.random()-0.5)*2*amt*n;}
+$('genLocalBtn').onclick=()=>{const style=$('stylePreset').value;const prompt=$('illustrationPrompt').value.trim()||'Untitled scene';const [w,h]=parseSize($('imgSize').value);
+ const off=document.createElement('canvas');off.width=w;off.height=h;const c=off.getContext('2d');const g=c.createLinearGradient(0,0,w,h);g.addColorStop(0,'#0b0b10');g.addColorStop(1,'#17171c');c.fillStyle=g;c.fillRect(0,0,w,h);
+ c.strokeStyle='#ef4444';c.lineWidth=Math.max(4,Math.floor(Math.min(w,h)/120));c.strokeRect(16,16,w-32,h-32);
+ c.fillStyle='#fff';c.font=`bold ${Math.floor(Math.min(w,h)/14)}px Inter, system-ui`;c.fillText(prompt.slice(0,48),32+jitter(w),Math.floor(h*0.25)+jitter(h));
+ c.font=`${Math.floor(Math.min(w,h)/28)}px Inter, system-ui`;c.fillStyle='#a1a1aa';c.fillText(style.slice(0,60),32+jitter(w),Math.floor(h*0.25)+40+jitter(h));
+ const dataURL=off.toDataURL('image/png');addIllustrationFromDataURL(dataURL,{styleName:style.split(',')[0],prompt,generator:'Local Poster'});};
+$('genAIBtn').onclick=()=>aiGenOnce();$('genBatchBtn').onclick=()=>batchGenerate();
+async function aiGenOnce(seed=0){try{ensureProject();const style=$('stylePreset').value;const prompt=($('illustrationPrompt').value||'').trim();if(!prompt){alert('Please write a prompt.');return;}
+ const size=$('imgSize').value,provider=$('provider').value,endpoint=$('endpoint').value.trim(),key=$('openaiKey').value.trim();const fullPrompt=`${prompt}\nStyle: ${style}\nSeedJitter:${seed.toFixed(3)}\nComposition: detailed, coherent scene, clean edges, storytelling`;
+ let base64png=null;
+ if(provider==='proxy'){if(!endpoint){alert('Set your proxy endpoint.');return;}const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:fullPrompt,size})});if(!r.ok) throw new Error('Proxy error');const j=await r.json();base64png=j.base64_png||j.imageBase64||j.pngBase64;}
+ else{if(!key){alert('Paste OpenAI API key.');return;}const r=await fetch('https://api.openai.com/v1/images/generations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},body:JSON.stringify({model:'gpt-image-1',prompt:fullPrompt,size:size})});const j=await r.json();if(j.error) throw new Error(j.error.message||'OpenAI error');base64png=j.data?.[0]?.b64_json;}
+ if(!base64png) throw new Error('No image data'); const dataURL=`data:image/png;base64,${base64png}`;addIllustrationFromDataURL(dataURL,{styleName:style.split(',')[0],prompt,generator:provider==='proxy'?'Proxy':'OpenAI'});}catch(e){alert(e.message||e);}}
+async function batchGenerate(){const n=Math.max(1,Math.min(12,parseInt(($('batchCount').value||'4'),10)||4));for(let i=0;i<n;i++){await aiGenOnce(Math.random());}}
+async function addIllustrationFromDataURL(dataURL,metaExtra){const b64=dataURL.split(',')[1];const raw=atob(b64);const buf=new ArrayBuffer(raw.length);const u8=new Uint8Array(buf);for(let i=0;i<raw.length;i++)u8[i]=raw.charCodeAt(i);
+ const meta=baseMetadata({kind:'illustration',...metaExtra});const injected=addPNGTextChunk(buf,'book-animator',JSON.stringify(meta));const blob=new Blob([injected],{type:'image/png'});const url=URL.createObjectURL(blob);const name=`illustration_${Date.now()}_${Math.random().toString(36).slice(2,6)}.png`;state.illos.unshift({name,blob,url,meta});renderGallery();}
+$('saveIlloBtn').onclick=async()=>{try{ensureProject();const pick=state.illos.find(x=>x.selected)||state.illos[0];if(!pick){alert('Generate/select an illustration first.');return;}
+ const path=projectPath(`assets/${pick.name}`);await writeFile(path,pick.blob);state.assets.push({name:pick.name,type:'image/png',path,size:pick.blob.size,selected:false});await saveProjectIndex();renderAssetList();saveStateEl.textContent='Illustration saved ✔';}catch(e){alert(e.message||e);}};
+
+/* ==== Voice Studio + Lip-Sync ==== */
+const voiceListEl=$('voiceList'), ttsPlayer=$('ttsPlayer');
+function updateVoiceList(){voiceListEl.innerHTML='';state.assets.filter(a=>a.type.startsWith('audio/')).forEach(a=>{const o=document.createElement('option');o.value=a.path;o.textContent=a.name;voiceListEl.appendChild(o);});updateAudioSelect();}
+function updateAudioSelect(){const sel=$('audioForVideo');sel.innerHTML='<option value="">(no audio)</option>';state.assets.filter(a=>a.type.startsWith('audio/')).forEach(a=>{const o=document.createElement('option');o.value=a.path;o.textContent=a.name;sel.appendChild(o);});}
+$('btnImportVoice').onclick=()=>$('voiceImport').click();
+$('voiceImport').addEventListener('change', async (e)=>{try{ensureProject();const [f]=[...e.target.files];if(!f) return;const name=$('voiceName').value.trim()||f.name.replace(/\.[^.]+$/,'');const path=projectPath(`voices/${crypto.randomUUID()}_${name}.wav`);await writeFile(path,f);
+ state.assets.push({name:`${name}.wav`,type:f.type||'audio/wav',path,size:f.size,selected:false});
+ await writeFile(projectPath(`voices/${name}.voice.json`),new Blob([JSON.stringify(baseMetadata({kind:'voice-profile',name,source:'import'}),null,2)],{type:'application/json'}));
+ await saveProjectIndex();renderAssetList();updateVoiceList();saveStateEl.textContent='Voice imported ✔';}catch(err){alert(err.message||err);}});
+$('btnCloneVoice').onclick=async()=>{try{ensureProject();const sel=voiceListEl.value;if(!sel){alert('Select an imported sample first.');return;}const name=$('voiceName').value.trim()||`Clone_${Date.now()}`;
+ await writeFile(projectPath(`voices/${name}.voice.json`),new Blob([JSON.stringify(baseMetadata({kind:'voice-profile',name,source:'clone-from-sample',samplePath:sel}),null,2)],{type:'application/json'}));
+ saveStateEl.textContent='Clone profile registered ✔';}catch(e){alert(e.message||e);}};
+$('btnPlayVoice').onclick=async()=>{const p=voiceListEl.value;if(!p){alert('Pick a voice sample.');return;}const f=await readFile(p);ttsPlayer.src=URL.createObjectURL(f);ttsPlayer.play();};
+$('btnDeleteVoice').onclick=async()=>{const p=voiceListEl.value;if(!p){alert('Pick a voice sample.');return;}state.assets=state.assets.filter(a=>a.path!==p);await saveProjectIndex();renderAssetList();updateVoiceList();};
+$('btnSynthesize').onclick=async()=>{try{ensureProject();const text=($('ttsText').value||'').trim();if(!text){alert('Type text to synthesize.');return;}
+ const voiceName=$('voiceName').value.trim()||'Adam';const provider=$('ttsProvider').value, endpoint=$('ttsEndpoint').value.trim(), key=$('ttsApiKey').value.trim();let wavBlob=null;
+ if(provider==='proxy'){if(!endpoint){alert('Set TTS proxy endpoint.');return;}const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,voice:voiceName,emotion:parseFloat($('emo').value),pitch:parseInt($('pit').value,10),speed:parseFloat($('spd').value)})});if(!r.ok) throw new Error('Proxy TTS error');const ab=await r.arrayBuffer();wavBlob=new Blob([ab],{type:'audio/wav'});}
+ else{if(!key){alert('Paste OpenAI API key.');return;}const r=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},body:JSON.stringify({model:'gpt-4o-mini-tts',voice:'alloy',input:text,speed:parseFloat($('spd').value)})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error?.message||'OpenAI TTS error');}const ab=await r.arrayBuffer();wavBlob=new Blob([ab],{type:'audio/wav'});}
+ state.lastAudioBlob=wavBlob; ttsPlayer.src=URL.createObjectURL(wavBlob); ttsPlayer.play(); saveStateEl.textContent='Synth preview ✔';}catch(e){alert(e.message||e);}};
+$('btnSaveTTS').onclick=async()=>{try{ensureProject();if(!state.lastAudioBlob){alert('Synthesize first or select an audio asset.');return;}const name=`tts_${Date.now()}.wav`;const path=projectPath(`assets/${name}`);
+ await writeFile(path,new Blob([await state.lastAudioBlob.arrayBuffer()],{type:'audio/wav'})); state.assets.push({name,type:'audio/wav',path,size:state.lastAudioBlob.size,selected:false}); await saveProjectIndex();renderAssetList();updateVoiceList();saveStateEl.textContent='TTS saved ✔';}catch(e){alert(e.message||e);}};
+$('btnMakeLipSync').onclick=async()=>{try{ensureProject();let audioFile=null;const selected=voiceListEl.value || (state.assets.find(a=>a.type.startsWith('audio/') && a.selected)?.path || null);
+ audioFile = selected ? await readFile(selected) : state.lastAudioBlob; if(!audioFile){alert('Select/import audio or synthesize first.');return;}
+ const track=await buildVisemeTrack(audioFile);const name=`lipsync_${Date.now()}.json`;const path=projectPath(`tracks/${name}`);
+ await writeFile(path,new Blob([JSON.stringify(track,null,2)],{type:'application/json'})); state.tracks=state.tracks||[]; state.tracks.push({name,path,len:track.duration}); await saveProjectIndex();renderTracks();saveStateEl.textContent='Lip-sync track created ✔';}catch(e){alert(e.message||e);}};
+async function buildVisemeTrack(fileOrBlob){const ac=new (window.AudioContext||window.webkitAudioContext)();const buf=await fileOrBlob.arrayBuffer();const audio=await ac.decodeAudioData(buf);
+ const ch=audio.getChannelData(0);const sr=audio.sampleRate;const win=0.04,hop=0.02;const N=Math.floor(win*sr),H=Math.floor(hop*sr);const frames=[];let pos=0;
+ while(pos+N<=ch.length){const seg=ch.subarray(pos,pos+N);let en=0;for(let i=0;i<seg.length;i++)en+=seg[i]*seg[i];let centroid=0,sum=0;for(let k=0;k<64;k++){let re=0,im=0;const w=(2*Math.PI*k)/N;for(let n=0;n<N;n++){re+=seg[n]*Math.cos(w*n);im-=seg[n]*Math.sin(w*n);}const mag=(re*re+im*im);centroid+=k*mag;sum+=mag;}
+  const c=(sum>1e-9)?(centroid/sum):0;const energy=en/N;const open=energy>0.005?(energy>0.02?2:1):0;const band=c<8?'M':(c<20?'A':'E');const viseme=open===0?'X':(band+(open===2?':O':':H'));frames.push({t:pos/sr,v:viseme});pos+=H;}
+ return {version:1,fps:Math.round(1/hop),duration:audio.duration,frames};}
+function renderTracks(){const list=$('trackList');list.innerHTML='';if(!state.tracks?.length){const d=document.createElement('div');d.className='muted small';d.textContent='No lip-sync tracks yet.';list.appendChild(d);return;} state.tracks.forEach(t=>{const el=document.createElement('div');el.className='item small';el.textContent=`${t.name} (${(t.len||0).toFixed(2)}s)`;list.appendChild(el);});}
+
+/* ==== Mouth Sprites Map ==== */
+const VISEMES=['X','M:H','M:O','A:H','A:O','E:H','E:O'];
+function renderVisGrid(){const g=$('visGrid');g.innerHTML='';VISEMES.forEach(tok=>{const cell=document.createElement('div');cell.className='viscell';
+ const lbl=document.createElement('div');lbl.innerHTML=`<strong>${tok}</strong>`;
+ const img=document.createElement('img');img.alt=tok;img.dataset.tok=tok; if(state.vismap[tok]?.url){img.src=state.vismap[tok].url;}
+ const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=async(e)=>{const [f]=[...e.target.files];if(!f)return; const url=URL.createObjectURL(f);img.src=url; state.vismap[tok]={blob:f,url,filename:`vis_${tok}.png`};};
+ cell.appendChild(lbl);cell.appendChild(img);cell.appendChild(inp);g.appendChild(cell);});}
+$('btnSaveVisMap').onclick=async()=>{try{ensureProject();for(const tok of Object.keys(state.vismap)){const v=state.vismap[tok];if(v?.blob){const path=projectPath(`sprites/${v.filename}`);await writeFile(path,v.blob);state.vismap[tok].path=path;}} await writeFile(projectPath('sprites/viseme.map.json'),new Blob([JSON.stringify({tokens:VISEMES,map:state.vismap},null,2)],{type:'application/json'})); await saveProjectIndex();saveStateEl.textContent='Sprite map saved ✔';}catch(e){alert(e.message||e);}};
+$('btnClearVisMap').onclick=()=>{state.vismap={};renderVisGrid();};
+
+/* ==== Preview ==== */
+$('removeSelectedBtn').onclick=async()=>{state.assets=state.assets.filter(a=>!a.selected);await saveProjectIndex();renderAssetList();updateVoiceList();};
+$('previewSelectedBtn').onclick=async()=>{const sel=state.assets.find(a=>a.selected);if(!sel){alert('Select one asset.');return;}const file=await readFile(sel.path);const url=URL.createObjectURL(file);
+ const v=$('previewVideo'),i=$('previewImage'),au=$('previewAudio');v.style.display='none';i.style.display='none';au.style.display='none';
+ if(sel.type.startsWith('video/')){v.src=url;v.style.display='block';v.play();}else if(sel.type.startsWith('image/')){i.src=url;i.style.display='block';}else if(sel.type.startsWith('audio/')){au.src=url;au.style.display='block';au.play();}else alert('Unsupported preview type.');};
+
+/* ==== Video render (canvas capture → WebM) ==== */
+let mediaRecorder=null, recChunks=[];
+$('stopRenderBtn').onclick=()=>{try{mediaRecorder?.stop();}catch{}};
+$('renderVideoBtn').onclick=async()=>{try{ensureProject();if(!state.timeline.length){alert('Timeline is empty.');return;}const fps=Math.max(1,Math.min(60,parseInt(($('fps').value||'24'),10)||24));
+ const stream=canvas.captureStream(fps); mediaRecorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9'}); recChunks=[]; mediaRecorder.ondataavailable=(e)=>{if(e.data.size>0) recChunks.push(e.data);};
+ mediaRecorder.onstop=()=>{const blob=new Blob(recChunks,{type:'video/webm'}); state.lastVideoBlob=blob; $('renderPreview').src=URL.createObjectURL(blob); writeFile(projectPath(`exports/video_${Date.now()}.meta.json`), new Blob([JSON.stringify(baseMetadata({kind:'video-export',fps,frames:state.timeline.length}),null,2)],{type:'application/json'})); saveStateEl.textContent='Video (video-only) ✔';};
+ mediaRecorder.start();
+ // draw timeline frames
+ for(const fr of state.timeline){const file=await readFile(fr.path);const img=await blobToImage(file);ctx.drawImage(img,0,0,canvas.width,canvas.height); await compositeMouthIfAny(fr); await sleep((Number(fr.dur)||0.25)*1000);}
+ mediaRecorder.stop();
+}catch(e){alert(e.message||e);}};
+async function compositeMouthIfAny(){ if(!state.tracks?.length || !Object.keys(state.vismap||{}).length) return; try{
+  const tr=await readFile(state.tracks[0].path).then(f=>f.text()).then(JSON.parse); const now=performance.now()/1000; const idx=Math.floor((now%tr.duration)/(1/tr.fps)); const v=tr.frames[idx]?.v||'X';
+  const entry=state.vismap[v]; if(entry?.path){const spr=await readFile(entry.path); const img=await blobToImage(spr); const w=120,h=90; ctx.drawImage(img, canvas.width- w -20, canvas.height- h -20, w, h);}
+ }catch{}}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function blobToImage(blob){return new Promise(res=>{const url=URL.createObjectURL(blob);const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);res(img);};img.src=url;});}
+
+/* ==== FFmpeg-wasm mux (video + audio → out.webm) ==== */
+let ffmpegReady=false, FF=null, toBlob=null;
+async function ensureFFmpeg(){
+  if(ffmpegReady) return;
+  // dynamic ESM import (cached by SW)
+  const mod = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/ffmpeg.min.js');
+  const util = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js');
+  FF = mod.createFFmpeg({ log: false });
+  toBlob = util.toBlob;
+  await FF.load();
+  ffmpegReady = true;
 }
-function renderCharList(){
-  const list = byId('charList'); list.innerHTML='';
-  CHARS.forEach((c,ix)=>{
-    const el=document.createElement('div'); el.className='item';
-    el.innerHTML = `
-      <div>
-        <div style="font-weight:700">${escapeHtml(c.name)}</div>
-        <div style="color:#bbb;font-size:.9rem">OpenAI: ${escapeHtml(c.voice||'ember')}${c.eleven?` · 11Labs:${escapeHtml(c.eleven)}`:''}</div>
-      </div>
-      <div style="display:flex;gap:.5rem">
-        <button class="btn small" data-edit="${ix}">Edit</button>
-      </div>`;
-    list.appendChild(el);
-  });
-  list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openChar(+b.dataset.edit));
-}
-function openChar(ix){
-  const c=CHARS[ix];
-  showCharModal(true);
-  byId('ceName').value=c.name; byId('ceNotes').value=c.notes||''; byId('ceVoice').value=c.voice||'ember';
-  byId('ce11').value=c.eleven||''; byId('cePortrait').value='';
-  editingIx = ix;
-}
-function showCharModal(v){ byId('charModal').style.display=v?'flex':'none'; }
-let editingIx = -1;
-byId('ceCancel').onclick=()=> showCharModal(false);
-byId('ceSave').onclick=async ()=>{
-  const c=CHARS[editingIx];
-  c.name   = byId('ceName').value.trim()||c.name;
-  c.notes  = byId('ceNotes').value.trim();
-  c.voice  = byId('ceVoice').value;
-  c.eleven = byId('ce11').value.trim();
-  const f=byId('cePortrait').files?.[0];
-  if(f) c.portrait = await fileToDataURL(f);
-  save('ba_chars', CHARS); renderCharList(); showCharModal(false);
-};
+$('muxWithAudioBtn').onclick=async()=>{try{
+  ensureProject();
+  if(!state.lastVideoBlob){alert('Render a video-only WebM first.');return;}
+  const audioPath=$('audioForVideo').value; if(!audioPath){alert('Select an audio asset to mux.');return;}
+  await ensureFFmpeg();
+  const inVid = new Uint8Array(await state.lastVideoBlob.arrayBuffer());
+  const inAudFile = await readFile(audioPath);
+  const inAud = new Uint8Array(await inAudFile.arrayBuffer());
 
-/* ========= scenes ========= */
-UI.previewScenesBtn.onclick = ()=> updateSceneTiles();
-function splitScenes(text){
-  const blocks = text.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
-  return blocks.length?blocks:[];
-}
-function updateSceneTiles(){
-  const scenes=splitScenes(UI.txt.value);
-  UI.scenesBadge.textContent=scenes.length;
-  UI.thumbs.innerHTML=''; scenes.forEach((_,i)=> UI.thumbs.appendChild(makeTile(i+1)));
-}
-function makeTile(n){
-  const t=document.createElement('div'); t.className='tile';
-  t.innerHTML = `<div class="num">#${n}</div><span style="color:#ccc">waiting…</span>`;
-  return t;
-}
+  await FF.FS('writeFile','vid.webm', inVid);
+  await FF.FS('writeFile','aud.wav', inAud);
 
-/* ========= dialogue parsing ========= */
-function parseDialogue(sceneText){
-  const lines = sceneText.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-  const out = [];
-  for(const line of lines){
-    const m = line.match(/^([^:]{1,60}):\s*(.+)$/); // "Name: text"
-    if(m){ out.push({speaker:m[1].trim(), text:m[2].trim()}); }
-    else { out.push({speaker:'Narrator', text: line}); }
-  }
-  return out;
-}
-function findCharByName(name){
-  const n = (name||'').toLowerCase();
-  return CHARS.find(c=>c.name.toLowerCase()===n) ||
-         CHARS.find(c=>n && c.name.toLowerCase().startsWith(n)) ||
-         CHARS.find(c=>/^narrator$/i.test(c.name)) ||
-         CHARS[0];
-}
+  // Mux to WebM+Opus (good browser support)
+  await FF.run('-i','vid.webm','-i','aud.wav','-c:v','copy','-c:a','libopus','-b:a','128k','-shortest','out.webm');
 
-/* ========= proxy helpers ========= */
-function getProxyBase(){
-  const base = (SECRETS.proxy||'https://proxy.blindart2020.workers.dev').replace(/\/+$/,'');
-  return base;
-}
-async function callProxy(path,{method='POST',json=null,qs=null,expect='json'}={}){
-  const base=getProxyBase();
-  const q=qs?('?'+new URLSearchParams(qs).toString()):'';
-  const url=`${base}${path}${q}`;
-  const res=await fetch(url,{method,headers:json?{'Content-Type':'application/json'}:undefined,body:json?JSON.stringify(json):undefined});
-  if(!res.ok){ throw new Error(`${path} ${res.status}`); }
-  if(expect==='blob') return await res.blob();
-  return await res.json();
-}
-// Worker endpoints (blob responses)
-async function genImage(prompt,style,aspect){
-  const blob = await callProxy('/images',{json:{prompt,style,aspect}},null,'blob');
-  return URL.createObjectURL(blob);
-}
-async function ttsOpenAI(text,voice='ember'){
-  const blob = await callProxy('/voice/openai',{json:{text,voice}},null,'blob');
-  return URL.createObjectURL(blob);
-}
-async function ttsEleven(text,voice_id){
-  const blob = await callProxy('/voice/11labs',{json:{text,voice_id}},null,'blob');
-  return URL.createObjectURL(blob);
-}
-async function autoSfx(text){
-  const blob = await callProxy('/sfx/auto',{json:{text}},null,'blob');
-  return URL.createObjectURL(blob);
-}
+  const data = FF.FS('readFile','out.webm');
+  const muxBlob = toBlob(data.buffer, 'video/webm');
+  const url = URL.createObjectURL(muxBlob);
+  $('renderPreview').src = url;
 
-/* ========= prompt & placeholders ========= */
-function buildPrompt(scene, art){
-  const base = `Illustration, ${art}, cinematic lighting, clean composition, high detail.`;
-  const clean = scene.replace(/^\s*#.*$/gm,'').trim();
-  return `${base}\nScene: ${clean}`;
-}
-async function placeholderPNG(title, subtitle=''){
-  const w=640,h=360, pad=18, r=12;
-  const c = document.createElement('canvas'); c.width=w; c.height=h;
-  const x = c.getContext('2d');
-  x.fillStyle='#0f0f0f'; x.fillRect(0,0,w,h);
-  x.strokeStyle='#666'; x.lineWidth=2; roundRect(x,pad,pad,w-pad*2,h-pad*2,r); x.stroke();
-  x.fillStyle='#fff'; x.font='bold 22px Inter, system-ui'; x.fillText(title, 26, 50);
-  x.fillStyle='#bbb'; x.font='15px Inter, system-ui'; wrapText(x, subtitle, 26, 80, w-52, 20);
-  return c.toDataURL('image/png');
-}
-function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
-function wrapText(ctx, text, x, y, max, lh){
-  const words=(text||'').split(/\s+/), line=[];
-  for(const w of words){ const test=[...line,w].join(' '); if(ctx.measureText(test).width>max){ ctx.fillText(line.join(' '),x,y); line.length=0;y+=lh; } line.push(w); }
-  ctx.fillText(line.join(' '),x,y);
-}
+  // Save artifact + sidecar
+  const fname=`video_mux_${Date.now()}.webm`;
+  await writeFile(projectPath(`exports/${fname}`), muxBlob);
+  await writeFile(projectPath(`exports/${fname}.meta.json`), new Blob([JSON.stringify(baseMetadata({kind:'video-mux',audio:audioPath}),null,2)],{type:'application/json'}));
 
-/* ========= generation (images + audio with REAL durations) ========= */
-UI.startBtn.onclick = async ()=>{
-  const scenes=splitScenes(UI.txt.value);
-  if(!scenes.length) return alert('Paste some text first.');
-  UI.statusBadge.textContent='Generating…';
-  UI.thumbs.innerHTML=''; scenes.forEach((_,i)=> UI.thumbs.appendChild(makeTile(i+1)));
-  UI.meter.style.width='0%'; UI.pct.textContent='0%';
-  ASSETS={images:[], clips:[], sfx:[]};
+  saveStateEl.textContent='Muxed video ✔';
+}catch(e){alert(e.message||e);}};
 
-  const online = SETTINGS.renderMode==='online';
-  const ACtmp = new (window.AudioContext || window.webkitAudioContext)(); // for decoding durations
+/* ==== Provider field persistence ==== */
+function persist(ids,key){try{const saved=localStorage.getItem(key);if(saved){const o=JSON.parse(saved);ids.forEach(id=>{if(o[id]!==undefined)$(`${id}`).value=o[id];});}
+ ids.forEach(id=>{$(id).addEventListener('change',()=>{const cur={};ids.forEach(i=>cur[i]=$(`${i}`).value);localStorage.setItem(key,JSON.stringify(cur));});});}catch{}
+persist(['provider','endpoint','openaiKey'],'ba_img_cfg');persist(['ttsProvider','ttsEndpoint','ttsApiKey'],'ba_tts_cfg');
 
-  for(let i=0;i<scenes.length;i++){
-    const tile = UI.thumbs.children[i];
-    try{
-      // IMAGE
-      let imgUrl;
-      if(online){
-        const prompt = buildPrompt(scenes[i], SETTINGS.artStyle);
-        imgUrl = await genImage(prompt, SETTINGS.artStyle, SETTINGS.aspect);
-      }else{
-        imgUrl = await placeholderPNG(`Scene ${i+1}`, `${SETTINGS.artStyle} • ${SETTINGS.visualMotion}`);
-      }
-      ASSETS.images[i]=imgUrl;
-      tile.innerHTML = `<div class="num">#${i+1}</div><img alt="scene ${i+1}" src="${imgUrl}"/>`;
-
-      // DIALOGUE with real durations
-      const dialog = parseDialogue(scenes[i]);
-      const clips = [];
-      if(online){
-        let t=0;
-        for(const d of dialog){
-          const ch = findCharByName(d.speaker);
-          let url;
-          if(ch && ch.eleven){ url = await ttsEleven(d.text, ch.eleven); }
-          else { url = await ttsOpenAI(d.text, (ch && ch.voice) ? ch.voice : 'ember'); }
-          const buf = await fetch(url).then(r=>r.arrayBuffer()).then(b=>ACtmp.decodeAudioData(b));
-          const dur = Math.max(0.5, buf.duration);
-          clips.push({url, when:t, dur, speaker:ch?.name||'Narrator'});
-          t += dur + 0.12; // short gap
-        }
-      }
-      ASSETS.clips[i]=clips;
-
-      // SFX (best effort)
-      let sfxUrl = null;
-      if(online){ try{ sfxUrl = await autoSfx(scenes[i]); }catch{} }
-      ASSETS.sfx[i]=sfxUrl||null;
-
-    }catch(err){
-      const msg=(err && err.message)||'Failed';
-      const ph = await placeholderPNG(`Scene ${i+1}`, msg);
-      ASSETS.images[i]=ph; ASSETS.clips[i]=[];
-      tile.innerHTML = `<div class="num">#${i+1}</div><img src="${ph}"/><div class="err" title="${msg}">⚠ ${escapeHtml(msg).slice(0,70)}</div>`;
-    }
-    const p=Math.round(((i+1)/scenes.length)*100);
-    UI.meter.style.width=p+'%'; UI.pct.textContent=p+'%';
-    await sleep(10);
-  }
-  ACtmp.close();
-  UI.statusBadge.textContent='Ready';
-  alert('Images & audio generated. You can Preview or Export now.');
-};
-
-/* ========= LIVE PREVIEW (synced) ========= */
-UI.previewLiveBtn.onclick = async ()=>{
-  if(!ASSETS.images.length){ return alert('Generate first.'); }
-  UI.previewWrap.style.display='grid';
-  const C = UI.previewCanvas;
-  setStageSizeCanvas(C, SETTINGS.aspect||'16:9');
-  const ctx = C.getContext('2d');
-  const fps = 60;
-  const W = C.width, H = C.height;
-  const imgs = await Promise.all(ASSETS.images.map(loadImg));
-
-  const AC = new (window.AudioContext || window.webkitAudioContext)();
-  const master = AC.createGain(); master.gain.value=1.0; master.connect(AC.destination);
-
-  // Build absolute timeline length from real clips
-  let totalLen = 0;
-  const sceneStart = []; // absolute start time for each scene
-  for(let i=0;i<ASSETS.images.length;i++){
-    sceneStart[i]=totalLen;
-    const clips = ASSETS.clips[i]||[];
-    let sceneDur = 0;
-    for(const cl of clips){ sceneDur = Math.max(sceneDur, cl.when + cl.dur); }
-    sceneDur = Math.max(sceneDur, 2.0); // ensure visible even if no audio
-    totalLen += sceneDur + 0.2; // pad
-  }
-
-  // schedule all audio now
-  const startAt = AC.currentTime + 0.35;
-  for(let i=0;i<ASSETS.images.length;i++){
-    const base = sceneStart[i];
-    const clips = ASSETS.clips[i]||[];
-    for(const cl of clips){
-      const src = AC.createBufferSource();
-      const buf = await fetchDecode(AC, cl.url);
-      const g = AC.createGain(); g.gain.value = 1.0;
-      src.buffer = buf; src.connect(g).connect(master);
-      src.start(startAt + base + cl.when);
-    }
-    if(ASSETS.sfx[i]){
-      // low-volume sfx overlay
-      const sbuf = await fetchDecode(AC, ASSETS.sfx[i]);
-      const sg = AC.createGain(); sg.gain.value = 0.9;
-      const ss = AC.createBufferSource(); ss.buffer = sbuf; ss.connect(sg).connect(master);
-      ss.start(startAt + base);
-    }
-  }
-
-  const visual = (SETTINGS && SETTINGS.visualMotion) || 'Ken Burns';
-  const t0 = performance.now() + 350; // align visual to audio start
-  function draw(){
-    const tSec = Math.max(0, (performance.now() - t0)/1000);
-    if(tSec > totalLen + 0.3){ return; }
-    // find current scene
-    let s=0; while(s+1<sceneStart.length && tSec >= sceneStart[s+1]) s++;
-    const local = tSec - sceneStart[s];
-
-    // compute scene duration (from clips)
-    let sDur = 2.0;
-    const cl = ASSETS.clips[s]||[];
-    for(const c of cl){ sDur = Math.max(sDur, c.when + c.dur); }
-    const tt = Math.min(1, Math.max(0, sDur ? local/sDur : 0));
-
-    // draw
-    ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
-    const img = imgs[s];
-    const rect = motionRect(visual, img, W, H, tt);
-    ctx.drawImage(img, rect.sx, rect.sy, rect.sw, rect.sh, 0,0,W,H);
-
-    // overlay
-    ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(20,18,160,36);
-    ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.strokeRect(20,18,160,36);
-    ctx.fillStyle='#fff'; ctx.font='bold 18px system-ui,sans-serif';
-    ctx.fillText(`Scene ${s+1}/${imgs.length}`, 32, 42);
-
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
-};
-
-/* ========= EXPORT ZIP ========= */
-byId('btnZip').onclick = async ()=>{
-  if(!ASSETS.images.length){ return alert('Generate first.'); }
-  const zip = new JSZip();
-  const manifest = {settings:SETTINGS, characters:CHARS, scenes:[]};
-  for(let i=0;i<ASSETS.images.length;i++){
-    const sceneRec = { image:`scene-${(i+1).toString().padStart(3,'0')}.png`, clips:[], sfx:null };
-    if(ASSETS.images[i]){
-      const imgBlob = await fetch(ASSETS.images[i]).then(r=>r.blob());
-      zip.file(sceneRec.image, imgBlob);
-    }
-    const clips = ASSETS.clips[i]||[];
-    for(let j=0;j<clips.length;j++){
-      const fname = `scene-${(i+1).toString().padStart(3,'0')}-line-${j+1}.mp3`;
-      const vBlob = await fetch(clips[j].url).then(r=>r.blob());
-      zip.file(fname, vBlob);
-      sceneRec.clips.push({file:fname, when:clips[j].when, dur:clips[j].dur, speaker:clips[j].speaker});
-    }
-    if(ASSETS.sfx[i]){
-      const sBlob = await fetch(ASSETS.sfx[i]).then(r=>r.blob());
-      const sname = `scene-${(i+1).toString().padStart(3,'0')}-sfx.mp3`;
-      zip.file(sname, sBlob); sceneRec.sfx = sname;
-    }
-    manifest.scenes[i]=sceneRec;
-  }
-  zip.file('manifest.json', JSON.stringify(manifest,null,2));
-  const blob = await zip.generateAsync({type:'blob'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='BookAnimator_Project.zip'; a.click();
-};
-
-/* ========= SAVE & WIPE ========= */
-UI.btnSave.onclick = ()=>{
-  save('ba_settings', SETTINGS);
-  save('ba_secrets', SECRETS);
-  save('ba_chars', CHARS);
-  alert('Saved to this browser.');
-};
-byId('btnClearThumbs').onclick=()=>{ UI.thumbs.innerHTML=''; ASSETS={images:[],clips:[],sfx:[]}; };
-byId('btnWipe').onclick=()=>{
-  localStorage.removeItem('ba_settings');
-  localStorage.removeItem('ba_secrets');
-  localStorage.removeItem('ba_chars');
-  alert('Cleared saved data. Reload the page.');
-};
-
-/* ========= VIDEO EXPORT (WebM) with sync ========= */
-const STAGE = document.getElementById('stage');
-function setStageSizeCanvas(C, aspect){
-  if(aspect==='9:16'){ C.width=720; C.height=1280; }
-  else if(aspect==='1:1'){ C.width=1024; C.height=1024; }
-  else { C.width=1280; C.height=720; } // 16:9
-}
-function setStageSize(aspect){ setStageSizeCanvas(STAGE, aspect); }
-
-document.getElementById('btnRenderVideo').onclick = async () => {
-  try{
-    if(!ASSETS || !ASSETS.images || ASSETS.images.length===0){
-      alert('No scenes to render. Generate first.');
-      return;
-    }
-    setStageSize(SETTINGS.aspect || '16:9');
-
-    const fps = 24;
-    const width = STAGE.width, height = STAGE.height;
-    const ctx = STAGE.getContext('2d');
-    STAGE.style.display = 'block';
-
-    // compute real timing
-    let totalLen = 0;
-    const sceneStart = [];
-    for(let i=0;i<ASSETS.images.length;i++){
-      sceneStart[i]=totalLen;
-      let sDur=2.0;
-      for(const cl of (ASSETS.clips[i]||[])){ sDur = Math.max(sDur, cl.when + cl.dur); }
-      totalLen += sDur + 0.2;
-    }
-
-    // Audio graph
-    const AC = new (window.AudioContext || window.webkitAudioContext)();
-    const masterGain = AC.createGain(); masterGain.gain.value = 1.0; masterGain.connect(AC.destination);
-
-    // schedule audio
-    const startAt = AC.currentTime + 0.35;
-    for(let i=0;i<ASSETS.images.length;i++){
-      const base = sceneStart[i];
-      const clips = ASSETS.clips[i]||[];
-      for(const cl of clips){
-        const buf = await fetchDecode(AC, cl.url);
-        const src = AC.createBufferSource(); src.buffer = buf;
-        const g = AC.createGain(); g.gain.value = 1.0; src.connect(g).connect(masterGain);
-        src.start(startAt + base + cl.when);
-      }
-      if(ASSETS.sfx[i]){
-        const sb = await fetchDecode(AC, ASSETS.sfx[i]);
-        const ss = AC.createBufferSource(); ss.buffer = sb;
-        const sg = AC.createGain(); sg.gain.value = 0.9; ss.connect(sg).connect(masterGain);
-        ss.start(startAt + base);
-      }
-    }
-
-    // capture audio + canvas
-    const audioStream = AC.destination.stream;
-    const canvasStream = STAGE.captureStream(fps);
-    const mixStream = new MediaStream([
-      canvasStream.getVideoTracks()[0],
-      ...(audioStream ? audioStream.getAudioTracks() : [])
-    ]);
-
-    const chunks=[];
-    const mr = new MediaRecorder(mixStream, { mimeType: 'video/webm;codecs=vp9,opus' });
-    mr.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
-    const recDone = new Promise(res => { mr.onstop = res; });
-    mr.start(100);
-
-    const imgs = await Promise.all(ASSETS.images.map(loadImg));
-    const visual = (SETTINGS && SETTINGS.visualMotion) || 'Ken Burns';
-
-    const totalFrames = Math.ceil(totalLen * fps);
-    let frame=0;
-    function draw(){
-      const tSec = frame / fps;
-      if(tSec > totalLen + 0.05){
-        setTimeout(async ()=>{
-          mr.stop(); await recDone;
-          const blob = new Blob(chunks, { type: 'video/webm' });
-          downloadBlob(blob, 'BookAnimator_Render.webm');
-          STAGE.style.display='none';
-        }, 200);
-        return;
-      }
-      // scene index
-      let s=0; while(s+1<sceneStart.length && tSec >= sceneStart[s+1]) s++;
-      const sLocal = tSec - sceneStart[s];
-      let sDur = 2.0;
-      for(const cl of (ASSETS.clips[s]||[])){ sDur = Math.max(sDur, cl.when + cl.dur); }
-      const tt = Math.min(1, Math.max(0, sDur? sLocal/sDur : 0));
-
-      // draw
-      ctx.fillStyle='#000'; ctx.fillRect(0,0,width,height);
-      const img = imgs[s];
-      const rect = motionRect(visual, img, width, height, tt);
-      ctx.drawImage(img, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, width, height);
-
-      // HUD
-      ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(20,18,160,36);
-      ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.strokeRect(20,18,160,36);
-      ctx.fillStyle='#fff'; ctx.font='bold 18px system-ui,sans-serif';
-      ctx.fillText(`Scene ${s+1}/${imgs.length}`, 32, 42);
-
-      frame++;
-      UI.meter.style.width = Math.min(100, Math.round((frame/totalFrames)*100)) + '%';
-      UI.pct.textContent   = Math.min(100, Math.round((frame/totalFrames)*100)) + '%';
-      requestAnimationFrame(draw);
-    }
-    requestAnimationFrame(draw);
-  }catch(err){
-    alert('Video render failed: ' + (err?.message || err));
-    STAGE.style.display = 'none';
-  }
-};
-
-/* ========= motion + media helpers ========= */
-function motionRect(mode, img, W, H, t){
-  const iw = img.naturalWidth, ih = img.naturalHeight;
-  const imgAR = iw/ih, canAR = W/H;
-  let sw, sh;
-  if (imgAR > canAR){ sh = ih; sw = sh * canAR; } else { sw = iw; sh = sw / canAR; }
-  let sx = (iw - sw)/2, sy = (ih - sh)/2;
-
-  const zoomAmt = 0.15, panAmt = 0.15;
-  switch((mode||'Ken Burns').toLowerCase()){
-    case 'ken burns':
-    case 'zoom in': {
-      const z = 1 - zoomAmt*t;
-      const tw = sw*z, th = sh*z;
-      const tx = sx + (sw - tw)/2, ty = sy + (sh - th)/2;
-      return { sx:tx, sy:ty, sw:tw, sh:th };
-    }
-    case 'zoom out': {
-      const z = 1 - zoomAmt*(1-t);
-      const tw = sw*z, th = sh*z;
-      const tx = sx + (sw - tw)/2, ty = sy + (sh - th)/2;
-      return { sx:tx, sy:ty, sw:tw, sh:th };
-    }
-    case 'pan left':  return { sx: sx + (sw*panAmt) * t, sy, sw, sh };
-    case 'pan right': return { sx: sx - (sw*panAmt) * t, sy, sw, sh };
-    default:          return { sx, sy, sw, sh };
-  }
-}
-async function fetchDecode(ctx, url){
-  const res = await fetch(url);
-  const buf = await res.arrayBuffer();
-  return await ctx.decodeAudioData(buf);
-}
-function loadImg(url){
-  return new Promise((res,rej)=>{ const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>res(im); im.onerror=rej; im.src=url; });
-}
-function downloadBlob(blob, name){
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=name;
-  a.click();
-}
+/* ==== Init ==== */
+$('projectName').addEventListener('change',e=>setProjectName(e.target.value));
+function init(){renderAssetList();renderTimeline();renderGallery();renderTracks();renderVisGrid();if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}}
+init();
 </script>
 </body>
 </html>
