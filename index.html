@@ -6,25 +6,35 @@
 <title>Book Animator — Standalone</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b0b0b">
+
+<!-- Bright-white UI -->
 <style>
-  :root{--bg:#0b0b0b;--panel:#111214;--ink:#f5f5f5;--muted:#a1a1aa;--line:#232324;--accent:#ef4444;--ok:#22c55e;--warn:#f59e0b;}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif}
+  :root{
+    --bg:#0b0b0b;--panel:#111214;--ink:#ffffff;--muted:#c9c9cf;
+    --line:#232324;--accent:#ef4444;--ok:#22c55e;--warn:#f59e0b;
+  }
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif}
   .wrap{max-width:1250px;margin:0 auto;padding:16px}
-  h1{font-size:1.8rem;margin:8px 0 12px}
+  h1{font-size:1.8rem;margin:8px 0 12px;color:#fff}
   .grid{display:grid;gap:12px}
   .g-3{grid-template-columns:1.15fr .85fr}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
-  label{font-size:.85rem;color:var(--muted)}
-  input[type="text"], textarea, select{width:100%;background:#0c0c0f;border:1px solid #2a2a2e;color:var(--ink);border-radius:12px;padding:10px}
+  label{font-size:.85rem;color:#fff}
+  input[type="text"], textarea, select{
+    width:100%;background:#0c0c0f;border:1px solid #2a2a2e;color:#fff;border-radius:12px;padding:10px
+  }
+  input::placeholder, textarea::placeholder{color:var(--muted)}
   textarea{min-height:120px}
-  button{background:#18181b;border:1px solid #2a2a2e;color:#fafafa;border-radius:12px;padding:10px 14px;cursor:pointer}
+  button{background:#18181b;border:1px solid #2a2a2e;color:#fff;border-radius:12px;padding:10px 14px;cursor:pointer}
   button.accent{background:var(--accent);border-color:var(--accent);color:white}
-  button.ghost{background:transparent;border:1px dashed #3a3a40}
+  button.ghost{background:transparent;border:1px dashed #3a3a40;color:#fff}
   .row{display:flex;gap:8px;flex-wrap:wrap}
-  .pill{font-size:.8rem;padding:6px 8px;border:1px solid #2a2a2e;border-radius:999px}
+  .pill{font-size:.8rem;padding:6px 8px;border:1px solid #2a2a2e;border-radius:999px;color:#fff}
   .list{display:grid;gap:6px}
-  .item{padding:8px 10px;border:1px solid #2a2a2e;border-radius:12px;background:#0f0f12}
-  .muted{color:var(--muted)} .small{font-size:.85rem}
+  .item{padding:8px 10px;border:1px solid #2a2a2e;border-radius:12px;background:#0f0f12;color:#fff}
+  .muted{color:var(--muted)}
+  .small{font-size:.85rem}
   .right{display:flex;gap:8px;align-items:center;justify-content:flex-end}
   .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .thumb{width:100%;aspect-ratio:16/9;background:#0b0b0f;border:1px solid #1f1f22;border-radius:12px}
@@ -32,10 +42,10 @@
   .slot{position:relative;border:1px solid #242428;border-radius:10px;overflow:hidden;background:#0d0d10}
   .slot img{width:100%;display:block}
   .slot .cap{position:absolute;inset:auto 0 0 0;background:linear-gradient(transparent,#0008);color:#fff;font-size:.75rem;padding:4px 6px}
-  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#101014;border:1px solid #25252a;border-radius:6px;padding:2px 6px;font-size:.85rem}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#101014;border:1px solid #25252a;border-radius:6px;padding:2px 6px;font-size:.85rem;color:#fff}
   .drag{cursor:grab} .drag:active{cursor:grabbing}
   .visgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .viscell{border:1px dashed #2b2b30;border-radius:8px;padding:8px;display:grid;gap:6px}
+  .viscell{border:1px dashed #2b2b30;border-radius:8px;padding:8px;display:grid;gap:6px;color:#fff}
   .viscell img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#0c0c10;border:1px solid #222}
 </style>
 </head>
@@ -44,7 +54,7 @@
   <header class="bar">
     <h1 style="flex:1">Book Animator • Standalone</h1>
     <button id="installBtn" class="ghost small">Install App</button>
-    <span class="pill muted">status: <span id="netState">online</span></span>
+    <span class="pill">status: <span id="netState">online</span></span>
   </header>
 
   <section class="grid g-3">
@@ -56,14 +66,17 @@
           <div><label class="small">Project Name</label><input id="projectName" type="text" placeholder="e.g., MyAnimationProject" /></div>
           <div class="right"><button id="newProjectBtn">New</button><button id="openProjectBtn">Open</button><button id="saveProjectBtn" class="accent">Save</button></div>
         </div>
-        <p class="muted small" style="margin-top:6px">Projects live in the browser’s private storage (OPFS/IndexedDB). Nothing is uploaded.</p>
+        <p class="muted small" style="margin-top:6px">Stored locally (OPFS/IndexedDB). Nothing uploads.</p>
       </div>
 
-      <!-- Script -->
+      <!-- Storyboard / Script -->
       <div class="card">
         <label>Storyboard / Script</label>
         <textarea id="scriptBox" placeholder="Write or paste your scene script here..."></textarea>
-        <div class="right" style="margin-top:8px"><button id="importTextBtn">Import .txt</button><button id="clearTextBtn">Clear</button></div>
+        <div class="right" style="margin-top:8px">
+          <button id="importTextBtn">Import .txt / .pdf / .json</button>
+          <button id="clearTextBtn">Clear</button>
+        </div>
       </div>
 
       <!-- Frame Canvas -->
@@ -78,7 +91,7 @@
         <p class="muted small" style="margin-top:6px">(Frames embed metadata.)</p>
       </div>
 
-      <!-- NEW: Timeline Editor -->
+      <!-- Timeline Editor -->
       <div class="card">
         <div class="bar" style="justify-content:space-between">
           <label>Timeline Editor</label>
@@ -106,18 +119,23 @@
         <div class="row small" style="margin-top:8px">
           <button id="muxWithAudioBtn">Mux with Audio (FFmpeg-wasm)</button>
         </div>
-        <p class="muted small">Renders timeline frames. If a lip-sync track and sprite map exist, mouths are composited per viseme.</p>
+        <p class="muted small">If lip-sync track + sprite map exist, mouths overlay per viseme.</p>
         <video id="renderPreview" controls class="thumb" style="margin-top:8px"></video>
       </div>
     </div>
 
-    <!-- RIGHT: Assets + Illustration + Voices + Mouth Sprites + Export -->
+    <!-- RIGHT: Assets + Illustration + Voices + Sprites + Export -->
     <div class="grid" style="align-content:start;gap:12px">
       <!-- Assets -->
       <div class="card">
         <div class="bar" style="justify-content:space-between">
-          <label>Assets (images / audio / video / json)</label>
-          <div class="right"><input id="assetInput" type="file" multiple style="display:none" /><button id="addAssetsBtn">Add Assets</button></div>
+          <label>Assets (images / audio / video / json / js / pdf / txt)</label>
+          <div class="right">
+            <input id="assetInput" type="file"
+              accept="image/*,audio/*,video/*,.json,application/json,.js,text/javascript,.txt,text/plain,.pdf,application/pdf"
+              multiple style="display:none" />
+            <button id="addAssetsBtn">Add Assets</button>
+          </div>
         </div>
         <div id="assetList" class="list" style="margin-top:8px"></div>
       </div>
@@ -146,8 +164,10 @@
               <option value="Photoreal scene, shallow depth of field">Photoreal</option>
             </select>
             <select id="imgSize">
-              <option value="1024x1024">1024×1024</option><option value="1280x720">1280×720 (16:9)</option>
-              <option value="1024x576">1024×576 (16:9)</option><option value="768x1024">768×1024 (portrait)</option>
+              <option value="1024x1024">1024×1024</option>
+              <option value="1280x720">1280×720 (16:9)</option>
+              <option value="1024x576">1024×576 (16:9)</option>
+              <option value="768x1024">768×1024 (portrait)</option>
             </select>
           </div>
         </div>
@@ -206,7 +226,7 @@
         <audio id="ttsPlayer" controls style="width:100%;margin-top:8px"></audio>
       </div>
 
-      <!-- NEW: Mouth Sprites Mapper -->
+      <!-- Mouth Sprites Mapper -->
       <div class="card">
         <div class="bar" style="justify-content:space-between"><label>Mouth Sprites (Viseme Mapper)</label></div>
         <div class="visgrid" id="visGrid" style="margin-top:8px"></div>
@@ -246,7 +266,7 @@
 
 <!-- JSZip (export) -->
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
-<!-- FFmpeg-wasm (loaded on-demand inside JS) -->
+
 <script>
 /* ==== PWA install + network badge ==== */
 let deferredPrompt=null; const installBtn=document.getElementById('installBtn');
@@ -268,13 +288,15 @@ async function readFile(path){try{if(useOpfs) return await opfsRead(path);return
 /* ==== Model & helpers ==== */
 const $=id=>document.getElementById(id); const saveStateEl=$('saveState');
 const state={projectName:'',assets:[],frames:[],timeline:[],illos:[],tracks:[],vismap:{},selected:null,lastAudioBlob:null,lastVideoBlob:null};
+
 function setProjectName(n){state.projectName=(n||'').trim();$('projectName').value=state.projectName;}
 function projectPath(sub=''){return `Projects/${state.projectName}/${sub}`;}
 function ensureProject(){if(!state.projectName) throw new Error('Set a project name first.');}
+async function ensureOrPromptProject(){ if(!state.projectName){ const n=prompt('Project name?'); if(!n) throw new Error('Please set a project name first.'); setProjectName(n); } return true; }
 
 /* ==== Metadata + PNG tEXt embed ==== */
 function makeFingerprint(){return btoa(unescape(encodeURIComponent(`${state.projectName}|${new Date().toISOString()}|${crypto.getRandomValues(new Uint32Array(2)).join('-')}`)));}
-function baseMetadata(extra={}){return{app:'Book Animator Standalone',version:'1.3.0',project:state.projectName,createdAt:new Date().toISOString(),fingerprint:makeFingerprint(),...extra};}
+function baseMetadata(extra={}){return{app:'Book Animator Standalone',version:'1.3.1',project:state.projectName,createdAt:new Date().toISOString(),fingerprint:makeFingerprint(),...extra};}
 function addPNGTextChunk(pngBytes,keyword,text){function crc32(buf){let c=~0;for(let n=0;n<buf.length;n++){c^=buf[n];for(let k=0;k<8;k++){c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);}}return ~c>>>0;}
  const u8=new Uint8Array(pngBytes),sig=[137,80,78,71,13,10,26,10];for(let i=0;i<8;i++)if(u8[i]!==sig[i])throw new Error('Not a PNG');
  let p=8;const read32=i=>(u8[i]<<24)|(u8[i+1]<<16)|(u8[i+2]<<8)|(u8[i+3]);const ihdrLen=read32(p);const ihdrType=String.fromCharCode(...u8.slice(p+4,p+8));if(ihdrType!=='IHDR')throw new Error('PNG missing IHDR');const afterIHDR=p+12+ihdrLen;
@@ -291,19 +313,88 @@ $('drawTextBtn').onclick=()=>drawTitle('Scene Title');$('clearCanvasBtn').onclic
 
 /* ==== Assets ==== */
 function renderAssetList(){const list=$('assetList');list.innerHTML='';if(!state.assets.length){const d=document.createElement('div');d.className='item muted small';d.textContent='No assets yet. Use “Add Assets.”';list.appendChild(d);return;}
- state.assets.forEach(a=>{const row=document.createElement('label');row.className='item row';row.style.alignItems='center';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!a.selected;cb.onchange=()=>a.selected=cb.checked;const span=document.createElement('span');span.innerHTML=`<strong>${a.name}</strong> <span class="muted small">(${a.type}, ${(a.size/1024|0)} KB)</span>`;row.appendChild(cb);row.appendChild(span);list.appendChild(row);});updateAudioSelect();}
-$('addAssetsBtn').onclick=()=>$('assetInput').click();
-$('assetInput').addEventListener('change', async (e)=>{ensureProject();const files=[...e.target.files];for(const f of files){const path=projectPath(`assets/${crypto.randomUUID()}_${f.name}`);await writeFile(path,f);state.assets.push({name:f.name,type:f.type||'application/octet-stream',path,size:f.size,selected:false});}await saveProjectIndex();renderAssetList();});
+ state.assets.forEach(a=>{const row=document.createElement('label');row.className='item row';row.style.alignItems='center';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!a.selected;cb.onchange=()=>a.selected=cb.checked;const span=document.createElement('span');span.innerHTML=`<strong>${a.name}</strong> <span class="muted small">(${a.type||'unknown'}, ${(a.size/1024|0)} KB)</span>`;row.appendChild(cb);row.appendChild(span);list.appendChild(row);});updateAudioSelect();}
+$('addAssetsBtn').onclick=async()=>{try{await ensureOrPromptProject();$('assetInput').click();}catch(e){alert(e.message||e);}};
+$('assetInput').addEventListener('change', async (e) => {
+  try {
+    await ensureOrPromptProject();
+    const files = [...e.target.files];
+    for (const f of files) {
+      const path = projectPath(`assets/${crypto.randomUUID()}_${f.name}`);
+      await writeFile(path, f);
+      state.assets.push({ name: f.name, type: f.type || guessTypeByName(f.name), path, size: f.size, selected: false });
+    }
+    await saveProjectIndex(); renderAssetList(); saveStateEl.textContent='Assets added ✔';
+  } catch (err) { alert(err.message || err); }
+  finally { e.target.value=''; }
+});
+function guessTypeByName(name){
+  if (/\.json$/i.test(name)) return 'application/json';
+  if (/\.js$/i.test(name)) return 'text/javascript';
+  if (/\.txt$/i.test(name)) return 'text/plain';
+  if (/\.pdf$/i.test(name)) return 'application/pdf';
+  return 'application/octet-stream';
+}
 
 /* ==== Script import ==== */
-$('importTextBtn').onclick=async()=>{ensureProject();const [h]=await window.showOpenFilePicker?.({types:[{description:"Text",accept:{'text/plain':['.txt']}}]})??[];if(!h)return;const f=await h.getFile();$('scriptBox').value=await f.text();};
+document.body.insertAdjacentHTML('beforeend', `<input id="scriptFile" type="file" accept=".txt,text/plain,.pdf,application/pdf,.json,application/json" style="display:none" />`);
+$('importTextBtn').onclick=async()=>{$('scriptFile').click();};
+$('scriptFile').addEventListener('change', async (e) => {
+  try {
+    await ensureOrPromptProject();
+    const [file] = [...e.target.files]; if (!file) return;
+
+    if (file.type==='application/pdf' || /\.pdf$/i.test(file.name)) {
+      const txt = await pdfToText(file);
+      $('scriptBox').value = txt || '(No extractable text found in PDF)';
+      saveStateEl.textContent='Storyboard imported from PDF ✔';
+    } else if (file.type==='application/json' || /\.json$/i.test(file.name)) {
+      const raw = await file.text();
+      try {
+        const parsed = JSON.parse(raw);
+        // If it's a known storyboard shape, extract script; else dump formatted JSON
+        const script = parsed?.script || parsed?.story || parsed?.scenes?.map(s=>s.text||s.line||'').join('\n') || raw;
+        $('scriptBox').value = typeof script==='string' ? script : JSON.stringify(parsed,null,2);
+      } catch {
+        $('scriptBox').value = raw;
+      }
+      saveStateEl.textContent='Storyboard imported from JSON ✔';
+    } else {
+      $('scriptBox').value = await file.text();
+      saveStateEl.textContent='Storyboard imported ✔';
+    }
+    await saveProjectIndex();
+  } catch(err){ alert(err.message||err); }
+  finally { e.target.value=''; }
+});
+
+/* ==== PDF → Text (pdf.js on demand) ==== */
+async function pdfToText(file) {
+  // Add these to sw.js for full offline use:
+  // 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.mjs',
+  // 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.min.mjs'
+  const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.mjs');
+  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.min.mjs';
+  const data = new Uint8Array(await file.arrayBuffer());
+  const doc = await pdfjs.getDocument({ data }).promise;
+  let out = '';
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const content = await page.getTextContent();
+    const strings = content.items.map(i => ('str' in i ? i.str : (i?.text || '')));
+    out += strings.join(' ') + '\n';
+  }
+  return out.trim();
+}
+
+/* ==== Script clear ==== */
 $('clearTextBtn').onclick=()=>$('scriptBox').value='';
 
 /* ==== Frames & Timeline ==== */
-$('saveFrameBtn').onclick=async()=>{try{ensureProject();const raw=atob(canvas.toDataURL('image/png').split(',')[1]);const buf=new ArrayBuffer(raw.length);const u8=new Uint8Array(buf);for(let i=0;i<raw.length;i++)u8[i]=raw.charCodeAt(i);
+$('saveFrameBtn').onclick=async()=>{try{await ensureOrPromptProject();const raw=atob(canvas.toDataURL('image/png').split(',')[1]);const buf=new ArrayBuffer(raw.length);const u8=new Uint8Array(buf);for(let i=0;i<raw.length;i++)u8[i]=raw.charCodeAt(i);
  const meta=baseMetadata({kind:'frame',note:'Canvas export'});const injected=addPNGTextChunk(buf,'book-animator',JSON.stringify(meta));const pngBlob=new Blob([injected],{type:'image/png'});
  const name=`frame_${Date.now()}.png`;const path=projectPath(`frames/${name}`);await writeFile(path,pngBlob);const fr={name,path,dur:0.25,selected:false};state.frames.push({name,path});state.timeline.push(fr);await saveProjectIndex();renderTimeline();saveStateEl.textContent='Saved frame ✔';}catch(e){alert(e.message||e);}};
-$('btnAddFrameFromAsset').onclick=async()=>{ensureProject();const imgs=state.assets.filter(a=>a.selected && a.type.startsWith('image/'));if(!imgs.length){alert('Select image assets first.');return;}
+$('btnAddFrameFromAsset').onclick=async()=>{await ensureOrPromptProject();const imgs=state.assets.filter(a=>a.selected && a.type.startsWith('image/'));if(!imgs.length){alert('Select image assets first.');return;}
  imgs.forEach(a=>state.timeline.push({name:a.name,path:a.path,dur:0.25,selected:false}));await saveProjectIndex();renderTimeline();};
 $('btnRemoveTimelineSel').onclick=async()=>{state.timeline=state.timeline.filter(f=>!f.selected);await saveProjectIndex();renderTimeline();};
 function renderTimeline(){const list=$('timelineList');list.innerHTML=''; let total=0;
@@ -358,27 +449,41 @@ $('saveIlloBtn').onclick=async()=>{try{ensureProject();const pick=state.illos.fi
 const voiceListEl=$('voiceList'), ttsPlayer=$('ttsPlayer');
 function updateVoiceList(){voiceListEl.innerHTML='';state.assets.filter(a=>a.type.startsWith('audio/')).forEach(a=>{const o=document.createElement('option');o.value=a.path;o.textContent=a.name;voiceListEl.appendChild(o);});updateAudioSelect();}
 function updateAudioSelect(){const sel=$('audioForVideo');sel.innerHTML='<option value="">(no audio)</option>';state.assets.filter(a=>a.type.startsWith('audio/')).forEach(a=>{const o=document.createElement('option');o.value=a.path;o.textContent=a.name;sel.appendChild(o);});}
-$('btnImportVoice').onclick=()=>$('voiceImport').click();
-$('voiceImport').addEventListener('change', async (e)=>{try{ensureProject();const [f]=[...e.target.files];if(!f) return;const name=$('voiceName').value.trim()||f.name.replace(/\.[^.]+$/,'');const path=projectPath(`voices/${crypto.randomUUID()}_${name}.wav`);await writeFile(path,f);
- state.assets.push({name:`${name}.wav`,type:f.type||'audio/wav',path,size:f.size,selected:false});
- await writeFile(projectPath(`voices/${name}.voice.json`),new Blob([JSON.stringify(baseMetadata({kind:'voice-profile',name,source:'import'}),null,2)],{type:'application/json'}));
- await saveProjectIndex();renderAssetList();updateVoiceList();saveStateEl.textContent='Voice imported ✔';}catch(err){alert(err.message||err);}});
+$('btnImportVoice').onclick=async()=>{try{await ensureOrPromptProject();$('voiceImport').click();}catch(e){alert(e.message||e);}};
+$('voiceImport').addEventListener('change', async (e) => {
+  try {
+    await ensureOrPromptProject();
+    const [f] = [...e.target.files]; if (!f) return;
+    const name = $('voiceName').value.trim() || f.name.replace(/\.[^.]+$/, '');
+    const path = projectPath(`voices/${crypto.randomUUID()}_${name}.wav`);
+    await writeFile(path, f);
+    state.assets.push({ name: `${name}.wav`, type: f.type || 'audio/wav', path, size: f.size, selected: false });
+    const profile = { ...baseMetadata({ kind: 'voice-profile', name, source: 'import' }) };
+    await writeFile(projectPath(`voices/${name}.voice.json`), new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' }));
+    await saveProjectIndex(); renderAssetList(); updateVoiceList(); saveStateEl.textContent='Voice imported ✔';
+  } catch (err) { alert(err.message || err); }
+  finally { e.target.value=''; }
+});
 $('btnCloneVoice').onclick=async()=>{try{ensureProject();const sel=voiceListEl.value;if(!sel){alert('Select an imported sample first.');return;}const name=$('voiceName').value.trim()||`Clone_${Date.now()}`;
  await writeFile(projectPath(`voices/${name}.voice.json`),new Blob([JSON.stringify(baseMetadata({kind:'voice-profile',name,source:'clone-from-sample',samplePath:sel}),null,2)],{type:'application/json'}));
  saveStateEl.textContent='Clone profile registered ✔';}catch(e){alert(e.message||e);}};
 $('btnPlayVoice').onclick=async()=>{const p=voiceListEl.value;if(!p){alert('Pick a voice sample.');return;}const f=await readFile(p);ttsPlayer.src=URL.createObjectURL(f);ttsPlayer.play();};
 $('btnDeleteVoice').onclick=async()=>{const p=voiceListEl.value;if(!p){alert('Pick a voice sample.');return;}state.assets=state.assets.filter(a=>a.path!==p);await saveProjectIndex();renderAssetList();updateVoiceList();};
+
 $('btnSynthesize').onclick=async()=>{try{ensureProject();const text=($('ttsText').value||'').trim();if(!text){alert('Type text to synthesize.');return;}
  const voiceName=$('voiceName').value.trim()||'Adam';const provider=$('ttsProvider').value, endpoint=$('ttsEndpoint').value.trim(), key=$('ttsApiKey').value.trim();let wavBlob=null;
  if(provider==='proxy'){if(!endpoint){alert('Set TTS proxy endpoint.');return;}const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,voice:voiceName,emotion:parseFloat($('emo').value),pitch:parseInt($('pit').value,10),speed:parseFloat($('spd').value)})});if(!r.ok) throw new Error('Proxy TTS error');const ab=await r.arrayBuffer();wavBlob=new Blob([ab],{type:'audio/wav'});}
  else{if(!key){alert('Paste OpenAI API key.');return;}const r=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},body:JSON.stringify({model:'gpt-4o-mini-tts',voice:'alloy',input:text,speed:parseFloat($('spd').value)})});if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error?.message||'OpenAI TTS error');}const ab=await r.arrayBuffer();wavBlob=new Blob([ab],{type:'audio/wav'});}
  state.lastAudioBlob=wavBlob; ttsPlayer.src=URL.createObjectURL(wavBlob); ttsPlayer.play(); saveStateEl.textContent='Synth preview ✔';}catch(e){alert(e.message||e);}};
+
 $('btnSaveTTS').onclick=async()=>{try{ensureProject();if(!state.lastAudioBlob){alert('Synthesize first or select an audio asset.');return;}const name=`tts_${Date.now()}.wav`;const path=projectPath(`assets/${name}`);
  await writeFile(path,new Blob([await state.lastAudioBlob.arrayBuffer()],{type:'audio/wav'})); state.assets.push({name,type:'audio/wav',path,size:state.lastAudioBlob.size,selected:false}); await saveProjectIndex();renderAssetList();updateVoiceList();saveStateEl.textContent='TTS saved ✔';}catch(e){alert(e.message||e);}};
+
 $('btnMakeLipSync').onclick=async()=>{try{ensureProject();let audioFile=null;const selected=voiceListEl.value || (state.assets.find(a=>a.type.startsWith('audio/') && a.selected)?.path || null);
  audioFile = selected ? await readFile(selected) : state.lastAudioBlob; if(!audioFile){alert('Select/import audio or synthesize first.');return;}
  const track=await buildVisemeTrack(audioFile);const name=`lipsync_${Date.now()}.json`;const path=projectPath(`tracks/${name}`);
  await writeFile(path,new Blob([JSON.stringify(track,null,2)],{type:'application/json'})); state.tracks=state.tracks||[]; state.tracks.push({name,path,len:track.duration}); await saveProjectIndex();renderTracks();saveStateEl.textContent='Lip-sync track created ✔';}catch(e){alert(e.message||e);}};
+
 async function buildVisemeTrack(fileOrBlob){const ac=new (window.AudioContext||window.webkitAudioContext)();const buf=await fileOrBlob.arrayBuffer();const audio=await ac.decodeAudioData(buf);
  const ch=audio.getChannelData(0);const sr=audio.sampleRate;const win=0.04,hop=0.02;const N=Math.floor(win*sr),H=Math.floor(hop*sr);const frames=[];let pos=0;
  while(pos+N<=ch.length){const seg=ch.subarray(pos,pos+N);let en=0;for(let i=0;i<seg.length;i++)en+=seg[i]*seg[i];let centroid=0,sum=0;for(let k=0;k<64;k++){let re=0,im=0;const w=(2*Math.PI*k)/N;for(let n=0;n<N;n++){re+=seg[n]*Math.cos(w*n);im-=seg[n]*Math.sin(w*n);}const mag=(re*re+im*im);centroid+=k*mag;sum+=mag;}
@@ -400,7 +505,14 @@ $('btnClearVisMap').onclick=()=>{state.vismap={};renderVisGrid();};
 $('removeSelectedBtn').onclick=async()=>{state.assets=state.assets.filter(a=>!a.selected);await saveProjectIndex();renderAssetList();updateVoiceList();};
 $('previewSelectedBtn').onclick=async()=>{const sel=state.assets.find(a=>a.selected);if(!sel){alert('Select one asset.');return;}const file=await readFile(sel.path);const url=URL.createObjectURL(file);
  const v=$('previewVideo'),i=$('previewImage'),au=$('previewAudio');v.style.display='none';i.style.display='none';au.style.display='none';
- if(sel.type.startsWith('video/')){v.src=url;v.style.display='block';v.play();}else if(sel.type.startsWith('image/')){i.src=url;i.style.display='block';}else if(sel.type.startsWith('audio/')){au.src=url;au.style.display='block';au.play();}else alert('Unsupported preview type.');};
+ if(sel.type.startsWith('video/')){v.src=url;v.style.display='block';v.play();}
+ else if(sel.type.startsWith('image/')){i.src=url;i.style.display='block';}
+ else if(sel.type.startsWith('audio/')){au.src=url;au.style.display='block';au.play();}
+ else if(sel.type==='application/json' || /\.json$/i.test(sel.name)){const text=await file.text();alert('JSON asset loaded.\\nFirst 200 chars:\\n'+text.slice(0,200));}
+ else if(sel.type==='text/javascript' || /\.js$/i.test(sel.name)){const text=await file.text();alert('JS asset loaded.\\nFirst 200 chars:\\n'+text.slice(0,200));}
+ else if(sel.type==='application/pdf' || /\.pdf$/i.test(sel.name)){alert('PDF asset selected. Use Storyboard import if you want to extract text.');}
+ else if(sel.type==='text/plain' || /\.txt$/i.test(sel.name)){const text=await file.text();alert('TXT asset loaded.\\nFirst 200 chars:\\n'+text.slice(0,200));}
+ else { alert('Unsupported preview type for this asset.'); }};
 
 /* ==== Video render (canvas capture → WebM) ==== */
 let mediaRecorder=null, recChunks=[];
@@ -409,10 +521,10 @@ $('renderVideoBtn').onclick=async()=>{try{ensureProject();if(!state.timeline.len
  const stream=canvas.captureStream(fps); mediaRecorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9'}); recChunks=[]; mediaRecorder.ondataavailable=(e)=>{if(e.data.size>0) recChunks.push(e.data);};
  mediaRecorder.onstop=()=>{const blob=new Blob(recChunks,{type:'video/webm'}); state.lastVideoBlob=blob; $('renderPreview').src=URL.createObjectURL(blob); writeFile(projectPath(`exports/video_${Date.now()}.meta.json`), new Blob([JSON.stringify(baseMetadata({kind:'video-export',fps,frames:state.timeline.length}),null,2)],{type:'application/json'})); saveStateEl.textContent='Video (video-only) ✔';};
  mediaRecorder.start();
- // draw timeline frames
- for(const fr of state.timeline){const file=await readFile(fr.path);const img=await blobToImage(file);ctx.drawImage(img,0,0,canvas.width,canvas.height); await compositeMouthIfAny(fr); await sleep((Number(fr.dur)||0.25)*1000);}
+ for(const fr of state.timeline){const file=await readFile(fr.path);const img=await blobToImage(file);ctx.drawImage(img,0,0,canvas.width,canvas.height); await compositeMouthIfAny(); await sleep((Number(fr.dur)||0.25)*1000);}
  mediaRecorder.stop();
 }catch(e){alert(e.message||e);}};
+
 async function compositeMouthIfAny(){ if(!state.tracks?.length || !Object.keys(state.vismap||{}).length) return; try{
   const tr=await readFile(state.tracks[0].path).then(f=>f.text()).then(JSON.parse); const now=performance.now()/1000; const idx=Math.floor((now%tr.duration)/(1/tr.fps)); const v=tr.frames[idx]?.v||'X';
   const entry=state.vismap[v]; if(entry?.path){const spr=await readFile(entry.path); const img=await blobToImage(spr); const w=120,h=90; ctx.drawImage(img, canvas.width- w -20, canvas.height- h -20, w, h);}
@@ -424,7 +536,6 @@ function blobToImage(blob){return new Promise(res=>{const url=URL.createObjectUR
 let ffmpegReady=false, FF=null, toBlob=null;
 async function ensureFFmpeg(){
   if(ffmpegReady) return;
-  // dynamic ESM import (cached by SW)
   const mod = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/ffmpeg.min.js');
   const util = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js');
   FF = mod.createFFmpeg({ log: false });
@@ -440,23 +551,16 @@ $('muxWithAudioBtn').onclick=async()=>{try{
   const inVid = new Uint8Array(await state.lastVideoBlob.arrayBuffer());
   const inAudFile = await readFile(audioPath);
   const inAud = new Uint8Array(await inAudFile.arrayBuffer());
-
   await FF.FS('writeFile','vid.webm', inVid);
   await FF.FS('writeFile','aud.wav', inAud);
-
-  // Mux to WebM+Opus (good browser support)
   await FF.run('-i','vid.webm','-i','aud.wav','-c:v','copy','-c:a','libopus','-b:a','128k','-shortest','out.webm');
-
   const data = FF.FS('readFile','out.webm');
   const muxBlob = toBlob(data.buffer, 'video/webm');
   const url = URL.createObjectURL(muxBlob);
   $('renderPreview').src = url;
-
-  // Save artifact + sidecar
   const fname=`video_mux_${Date.now()}.webm`;
   await writeFile(projectPath(`exports/${fname}`), muxBlob);
   await writeFile(projectPath(`exports/${fname}.meta.json`), new Blob([JSON.stringify(baseMetadata({kind:'video-mux',audio:audioPath}),null,2)],{type:'application/json'}));
-
   saveStateEl.textContent='Muxed video ✔';
 }catch(e){alert(e.message||e);}};
 
